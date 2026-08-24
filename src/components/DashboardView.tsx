@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { CognitiveProfile, AppActiveTab, ComplexityMode, SkillNode, HorizonJobNode, AnyCognitiveNode } from '../types';
 import { calculateSkillVitality, getVitalityStatus } from '../utils/decay';
+import { getCompatibilityInfo, compatibilityLabelFromScore } from '../utils/romeMatching';
 
 interface DashboardViewProps {
   profile: CognitiveProfile;
@@ -56,6 +57,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   // 2 Top matching horizons
   const topHorizons = [...allHorizons].sort((a, b) => b.matchScore - a.matchScore).slice(0, 2);
+
+  // Prochaine action : calculée depuis le premier horizon (jamais de chiffre magique codé en dur)
+  const nextActionHorizon = topHorizons[0];
+  const nextGap = nextActionHorizon?.missingSkills?.[0];
+  const nextHorizonName = nextActionHorizon?.name || '';
+  const nextLabel = getCompatibilityInfo(compatibilityLabelFromScore(nextActionHorizon?.matchScore ?? 0));
 
   // 1 Skill in decay / needing reactivation
   const skillToReactivate = allSkills.find((s) => {
@@ -325,22 +332,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
             <h3 className="font-bold text-sm text-white">Prochaine Étape Clé</h3>
 
-            <div className="space-y-2 text-xs text-indigo-100">
-              <p className="text-[11px] leading-relaxed">
-                💡 <strong>Pont d'apprentissage prioritaire :</strong> Valider le module Qualiopi ou SIRH pour débloquer 96% d'affinité vers la Coordination Pédagogique.
-              </p>
-              <div className="p-2.5 bg-white/10 rounded-xl text-[10px] space-y-1">
-                <span className="text-indigo-200 block font-semibold">Bénéfice immédiat :</span>
-                <span>Valorisation instantanée de votre double bagage théorique et terrain.</span>
+            {nextGap ? (
+              <div className="space-y-2 text-xs text-indigo-100">
+                <p className="text-[11px] leading-relaxed">
+                  💡 <strong>Pont d'apprentissage prioritaire :</strong> « {nextGap.name} » pour vous rapprocher de <strong>{nextHorizonName}</strong> ({nextLabel.short.toLowerCase()}).
+                </p>
+                <div className="p-2.5 bg-white/10 rounded-xl text-[10px] space-y-1">
+                  <span className="text-indigo-200 block font-semibold">Formation suggérée :</span>
+                  <span>{nextGap.learningBridge || nextGap.recommendedTraining?.title || 'À identifier avec France Travail / OPCO.'}</span>
+                </div>
               </div>
-            </div>
+            ) : (
+              <p className="text-[11px] leading-relaxed text-indigo-100">
+                ✅ Aucun écart critique détecté sur vos horizons prioritaires. Vérifiez la vitalité de vos compétences ou explorez de nouveaux métiers dans « Mes possibilités ».
+              </p>
+            )}
           </div>
 
           <button
-            onClick={() => onNavigateTab('signature')}
+            onClick={() => onNavigateTab('horizons')}
             className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs font-semibold text-indigo-300 hover:text-white"
           >
-            <span>Voir mon Passeport Cognitif</span>
+            <span>Explorer mes possibilités</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -402,6 +415,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <strong className="text-white block font-semibold">Diagnostic cognitif global :</strong>
             <p className="leading-relaxed text-[11px] text-slate-300">
               {profile.cognitiveSignature.summaryText}
+            </p>
+            <p className="text-[10px] text-slate-500 pt-1 border-t border-slate-700/40">
+              ⚠️ Indices heuristiques d'aide à la réflexion, pas des mesures psychologiques. Le niveau 5 (conclusion psychologique) n'est jamais déduit automatiquement d'un CV.
             </p>
           </div>
         </div>

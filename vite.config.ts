@@ -11,6 +11,11 @@ export default defineConfig(() => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    optimizeDeps: {
+      // Ne scanner que l'entrée réelle : les maquettes HTML brutes du dossier
+      // raw/ ne doivent jamais être analysées par esbuild (fichiers non-ESM).
+      entries: ['index.html'],
+    },
     server: {
       host: '0.0.0.0',
       // Preview environments use a generated proxy hostname.

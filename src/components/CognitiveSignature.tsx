@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CognitiveProfile, SkillNode, CapacityNode } from '../types';
 import { calculateSkillVitality } from '../utils/decay';
+import { getEpistemicLevel } from '../utils/epistemics';
 import { 
   Brain, 
   Sparkles, 
@@ -19,7 +20,8 @@ import {
   Briefcase,
   Layers,
   MapPin,
-  Mail
+  Mail,
+  AlertCircle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -494,20 +496,37 @@ export const CognitiveSignature: React.FC<CognitiveSignatureProps> = ({
             Spectre des Capacités Cognitives Fondamentales
           </h3>
           <div className="space-y-3">
-            {capacities.map((cap) => (
-              <div key={cap.id} className="p-4 rounded-xl border border-slate-200 bg-slate-50/60">
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm">🧠</span>
-                    <strong className="text-xs font-bold text-slate-900">{cap.name}</strong>
+            {capacities.map((cap) => {
+              const epistemic = getEpistemicLevel(cap);
+              return (
+                <div key={cap.id} className="p-4 rounded-xl border border-slate-200 bg-slate-50/60">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">🧠</span>
+                      <strong className="text-xs font-bold text-slate-900">{cap.name}</strong>
+                    </div>
+                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border ${epistemic.badge}`}>
+                      Nv. {epistemic.level} · {epistemic.label}
+                    </span>
                   </div>
-                  <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-pink-100 text-pink-800">
-                    {cap.level}
-                  </span>
+                  <p className="text-xs text-slate-600">{cap.description}</p>
+                  {epistemic.level >= 4 && (
+                    <p className="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5 mt-2 flex items-start gap-1.5">
+                      <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
+                      <span>Hypothèse cognitive — à confirmer par un échange humain, pas une mesure psychologique.</span>
+                    </p>
+                  )}
                 </div>
-                <p className="text-xs text-slate-600">{cap.description}</p>
-              </div>
-            ))}
+              );
+            })}
+          </div>
+
+          {/* Garde-fou épistémique */}
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-[11px] text-slate-600 leading-relaxed space-y-1.5">
+            <strong className="text-slate-900 block">🛡️ Garde-fou épistémique</strong>
+            <p>
+              Cognitorium distingue <strong>ce qui est documenté</strong> (faits : expériences, diplômes, données) de <strong>ce qui est interprété</strong> (compétences inférées, capacités candidates, hypothèses de rapprochement). Les indices numériques (RIASEC, transférabilité, scores de compatibilité) sont des <strong>aides à la réflexion</strong>, pas des mesures psychologiques. Le niveau 5 de l'échelle — conclusion psychologique — n'est jamais déduit automatiquement d'un CV.
+            </p>
           </div>
         </div>
       </div>
