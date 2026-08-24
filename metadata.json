@@ -1,0 +1,6 @@
+{
+  "name": "Cognitorium",
+  "description": "Système de représentation dynamique du capital cognitif, expérientiel et professionnel d'un individu.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
