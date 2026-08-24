@@ -42,7 +42,7 @@ export const TreeView: React.FC<TreeViewProps> = ({
   };
 
   const experiences = profile.nodes.filter(
-    (n) => n.category === 'experience' || n.category === 'formation'
+    (n) => n.category === 'experience' || n.category === 'formation' || n.category === 'research_project'
   ) as ExperienceNode[];
 
   const allSkills = profile.nodes.filter((n) => n.category.startsWith('skill_')) as SkillNode[];
@@ -133,7 +133,13 @@ export const TreeView: React.FC<TreeViewProps> = ({
                     {isExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
                   </button>
                   <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold shrink-0">
-                    {exp.category === 'formation' ? <GraduationCap className="w-4 h-4" /> : <Briefcase className="w-4 h-4" />}
+                    {exp.category === 'formation' ? (
+                      <GraduationCap className="w-4 h-4" />
+                    ) : exp.category === 'research_project' ? (
+                      <span className="text-sm">🔬</span>
+                    ) : (
+                      <Briefcase className="w-4 h-4" />
+                    )}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
@@ -141,6 +147,11 @@ export const TreeView: React.FC<TreeViewProps> = ({
                       <span className="text-[10px] px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-md font-semibold">
                         {exp.period}
                       </span>
+                      {exp.metrics?.summaryVolume && (
+                        <span className="text-[10px] px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-md font-medium hidden sm:inline-block">
+                          📊 {exp.metrics.summaryVolume}
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-slate-500">{exp.institutionOrContext} • {exp.role}</p>
                   </div>

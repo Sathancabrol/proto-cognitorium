@@ -52,7 +52,8 @@ export const TableView: React.FC<TableViewProps> = ({
       if (selectedCategory === 'skills' && !node.category.startsWith('skill_')) return false;
       if (selectedCategory === 'capacity' && node.category !== 'capacity_cognitive') return false;
       if (selectedCategory === 'horizon' && node.category !== 'horizon_job') return false;
-      if (selectedCategory === 'experience' && node.category !== 'experience' && node.category !== 'formation') return false;
+      if (selectedCategory === 'experience' && node.category !== 'experience' && node.category !== 'formation' && node.category !== 'research_project') return false;
+      if (selectedCategory === 'research' && node.category !== 'research_project') return false;
     }
 
     // Status filter
@@ -106,6 +107,7 @@ export const TableView: React.FC<TableViewProps> = ({
             <option value="capacity">Capacités Méta</option>
             <option value="horizon">Horizons ROME</option>
             <option value="experience">Expériences & Formations</option>
+            <option value="research">Projets de Recherche</option>
           </select>
 
           {/* Status Selector */}
@@ -148,7 +150,7 @@ export const TableView: React.FC<TableViewProps> = ({
                   const isSkill = node.category.startsWith('skill_');
                   const isCapacity = node.category === 'capacity_cognitive';
                   const isHorizon = node.category === 'horizon_job';
-                  const isExp = node.category === 'experience' || node.category === 'formation';
+                  const isExp = node.category === 'experience' || node.category === 'formation' || node.category === 'research_project';
 
                   const skillNode = isSkill ? (node as SkillNode) : null;
                   const horizonNode = isHorizon ? (node as HorizonJobNode) : null;
@@ -187,7 +189,9 @@ export const TableView: React.FC<TableViewProps> = ({
                           {isSkill && 'Compétence'}
                           {isCapacity && 'Capacité Méta'}
                           {isHorizon && 'Horizon ROME'}
-                          {isExp && 'Expérience'}
+                          {node.category === 'experience' && 'Expérience'}
+                          {node.category === 'formation' && 'Formation'}
+                          {node.category === 'research_project' && '🔬 Recherche'}
                         </span>
                       </td>
 

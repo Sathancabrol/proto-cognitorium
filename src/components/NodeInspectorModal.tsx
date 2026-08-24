@@ -88,6 +88,7 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
             <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-slate-200/80 text-slate-700">
               {node.category === 'experience' && '🏗️ Expérience de Terrain'}
               {node.category === 'formation' && '🎓 Formation / Diplôme'}
+              {node.category === 'research_project' && '🔬 Projet de Recherche Universitaire'}
               {node.category === 'skill_tech' && '⚙️ Compétence Technique'}
               {node.category === 'skill_transversal' && '🔄 Compétence Transversale'}
               {node.category === 'skill_relational' && '🤝 Compétence Humaine'}
@@ -95,6 +96,21 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
               {node.category === 'knowledge' && '📚 Savoir & Réglementation'}
               {node.category === 'horizon_job' && '🧭 Horizon Professionnel'}
             </span>
+
+            {/* Inference Type Badge */}
+            {node.inferenceType && (
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                node.inferenceType === 'explicite'
+                  ? 'bg-blue-50 text-blue-700 border-blue-200'
+                  : node.inferenceType === 'inference_forte'
+                  ? 'bg-purple-50 text-purple-700 border-purple-200'
+                  : 'bg-amber-50 text-amber-700 border-amber-200'
+              }`}>
+                {node.inferenceType === 'explicite' && '📄 Explicite (CV/Diplôme)'}
+                {node.inferenceType === 'inference_forte' && '⚡ Inférence Forte'}
+                {node.inferenceType === 'inference_a_valider' && '❓ Inférence à Valider'}
+              </span>
+            )}
 
             {/* Verification Status Badge */}
             {isPending ? (
@@ -105,7 +121,7 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
             ) : (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
                 <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                <span>Vérifié</span>
+                <span>Vérifié ({node.confidenceScore || 95}%)</span>
               </span>
             )}
           </div>
@@ -194,6 +210,35 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
           </div>
         )}
 
+        {/* Quantitative Metrics Badge if present */}
+        {node.metrics && (
+          <div className="p-3.5 bg-indigo-50/80 rounded-2xl border border-indigo-100 flex flex-wrap items-center gap-3 text-xs text-indigo-950">
+            <span className="font-bold text-[11px] uppercase tracking-wider text-indigo-800 flex items-center gap-1">
+              📊 Volumétrie & Métriques :
+            </span>
+            {node.metrics.summaryVolume && (
+              <span className="font-semibold px-2.5 py-1 bg-white rounded-xl shadow-xs border border-indigo-200">
+                {node.metrics.summaryVolume}
+              </span>
+            )}
+            {node.metrics.participantsCount && (
+              <span className="px-2 py-0.5 bg-indigo-100/70 rounded-lg font-medium">
+                👥 {node.metrics.participantsCount} participants
+              </span>
+            )}
+            {node.metrics.classesCount && (
+              <span className="px-2 py-0.5 bg-indigo-100/70 rounded-lg font-medium">
+                🎓 {node.metrics.classesCount} classes encadrées
+              </span>
+            )}
+            {node.metrics.teamsCount && (
+              <span className="px-2 py-0.5 bg-indigo-100/70 rounded-lg font-medium">
+                🏗️ {node.metrics.teamsCount} équipes supervisées
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Node Description */}
         <div>
           <h3 className="text-xs font-bold uppercase text-slate-400 tracking-wider mb-2">Description & Contexte</h3>
@@ -201,6 +246,16 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
             {node.description}
           </p>
         </div>
+
+        {/* Emergent Insight for Capacities */}
+        {node.category === 'capacity_cognitive' && (node as CapacityNode).emergentInsight && (
+          <div className="p-3.5 bg-purple-50 rounded-2xl border border-purple-200 text-xs text-purple-950 space-y-1">
+            <span className="font-bold uppercase tracking-wider text-purple-800 text-[10px] block">
+              💡 Insight Émergent & Transférabilité
+            </span>
+            <p className="leading-relaxed">{(node as CapacityNode).emergentInsight}</p>
+          </div>
+        )}
 
         {/* Evidence & Provenance Section */}
         {node.evidence && node.evidence.length > 0 && (
@@ -218,8 +273,13 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
                       {ev.source}
                     </span>
                   </div>
-                  {ev.snippet && (
-                    <p className="text-[11px] text-blue-800 italic">« {ev.snippet} »</p>
+                  {ev.volumeMetric && (
+                    <span className="text-[11px] text-blue-700 font-semibold block">
+                      📈 Volume : {ev.volumeMetric}
+                    </span>
+                  )}
+                  {ev.detail && (
+                    <p className="text-[11px] text-blue-800 italic">« {ev.detail} »</p>
                   )}
                   {ev.date && (
                     <span className="text-[10px] text-slate-400 block">Date / Période : {ev.date}</span>
@@ -230,32 +290,38 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
           </div>
         )}
 
-        {/* Specific Details for Experience */}
-        {node.category === 'experience' && (
+        {/* Specific Details for Experience, Formation & Research */}
+        {(node.category === 'experience' || node.category === 'formation' || node.category === 'research_project') && (
           <div className="space-y-4">
-            <div>
-              <h3 className="text-xs font-bold uppercase text-slate-400 tracking-wider mb-2">Missions Opérationnelles</h3>
-              <ul className="space-y-1.5">
-                {(node as ExperienceNode).missions?.map((m, idx) => (
-                  <li key={idx} className="flex items-start gap-2 text-xs text-slate-700">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 mt-0.5 shrink-0" />
-                    <span>{m}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="text-xs font-bold uppercase text-slate-400 tracking-wider mb-2">Efforts & Gymnastique Cognitive</h3>
-              <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-2xl space-y-1.5">
-                {(node as ExperienceNode).cognitiveEfforts?.map((effort, idx) => (
-                  <div key={idx} className="text-xs text-blue-900 flex items-start gap-2">
-                    <Sparkles className="w-3.5 h-3.5 text-blue-500 mt-0.5 shrink-0" />
-                    <span>{effort}</span>
-                  </div>
-                ))}
+            {(node as ExperienceNode).missions && (node as ExperienceNode).missions.length > 0 && (
+              <div>
+                <h3 className="text-xs font-bold uppercase text-slate-400 tracking-wider mb-2">
+                  {node.category === 'research_project' ? 'Actions & Protocoles Conduits' : 'Missions Opérationnelles'}
+                </h3>
+                <ul className="space-y-1.5">
+                  {(node as ExperienceNode).missions.map((m, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-xs text-slate-700">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 mt-0.5 shrink-0" />
+                      <span>{m}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </div>
+            )}
+
+            {(node as ExperienceNode).cognitiveEfforts && (node as ExperienceNode).cognitiveEfforts.length > 0 && (
+              <div>
+                <h3 className="text-xs font-bold uppercase text-slate-400 tracking-wider mb-2">Efforts & Gymnastique Cognitive</h3>
+                <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-2xl space-y-1.5">
+                  {(node as ExperienceNode).cognitiveEfforts.map((effort, idx) => (
+                    <div key={idx} className="text-xs text-blue-900 flex items-start gap-2">
+                      <Sparkles className="w-3.5 h-3.5 text-blue-500 mt-0.5 shrink-0" />
+                      <span>{effort}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -278,13 +344,29 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
           <div className="space-y-4">
             <div className="p-4 bg-orange-50/80 border border-orange-200 rounded-2xl">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-bold uppercase text-orange-800">Affinité du Profil</span>
+                <span className="text-xs font-bold uppercase text-orange-800">
+                  Compatibilité Estimée : {(node as HorizonJobNode).compatibilityLevel || 'Élevée'}
+                </span>
                 <span className="text-base font-bold text-orange-600">{(node as HorizonJobNode).matchScore}%</span>
               </div>
               <p className="text-xs text-orange-950 leading-relaxed">
                 {(node as HorizonJobNode).rationale}
               </p>
             </div>
+
+            {(node as HorizonJobNode).explainabilityFactors?.evidenceConvergence && (
+              <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs space-y-1.5">
+                <span className="font-bold text-emerald-900 text-[11px] block">
+                  🎯 Preuves Convergentes du Parcours :
+                </span>
+                {(node as HorizonJobNode).explainabilityFactors?.evidenceConvergence?.map((ev, idx) => (
+                  <div key={idx} className="flex items-start gap-1.5 text-emerald-800 text-[11px]">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                    <span>{ev}</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div>
               <h3 className="text-xs font-bold uppercase text-slate-400 tracking-wider mb-2">Compétences Déjà Possédées</h3>

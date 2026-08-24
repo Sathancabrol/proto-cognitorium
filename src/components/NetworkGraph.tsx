@@ -38,11 +38,18 @@ const CATEGORY_STYLES: Record<NodeCategory, { label: string; color: string; ring
     icon: '📋'
   },
   formation: {
-    label: 'Formations & Langues',
+    label: 'Formations & Diplômes',
     color: '#8b5cf6', // Violet
     ringColor: 'rgba(139, 92, 246, 0.4)',
     bg: '#f5f3ff',
     icon: '🎓'
+  },
+  research_project: {
+    label: 'Recherche & Protocoles',
+    color: '#7c3aed', // Deep Purple
+    ringColor: 'rgba(124, 58, 237, 0.4)',
+    bg: '#f5f3ff',
+    icon: '🔬'
   },
   skill_tech: {
     label: 'Compétences Techniques',

@@ -1,6 +1,7 @@
 export type NodeCategory = 
   | 'experience' 
   | 'formation' 
+  | 'research_project'
   | 'mission'
   | 'skill_tech' 
   | 'skill_transversal' 
@@ -11,14 +12,28 @@ export type NodeCategory =
 
 export type VerificationStatus = 'verified' | 'pending' | 'inferred' | 'rejected';
 
+export type InferenceType = 'explicite' | 'inference_forte' | 'inference_a_valider';
+
 export interface EvidenceItem {
   id: string;
-  source: 'cv' | 'declaration' | 'project' | 'diploma' | 'ai_inference' | 'peer_review';
+  source: 'cv' | 'declaration' | 'project' | 'diploma' | 'ai_inference' | 'peer_review' | 'validation_humaine';
   label: string;
   detail?: string;
   confidenceScore: number; // 0 - 100
+  inferenceType?: InferenceType;
   inferenceMethod?: string;
   date?: string;
+  volumeMetric?: string;
+}
+
+export interface NodeMetrics {
+  participantsCount?: number;
+  classesCount?: number;
+  teamsCount?: number;
+  durationMonths?: number;
+  experimentsCount?: number;
+  studentsCount?: number;
+  summaryVolume?: string;
 }
 
 export interface BaseNode {
@@ -33,9 +48,11 @@ export interface BaseNode {
   // Core Knowledge Model: Provenance & Confiance
   verificationStatus?: VerificationStatus;
   confidenceScore?: number; // 0 - 100
+  inferenceType?: InferenceType;
   evidence?: EvidenceItem[];
   verifiedAt?: string;
   verifiedBy?: string;
+  metrics?: NodeMetrics;
 }
 
 export interface MissionDetail {
@@ -47,7 +64,7 @@ export interface MissionDetail {
 }
 
 export interface ExperienceNode extends BaseNode {
-  category: 'experience' | 'formation';
+  category: 'experience' | 'formation' | 'research_project';
   period: string;
   startYear: number;
   endYear?: number;
@@ -85,6 +102,7 @@ export interface CapacityNode extends BaseNode {
   level: 'fondamental' | 'avancé' | 'expert';
   underlyingSkills: string[];
   cognitiveDimension: 'Raisonnement & Analyse' | 'Coordination & Systémique' | 'Adaptabilité & Imprévus' | 'Spatial & Abstraction' | 'Humain & Médiation';
+  emergentInsight?: string;
 }
 
 export interface KnowledgeNode extends BaseNode {
@@ -109,6 +127,8 @@ export interface HorizonJobNode extends BaseNode {
   romeCode?: string; // e.g. 'F1208', 'K2102', 'M1508'
   romeTitle?: string;
   matchScore: number; // 0 - 100%
+  compatibilityLevel?: 'Élevée' | 'Très Élevée' | 'Modérée' | 'En développement';
+  isDirectlyExercised?: boolean;
   rationale: string;
   matchingSkills: string[];
   missingSkills: {
@@ -122,6 +142,8 @@ export interface HorizonJobNode extends BaseNode {
     strengthPoints: string[];
     riskPoints: string[];
     suggestedNextAction: string;
+    evidenceConvergence?: string[];
+    missingVerifications?: string[];
   };
 }
 
