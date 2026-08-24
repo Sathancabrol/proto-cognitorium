@@ -1,6 +1,7 @@
 import React from 'react';
 import { AnyCognitiveNode, GraphEdge, SkillNode, ExperienceNode, TaskNode, CapacityNode, HorizonJobNode } from '../types';
 import { calculateSkillVitality, getVitalityStatus } from '../utils/decay';
+import { getNodeVisualDescriptor } from '../utils/nodeVisualDescriptor';
 import { 
   X, 
   Sparkles, 
@@ -79,23 +80,24 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
     onValidateNode(node.id);
   };
 
+  const visualDesc = getNodeVisualDescriptor(node, simulationYear);
+
   return (
     <div id="node-inspector-drawer" className="fixed inset-y-0 right-0 z-40 w-full sm:w-[480px] bg-white shadow-2xl border-l border-slate-200 flex flex-col transform transition-transform duration-300 ease-in-out">
       {/* Header */}
       <div className="p-6 border-b border-slate-100 flex items-start justify-between bg-slate-50/70">
         <div className="flex-1 pr-4">
-          <div className="flex flex-wrap items-center gap-2 mb-1.5">
-            <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-slate-200/80 text-slate-700">
-              {node.category === 'experience' && '🏗️ Expérience de Terrain'}
-              {node.category === 'formation' && '🎓 Formation / Diplôme'}
-              {node.category === 'research_project' && '🔬 Projet de Recherche Universitaire'}
-              {node.category === 'task' && '📋 Tâche & Actions'}
-              {node.category === 'skill_tech' && '⚙️ Compétence Technique'}
-              {node.category === 'skill_transversal' && '🔄 Compétence Transversale'}
-              {node.category === 'skill_relational' && '🤝 Compétence Humaine'}
-              {node.category === 'capacity_cognitive' && '🧠 Capacité Cognitive Méta'}
-              {node.category === 'knowledge' && '📚 Savoir & Réglementation'}
-              {node.category === 'horizon_job' && '🧭 Horizon Professionnel'}
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <span 
+              className="text-xs font-bold px-2.5 py-1 rounded-lg border flex items-center gap-1.5 shadow-2xs"
+              style={{
+                backgroundColor: visualDesc.bgColor,
+                color: visualDesc.color,
+                borderColor: visualDesc.ringColor
+              }}
+            >
+              <span className="text-sm">{visualDesc.symbol}</span>
+              <span>{visualDesc.categoryLabel} · {visualDesc.subTypeLabel}</span>
             </span>
 
             {/* Inference Type Badge */}
@@ -127,6 +129,10 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
             )}
           </div>
           <h2 className="text-xl font-bold text-slate-900 leading-snug">{node.name}</h2>
+          <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
+            <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: visualDesc.color }}></span>
+            <span>{visualDesc.criteriaSummary}</span>
+          </p>
         </div>
         <button
           id="close-inspector-btn"

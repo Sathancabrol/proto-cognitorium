@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { AnyCognitiveNode, GraphEdge, NodeCategory } from '../types';
 import { calculateSkillVitality, getVitalityStatus } from '../utils/decay';
+import { getNodeVisualDescriptor } from '../utils/nodeVisualDescriptor';
 import { ZoomIn, ZoomOut, RotateCcw, Filter, Eye, Sparkles, Search, Layers, Compass } from 'lucide-react';
 
 interface NetworkGraphProps {
@@ -414,10 +415,9 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         ctx.save();
         ctx.globalAlpha = opacity;
 
-        // Calculate decay state / vitality ring for skills
-        const style = CATEGORY_STYLES[node.category] || CATEGORY_STYLES.skill_tech;
-        let ringColor = style.ringColor;
-        let fillColor = style.color;
+        // Calculate visual descriptor (icons, sub-type, colors, decay badge)
+        const visualDesc = getNodeVisualDescriptor(node, simulationYear);
+        let fillColor = visualDesc.color;
 
         if (node.vitality !== undefined) {
           const vitalityStatus = getVitalityStatus(node.vitality);
@@ -456,11 +456,34 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         ctx.lineWidth = isSelected ? 3.5 : 2;
         ctx.stroke();
 
-        // Category Icon inside Node
-        ctx.font = `${node.radius * 0.75}px sans-serif`;
+        // Category & Criteria Dynamic Icon inside Node
+        ctx.font = `${Math.round(node.radius * 0.85)}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(style.icon, node.x, node.y - 1);
+        ctx.fillText(visualDesc.symbol, node.x, node.y - (visualDesc.badgeSymbol ? 1 : 0));
+
+        // Optional Top-Right Status Badge (e.g. ⚡ Reactivated, ⏳ Decayed, ⭐ Expert)
+        if (visualDesc.badgeSymbol) {
+          const badgeX = node.x + node.radius * 0.65;
+          const badgeY = node.y - node.radius * 0.65;
+          ctx.beginPath();
+          ctx.arc(badgeX, badgeY, 7.5, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffffff';
+          ctx.fill();
+          ctx.strokeStyle = fillColor;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+
+          ctx.font = '9px "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
+          ctx.fillText(visualDesc.badgeSymbol, badgeX, badgeY + 0.5);
+        }
+
+        // Sub-Type pill text under icon on hover/select
+        if (isSelected || isHovered) {
+          ctx.font = 'bold 8px sans-serif';
+          ctx.fillStyle = fillColor;
+          ctx.fillText(visualDesc.subTypeLabel, node.x, node.y + node.radius + 4);
+        }
 
         // Node Title Label below
         ctx.font = isSelected ? '600 12px sans-serif' : '500 11px sans-serif';
@@ -472,7 +495,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         const maxLineWidth = 130;
         const words = node.name.split(' ');
         let line = '';
-        let lineY = node.y + node.radius + 6;
+        let lineY = node.y + node.radius + (isSelected || isHovered ? 14 : 6);
 
         for (let w = 0; w < words.length; w++) {
           const testLine = line + words[w] + ' ';
@@ -742,26 +765,26 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       </div>
 
       {/* Bottom Left Legend */}
-      <div className="absolute bottom-4 left-4 z-10 hidden sm:flex items-center gap-4 bg-white/90 backdrop-blur-md px-3.5 py-2 rounded-xl shadow-sm border border-slate-200 text-xs text-slate-600">
+      <div className="absolute bottom-4 left-4 z-10 hidden sm:flex items-center gap-3 bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-xl shadow-sm border border-slate-200 text-xs text-slate-600">
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />
+          <span className="text-xs">🏢/🎓</span>
           <span>Expériences</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" />
-          <span>Tâches</span>
+          <span className="text-xs">🎯/🏆</span>
+          <span>Missions</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 inline-block" />
+          <span className="text-xs">🧠/🎨/⚙️</span>
           <span>Compétences</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-pink-500 inline-block" />
+          <span className="text-xs">📐/🌐</span>
           <span>Cognition</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block" />
-          <span>Matching</span>
+          <span className="text-xs">🚀/🧭</span>
+          <span>Horizons</span>
         </div>
       </div>
     </div>

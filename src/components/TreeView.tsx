@@ -16,6 +16,7 @@ import {
   Filter
 } from 'lucide-react';
 import { CognitiveProfile, AnyCognitiveNode, ExperienceNode, TaskNode, SkillNode, CapacityNode, HorizonJobNode } from '../types';
+import { getNodeVisualDescriptor } from '../utils/nodeVisualDescriptor';
 
 interface TreeViewProps {
   profile: CognitiveProfile;
@@ -237,6 +238,7 @@ export const TreeView: React.FC<TreeViewProps> = ({
                     <div className="space-y-4">
                       {skills.map((skill) => {
                         const capacities = getCapacitiesForSkill(skill.id);
+                        const skillDesc = getNodeVisualDescriptor(skill, simulationYear);
 
                         return (
                           <div
@@ -245,18 +247,33 @@ export const TreeView: React.FC<TreeViewProps> = ({
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 rounded-lg bg-cyan-100 text-cyan-700 flex items-center justify-center text-xs font-bold">
-                                  ⚙️
+                                <div 
+                                  className="w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold shadow-2xs"
+                                  style={{ backgroundColor: skillDesc.bgColor, color: skillDesc.color }}
+                                >
+                                  {skillDesc.symbol}
                                 </div>
-                                <strong className="text-xs font-bold text-slate-900">{skill.name}</strong>
-                                <span className="text-[10px] px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-md font-semibold">
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <strong className="text-xs font-bold text-slate-900">{skill.name}</strong>
+                                    <span className="text-[10px] px-2 py-0.2 bg-slate-100 text-slate-700 rounded-md font-semibold">
+                                      {skillDesc.subTypeLabel}
+                                    </span>
+                                    {skillDesc.badgeSymbol && (
+                                      <span className="text-xs" title="Statut dynamique">
+                                        {skillDesc.badgeSymbol}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <span className="text-[10px] px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-md font-semibold ml-auto sm:ml-0">
                                   Niveau indicatif : {skill.baseMastery}%
                                 </span>
                               </div>
 
                               <button
                                 onClick={() => onSelectNode(skill)}
-                                className="text-xs font-bold text-emerald-600 hover:text-emerald-700"
+                                className="text-xs font-bold text-emerald-600 hover:text-emerald-700 hidden sm:inline-block"
                               >
                                 Détails & Vitalité ➔
                               </button>
