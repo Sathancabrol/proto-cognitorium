@@ -257,17 +257,15 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       confidenceScore: 98,
       inferenceType: 'explicite',
       metrics: {
-        participantsCount: 120,
-        experimentsCount: 2,
-        summaryVolume: '120+ passations, 2 protocoles expérimentaux'
+        summaryVolume: 'Projet de recherche universitaire — volume à confirmer'
       },
       evidence: [
-        { id: 'ev-r1', source: 'diploma', label: 'Mémoire de recherche Master 2 soutenu avec mention', confidenceScore: 99, date: '2019' }
+        { id: 'ev-r1', source: 'diploma', sourceDocument: 'cv_spécialisé_2020.pdf', label: 'Mémoire de recherche Master 2 soutenu avec mention', confidenceScore: 99, date: '2019' }
       ],
       missions: [
         'Conception expérimentale combinant indiçage spatial et temporal cueing',
-        'Passation auprès de plus de 120 participants et contrôle des temps de réponse',
-        'Analyses comportementales de variance (ANOVA) et comparaisons de profils de sujets sous R et JASP'
+        'Organisation des passations et contrôle des temps de réponse (volume à confirmer)',
+        'Analyse comportementale et comparaison de profils (méthodes précises à confirmer)'
       ],
       cognitiveEfforts: [
         'Dissociation des mécanismes d\'inhibition et de facilitation attentionnelle',
@@ -293,7 +291,7 @@ export const NATHAN_PROFILE: CognitiveProfile = {
         summaryVolume: 'Outil logiciel expérimental d\'évaluation unifié'
       },
       evidence: [
-        { id: 'ev-r2', source: 'diploma', label: 'Mémoire de Master 1 validé', confidenceScore: 98, date: '2018' }
+        { id: 'ev-r2', source: 'diploma', sourceDocument: 'cv_spécialisé_2020.pdf', label: 'Mémoire de Master 1 validé', confidenceScore: 98, date: '2018' }
       ],
       missions: [
         'Formalisation du construit psychologique de la préparation temporelle',
@@ -324,7 +322,7 @@ export const NATHAN_PROFILE: CognitiveProfile = {
         summaryVolume: 'Étude comparative groupes experts vs non-joueurs'
       },
       evidence: [
-        { id: 'ev-r3', source: 'project', label: 'Rapport d\'étude de recherche universitaire', confidenceScore: 95, date: '2017' }
+        { id: 'ev-r3', source: 'project', sourceDocument: 'cv_spécialisé_2020.pdf', label: 'Rapport d\'étude de recherche universitaire', confidenceScore: 95, date: '2017' }
       ],
       missions: [
         'Constitution de cohortes selon les types de jeux (Action, FPS, Stratégie, Contrôles)',
@@ -352,7 +350,7 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       confidenceScore: 94,
       inferenceType: 'explicite',
       evidence: [
-        { id: 'ev-r4', source: 'project', label: 'Travail de recherche de Licence 3', confidenceScore: 94, date: '2016' }
+        { id: 'ev-r4', source: 'project', sourceDocument: 'cv_spécialisé_2020.pdf', label: 'Travail de recherche de Licence 3', confidenceScore: 94, date: '2016' }
       ],
       missions: [
         'Programmation de paradigmes d\'indiçage symbolique (flèches, repères contextuels)',
@@ -390,7 +388,7 @@ export const NATHAN_PROFILE: CognitiveProfile = {
         summaryVolume: '3 protocoles expérimentaux, 160 participants en gare'
       },
       evidence: [
-        { id: 'ev-sncf-1', source: 'cv', label: 'Rapport de recherche SNCF Innovation', confidenceScore: 99, date: '2019', volumeMetric: '160 participants, 3 expériences' },
+        { id: 'ev-sncf-1', source: 'cv', sourceDocument: 'cv_spécialisé_2020.pdf', label: 'Rapport de recherche SNCF Innovation', confidenceScore: 99, date: '2019', volumeMetric: '160 participants, 3 expériences' },
         { id: 'ev-sncf-2', source: 'diploma', label: 'Validation stage Master 2 recherche', confidenceScore: 100, date: '2019' }
       ],
       missions: [
@@ -441,7 +439,7 @@ export const NATHAN_PROFILE: CognitiveProfile = {
         summaryVolume: '3 expériences, 60 participants, lunettes Tobii'
       },
       evidence: [
-        { id: 'ev-catie-1', source: 'cv', label: 'Stage M1 recherche CATIE', confidenceScore: 98, date: '2018', volumeMetric: '60 participants, 3 expériences' }
+        { id: 'ev-catie-1', source: 'cv', sourceDocument: 'cv_spécialisé_2020.pdf', label: 'Stage M1 recherche CATIE', confidenceScore: 98, date: '2018', volumeMetric: '60 participants, 3 expériences' }
       ],
       missions: [
         'Revue de littérature approfondie en cognition spatiale et navigation intérieure',
@@ -482,7 +480,7 @@ export const NATHAN_PROFILE: CognitiveProfile = {
         summaryVolume: '6 classes de ~30 étudiants (18 à 60 ans)'
       },
       evidence: [
-        { id: 'ev-tut-1', source: 'cv', label: 'Contrats de tutorat universitaire UM3 (2 années)', confidenceScore: 99, date: '2019', volumeMetric: '6 classes, 18-60 ans' },
+        { id: 'ev-tut-1', source: 'cv', sourceDocument: 'cv_spécialisé_2020.pdf', label: 'Contrats de tutorat universitaire UM3 (2 années)', confidenceScore: 99, date: '2019', volumeMetric: '6 classes, 18-60 ans' },
         { id: 'ev-tut-2', source: 'declaration', label: 'Procès-verbal d\'élection UFR 5', confidenceScore: 97, date: '2018' }
       ],
       missions: [
@@ -515,7 +513,7 @@ export const NATHAN_PROFILE: CognitiveProfile = {
         summaryVolume: '4 équipes directes + sous-traitants, gestion d\'un dépôt annexe'
       },
       evidence: [
-        { id: 'ev-sob-1', source: 'cv', label: 'Contrat Conducteur de Travaux SOBECA', confidenceScore: 98, date: '2024', volumeMetric: '4 équipes, gestion dépôt annexe' },
+        { id: 'ev-sob-1', source: 'cv', sourceDocument: 'cv 2024 (1).pdf', label: 'Contrat Conducteur de Travaux SOBECA', confidenceScore: 98, date: '2024', volumeMetric: '4 équipes, gestion dépôt annexe' },
         { id: 'ev-sob-2', source: 'diploma', label: 'Habilitations AIPR Encadrant & SST à jour', confidenceScore: 100, date: '2024' }
       ],
       missions: [
@@ -563,7 +561,7 @@ export const NATHAN_PROFILE: CognitiveProfile = {
         summaryVolume: 'Chantiers de voirie urbaine et réseaux d\'aménagement'
       },
       evidence: [
-        { id: 'ev-col-1', source: 'cv', label: 'Expérience terrain ouvrier TP COLAS', confidenceScore: 96, date: '2022' }
+        { id: 'ev-col-1', source: 'cv', sourceDocument: 'cv 2024 (1).pdf', label: 'Expérience terrain ouvrier TP COLAS', confidenceScore: 96, date: '2022' }
       ],
       missions: [
         'Implantation altimétrique au niveau laser et théodolite',
@@ -579,7 +577,124 @@ export const NATHAN_PROFILE: CognitiveProfile = {
     },
 
     // ========================================================================
-    // 4. COMPÉTENCES (SKILLS) : MÉTHODOLOGIE, RECHERCHE, GESTION, HUMAIN
+    // 4. MISSIONS : niveau intermédiaire entre vécu et compétences
+    // Les formulations ci-dessous restent volontairement proches des CV.
+    // ========================================================================
+    {
+      id: 'mission-sncf-protocoles',
+      name: 'Concevoir et conduire les protocoles d’orientation en gare',
+      category: 'mission',
+      experienceId: 'exp-sncf',
+      context: 'SNCF Innovation — projet Orientation enrichie',
+      actions: ['Préparer trois protocoles', 'Organiser les passations', 'Recueillir les données de 160 participants'],
+      skillsProduced: ['skill-metho-experimentale', 'skill-gestion-participants', 'skill-cognition-spatiale'],
+      description: 'Mission explicitement documentée par le CV recherche ; les modalités fines de recrutement restent à confirmer.',
+      verificationStatus: 'verified',
+      confidenceScore: 99,
+      inferenceType: 'explicite',
+      evidence: [{ id: 'ev-mission-sncf-1', source: 'cv', sourceDocument: 'cv_spécialisé_2020.pdf', label: 'CV spécialisé — SNCF : 3 expériences, 160 participants', confidenceScore: 99, date: '2019', volumeMetric: '3 expériences, 160 participants' }]
+    },
+    {
+      id: 'mission-sncf-restitution',
+      name: 'Analyser les parcours et restituer des recommandations',
+      category: 'mission',
+      experienceId: 'exp-sncf',
+      context: 'SNCF Innovation — cognition spatiale et wayfinding',
+      actions: ['Analyser les données comportementales', 'Synthétiser les résultats', 'Formuler des pistes pour l’orientation des voyageurs'],
+      skillsProduced: ['skill-stats-r-jasp', 'skill-traduction-recherche-reco', 'skill-relation-client-rd'],
+      description: 'La chaîne analyse–restitution est explicite ; le niveau exact d’autonomie et les destinataires doivent être confirmés.',
+      verificationStatus: 'pending',
+      confidenceScore: 88,
+      inferenceType: 'inference_forte',
+      evidence: [{ id: 'ev-mission-sncf-2', source: 'cv', sourceDocument: 'cv_spécialisé_2020.pdf', label: 'CV spécialisé — travaux SNCF sur les repères spatiaux', confidenceScore: 92, date: '2019' }]
+    },
+    {
+      id: 'mission-catie-etat-art',
+      name: 'Établir l’état de l’art en cognition spatiale',
+      category: 'mission',
+      experienceId: 'exp-catie',
+      context: 'CATIE — recherche d’itinéraire en milieu clos',
+      actions: ['Rechercher la littérature', 'Analyser les facteurs d’influence', 'Synthétiser les résultats utiles au projet'],
+      skillsProduced: ['skill-revue-litterature', 'skill-analyse-besoins'],
+      description: 'Revue de littérature explicitement mentionnée dans le CV spécialisé.',
+      verificationStatus: 'verified',
+      confidenceScore: 99,
+      inferenceType: 'explicite',
+      evidence: [{ id: 'ev-mission-catie-1', source: 'cv', sourceDocument: 'cv_spécialisé_2020.pdf', label: 'CV spécialisé — revue de littérature CATIE', confidenceScore: 99, date: '2018' }]
+    },
+    {
+      id: 'mission-catie-experimentation',
+      name: 'Évaluer les stratégies de marche par expérimentation',
+      category: 'mission',
+      experienceId: 'exp-catie',
+      context: 'CATIE — protocoles avec instrumentation eye-tracking',
+      actions: ['Mettre en œuvre trois expériences', 'Conduire les passations auprès de 60 participants', 'Exploiter les mesures instrumentées'],
+      skillsProduced: ['skill-eye-tracking', 'skill-gestion-participants', 'skill-metho-experimentale'],
+      description: 'Volumes et instrumentation issus du CV ; les traitements techniques détaillés sont à confirmer.',
+      verificationStatus: 'verified',
+      confidenceScore: 98,
+      inferenceType: 'explicite',
+      evidence: [{ id: 'ev-mission-catie-2', source: 'cv', sourceDocument: 'cv_spécialisé_2020.pdf', label: 'CV spécialisé — CATIE : 3 expériences, 60 participants', confidenceScore: 98, date: '2018', volumeMetric: '3 expériences, 60 participants' }]
+    },
+    {
+      id: 'mission-tutorat-transmission',
+      name: 'Accompagner des groupes d’étudiants hétérogènes',
+      category: 'mission',
+      experienceId: 'exp-tutorat',
+      context: 'Université Paul Valéry — tutorat',
+      actions: ['Animer six classes', 'Adapter les explications aux publics de 18 à 60 ans', 'Soutenir la méthodologie universitaire'],
+      skillsProduced: ['skill-pedagogie', 'skill-collaboration-ecoute', 'skill-encadrement-equipes'],
+      description: 'Mission documentée par les volumes déclarés dans les CV.',
+      verificationStatus: 'verified',
+      confidenceScore: 98,
+      inferenceType: 'explicite',
+      evidence: [{ id: 'ev-mission-tutorat-1', source: 'cv', sourceDocument: 'cv_spécialisé_2020.pdf', label: 'CV — tutorat de 6 classes d’environ 30 étudiants', confidenceScore: 98, date: '2017–2019', volumeMetric: '6 classes, publics de 18 à 60 ans' }]
+    },
+    {
+      id: 'mission-sobeca-pilotage',
+      name: 'Préparer et suivre les chantiers de réseaux secs',
+      category: 'mission',
+      experienceId: 'exp-sobeca',
+      context: 'SOBECA — travaux publics et génie civil',
+      actions: ['Réaliser ou vérifier les métrés', 'Suivre planning et budget', 'Coordonner quatre équipes et les sous-traitants'],
+      skillsProduced: ['skill-gestion-financiere-contrat', 'skill-encadrement-equipes', 'skill-controle-operationnel'],
+      description: 'Mission explicitement soutenue par le CV professionnel BTP.',
+      verificationStatus: 'verified',
+      confidenceScore: 98,
+      inferenceType: 'explicite',
+      evidence: [{ id: 'ev-mission-sobeca-1', source: 'cv', sourceDocument: 'cv 2024 (1).pdf', label: 'CV professionnel — SOBECA, 4 équipes et sous-traitants', confidenceScore: 98, date: '2023–2024', volumeMetric: '4 équipes + sous-traitants' }]
+    },
+    {
+      id: 'mission-sobeca-securite',
+      name: 'Assurer la sécurité et la logistique du chantier',
+      category: 'mission',
+      experienceId: 'exp-sobeca',
+      context: 'SOBECA — chantier et dépôt annexe',
+      actions: ['Contrôler les exigences de sécurité', 'Organiser les ressources du dépôt', 'Ajuster l’activité aux aléas terrain'],
+      skillsProduced: ['skill-securite-sst', 'skill-gestion-financiere-contrat', 'skill-controle-operationnel'],
+      description: 'Sécurité et gestion du dépôt sont explicites ; la portée des arbitrages reste à valider.',
+      verificationStatus: 'pending',
+      confidenceScore: 91,
+      inferenceType: 'inference_forte',
+      evidence: [{ id: 'ev-mission-sobeca-2', source: 'cv', sourceDocument: 'cv 2024 (1).pdf', label: 'CV professionnel — sécurité et gestion d’un dépôt annexe', confidenceScore: 96, date: '2023–2024' }]
+    },
+    {
+      id: 'mission-colas-controle',
+      name: 'Implanter et contrôler les ouvrages VRD',
+      category: 'mission',
+      experienceId: 'exp-colas',
+      context: 'COLAS — chantier VRD',
+      actions: ['Lire les plans et les cotes', 'Utiliser les instruments de mesure', 'Contrôler puis ajuster l’implantation'],
+      skillsProduced: ['skill-controle-operationnel', 'skill-cognition-spatiale'],
+      description: 'La pratique VRD est explicite ; la formulation en boucle de contrôle est une inférence à confirmer.',
+      verificationStatus: 'pending',
+      confidenceScore: 89,
+      inferenceType: 'inference_forte',
+      evidence: [{ id: 'ev-mission-colas-1', source: 'cv', sourceDocument: 'cv 2024 (1).pdf', label: 'CV professionnel — expérience terrain COLAS', confidenceScore: 95, date: '2022' }]
+    },
+
+    // ========================================================================
+    // 5. COMPÉTENCES (SKILLS) : MÉTHODOLOGIE, RECHERCHE, GESTION, HUMAIN
     // ========================================================================
     {
       id: 'skill-metho-experimentale',
@@ -587,7 +702,7 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       category: 'skill_tech',
       baseMastery: 96,
       acquiredYear: 2016,
-      lastPracticedYear: 2025,
+      lastPracticedYear: 2019,
       halfLifeYears: 8,
       decayFactor: 0.05,
       transferabilityScore: 9.8,
@@ -633,7 +748,7 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       category: 'skill_tech',
       baseMastery: 92,
       acquiredYear: 2015,
-      lastPracticedYear: 2025,
+      lastPracticedYear: 2019,
       halfLifeYears: 8,
       decayFactor: 0.06,
       transferabilityScore: 9.5,
@@ -656,11 +771,11 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       category: 'skill_transversal',
       baseMastery: 95,
       acquiredYear: 2018,
-      lastPracticedYear: 2026,
+      lastPracticedYear: 2019,
       halfLifeYears: 9,
       decayFactor: 0.04,
       transferabilityScore: 10,
-      verificationStatus: 'verified',
+      verificationStatus: 'pending',
       confidenceScore: 98,
       inferenceType: 'inference_forte',
       evidence: [
@@ -679,7 +794,7 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       category: 'skill_relational',
       baseMastery: 90,
       acquiredYear: 2018,
-      lastPracticedYear: 2025,
+      lastPracticedYear: 2019,
       halfLifeYears: 7,
       decayFactor: 0.08,
       transferabilityScore: 9.3,
@@ -702,11 +817,11 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       category: 'skill_transversal',
       baseMastery: 93,
       acquiredYear: 2017,
-      lastPracticedYear: 2026,
+      lastPracticedYear: 2024,
       halfLifeYears: 10,
       decayFactor: 0.03,
       transferabilityScore: 9.7,
-      verificationStatus: 'verified',
+      verificationStatus: 'pending',
       confidenceScore: 97,
       inferenceType: 'inference_forte',
       evidence: [
@@ -725,7 +840,7 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       category: 'skill_tech',
       baseMastery: 88,
       acquiredYear: 2022,
-      lastPracticedYear: 2025,
+      lastPracticedYear: 2024,
       halfLifeYears: 6,
       decayFactor: 0.12,
       transferabilityScore: 8.6,
@@ -748,7 +863,7 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       category: 'skill_relational',
       baseMastery: 95,
       acquiredYear: 2017,
-      lastPracticedYear: 2026,
+      lastPracticedYear: 2024,
       halfLifeYears: 10,
       decayFactor: 0.04,
       transferabilityScore: 9.6,
@@ -771,11 +886,11 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       category: 'skill_tech',
       baseMastery: 94,
       acquiredYear: 2022,
-      lastPracticedYear: 2025,
+      lastPracticedYear: 2024,
       halfLifeYears: 6.5,
       decayFactor: 0.09,
       transferabilityScore: 9.4,
-      verificationStatus: 'verified',
+      verificationStatus: 'pending',
       confidenceScore: 97,
       inferenceType: 'inference_forte',
       evidence: [
@@ -794,7 +909,7 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       category: 'skill_tech',
       baseMastery: 96,
       acquiredYear: 2017,
-      lastPracticedYear: 2025,
+      lastPracticedYear: 2019,
       halfLifeYears: 8,
       decayFactor: 0.05,
       transferabilityScore: 9.5,
@@ -840,7 +955,7 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       category: 'skill_tech',
       baseMastery: 90,
       acquiredYear: 2016,
-      lastPracticedYear: 2025,
+      lastPracticedYear: 2019,
       halfLifeYears: 6,
       decayFactor: 0.15,
       transferabilityScore: 9.2,
@@ -863,7 +978,7 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       category: 'skill_transversal',
       baseMastery: 95,
       acquiredYear: 2016,
-      lastPracticedYear: 2026,
+      lastPracticedYear: 2019,
       halfLifeYears: 10,
       decayFactor: 0.04,
       transferabilityScore: 10,
@@ -886,7 +1001,7 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       category: 'skill_relational',
       baseMastery: 94,
       acquiredYear: 2017,
-      lastPracticedYear: 2025,
+      lastPracticedYear: 2019,
       halfLifeYears: 8.5,
       decayFactor: 0.08,
       transferabilityScore: 9.8,
@@ -909,7 +1024,7 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       category: 'skill_transversal',
       baseMastery: 96,
       acquiredYear: 2022,
-      lastPracticedYear: 2025,
+      lastPracticedYear: 2024,
       halfLifeYears: 5.5,
       decayFactor: 0.08,
       transferabilityScore: 9.0,
@@ -955,7 +1070,7 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       category: 'skill_relational',
       baseMastery: 98,
       acquiredYear: 2015,
-      lastPracticedYear: 2026,
+      lastPracticedYear: 2024,
       halfLifeYears: 12,
       decayFactor: 0.02,
       transferabilityScore: 10,
@@ -973,8 +1088,51 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       y: 2020
     },
 
+    {
+      id: 'skill-analyse-differences-individuelles',
+      name: 'Analyse des Différences Interindividuelles',
+      category: 'skill_tech',
+      baseMastery: 82,
+      acquiredYear: 2016,
+      lastPracticedYear: 2019,
+      halfLifeYears: 7,
+      decayFactor: 0.12,
+      transferabilityScore: 8.8,
+      verificationStatus: 'pending',
+      confidenceScore: 88,
+      inferenceType: 'inference_forte',
+      evidence: [
+        { id: 'ev-sk-diff-ind', source: 'project', sourceDocument: 'cv_spécialisé_2020.pdf', label: 'Projet universitaire comparant pratique vidéoludique et orientation de l’attention', confidenceScore: 92, date: '2016–2017' }
+      ],
+      description: 'Comparer des groupes ou profils afin d’identifier des variations comportementales. La profondeur méthodologique exacte doit être confirmée par le mémoire ou l’utilisateur.',
+      subSkills: ['Comparaison de profils', 'Variabilité interindividuelle', 'Interprétation prudente des écarts'],
+      originExperienceIds: ['res-projet-jeux-video', 'res-projet-m2-preference'],
+      connectedCapacityIds: ['cap-analyse-systemique', 'cap-conception-methodo']
+    },
+    {
+      id: 'skill-outils-bureautiques-planification',
+      name: 'Outils Bureautiques & Planification (Pack Office, Gantt)',
+      category: 'skill_tech',
+      baseMastery: 80,
+      acquiredYear: 2017,
+      lastPracticedYear: 2024,
+      halfLifeYears: 5,
+      decayFactor: 0.15,
+      transferabilityScore: 8.5,
+      verificationStatus: 'verified',
+      confidenceScore: 96,
+      inferenceType: 'explicite',
+      evidence: [
+        { id: 'ev-sk-office', source: 'cv', sourceDocument: 'cv_spécialisé_2020.pdf', label: 'Logiciels explicitement listés : Pack Office et diagramme de Gantt', confidenceScore: 96, date: '2020' }
+      ],
+      description: 'Utilisation des outils bureautiques pour structurer les livrables et des représentations Gantt pour planifier les activités.',
+      subSkills: ['Traitement de texte', 'Tableur', 'Présentation', 'Diagramme de Gantt'],
+      originExperienceIds: ['exp-sncf', 'exp-catie', 'exp-sobeca'],
+      connectedCapacityIds: ['cap-traduction-action', 'cap-controle-adaptatif']
+    },
+
     // ========================================================================
-    // 5. CAPACITÉS COGNITIVES MÉTA & TRANSVERSALES (8 Capacités Méta)
+    // 6. CAPACITÉS COGNITIVES MÉTA & TRANSVERSALES (8 Capacités Méta)
     // ========================================================================
     {
       id: 'cap-controle-adaptatif',
@@ -982,7 +1140,7 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       category: 'capacity_cognitive',
       level: 'expert',
       cognitiveDimension: 'Coordination & Systémique',
-      verificationStatus: 'verified',
+      verificationStatus: 'pending',
       confidenceScore: 98,
       inferenceType: 'inference_forte',
       description: 'Pont direct recherche/chantier : capacité à piloter une boucle rigoureuse (Hypothèse/Métré ➔ Mesure ➔ Détection d\'écart ➔ Ajustement itératif ➔ Validation).',
@@ -997,7 +1155,7 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       category: 'capacity_cognitive',
       level: 'expert',
       cognitiveDimension: 'Adaptabilité & Imprévus',
-      verificationStatus: 'verified',
+      verificationStatus: 'pending',
       confidenceScore: 97,
       inferenceType: 'inference_forte',
       description: 'Aptitude exceptionnelle à mobiliser et adapter connaissances et méthodes d\'un domaine à l\'autre : du laboratoire universitaire aux R&D transports et aux chantiers TP physiques.',
@@ -1012,7 +1170,7 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       category: 'capacity_cognitive',
       level: 'expert',
       cognitiveDimension: 'Raisonnement & Analyse',
-      verificationStatus: 'verified',
+      verificationStatus: 'pending',
       confidenceScore: 96,
       inferenceType: 'inference_forte',
       description: 'Compréhension globale des interactions entre cognition humaine, contraintes techniques/numériques, environnements physiques et dynamiques temporelles.',
@@ -1040,7 +1198,7 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       category: 'capacity_cognitive',
       level: 'expert',
       cognitiveDimension: 'Coordination & Systémique',
-      verificationStatus: 'verified',
+      verificationStatus: 'pending',
       confidenceScore: 97,
       inferenceType: 'inference_forte',
       description: 'Conversion fluide des constats théoriques ou statistiques en recommandations d\'aménagement, décisions de conception et plans d\'action opérationnels.',
@@ -1103,7 +1261,8 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       romeTitle: 'Conseil en organisation et management d\'entreprise (Facteurs Humains)',
       matchScore: 97,
       compatibilityLevel: 'Très Élevée',
-      verificationStatus: 'verified',
+      verificationStatus: 'inferred',
+      inferenceType: 'inference_a_valider',
       confidenceScore: 97,
       rationale: 'Votre parcours fournit plusieurs preuves convergentes solides vers ce métier : expérience de recherche appliquée SNCF Innovation (« Orientation enrichie »), mesures eye-tracking CATIE (« Recherche d\'itinéraire »), mémoire M2 sur l\'attention spatiale et compréhension physique des infrastructures.',
       matchingSkills: [
@@ -1158,7 +1317,8 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       romeTitle: 'Coordination pédagogique',
       matchScore: 96,
       compatibilityLevel: 'Très Élevée',
-      verificationStatus: 'verified',
+      verificationStatus: 'inferred',
+      inferenceType: 'inference_a_valider',
       confidenceScore: 96,
       rationale: 'Votre parcours démontre une forte convergence de compétences transférables : animation de 6 classes universitaires hétérogènes (18 à 60 ans), écoute empathique (100% collaboration RIASEC), et expertise théorique des mécanismes d\'apprentissage et de rétention (sciences cognitives).',
       matchingSkills: [
@@ -1213,7 +1373,8 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       romeTitle: 'Conseil en ressources humaines et mobilité',
       matchScore: 94,
       compatibilityLevel: 'Élevée',
-      verificationStatus: 'verified',
+      verificationStatus: 'inferred',
+      inferenceType: 'inference_a_valider',
       confidenceScore: 94,
       rationale: 'Votre parcours fournit des preuves solides : diplôme d\'État Master 2 en évaluation cognitive, maîtrise des biais psychologiques et qualité d\'écoute rare (100% RIASEC collaboration).',
       matchingSkills: [
@@ -1267,7 +1428,8 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       romeTitle: 'Études et prospective systèmes d\'information',
       matchScore: 93,
       compatibilityLevel: 'Élevée',
-      verificationStatus: 'verified',
+      verificationStatus: 'inferred',
+      inferenceType: 'inference_a_valider',
       confidenceScore: 93,
       rationale: 'Hypothèse soutenue par 4 projets de recherche conduits avec succès, la gestion de partenariats R&D industriels (SNCF Innovation, CATIE) et une capacité éprouvée à traduire la science en décisions.',
       matchingSkills: [
@@ -1317,7 +1479,8 @@ export const NATHAN_PROFILE: CognitiveProfile = {
       romeTitle: 'Management et ingénierie qualité, sécurité, environnement',
       matchScore: 90,
       compatibilityLevel: 'Élevée',
-      verificationStatus: 'verified',
+      verificationStatus: 'inferred',
+      inferenceType: 'inference_a_valider',
       confidenceScore: 90,
       rationale: 'Votre profil conjugue l\'expérience concrète des chantiers TP (SOBECA/COLAS, SST, AIPR) et la compréhension cognitive des biais de vigilance et d\'habitude qui causent les accidents de travail.',
       matchingSkills: [
@@ -1379,8 +1542,31 @@ export const NATHAN_PROFILE: CognitiveProfile = {
     { id: 'e-r3', source: 'res-projet-m1-outil-prep', target: 'skill-metho-experimentale', type: 'acquired_in', strength: 0.95, label: 'Conception d\'outils' },
     { id: 'e-r4', source: 'res-projet-jeux-video', target: 'skill-revue-litterature', type: 'acquired_in', strength: 0.9, label: 'Différences interindividuelles' },
     { id: 'e-r5', source: 'res-projet-endogene', target: 'skill-metho-experimentale', type: 'acquired_in', strength: 0.9, label: 'Chronométrie mentale' },
+    { id: 'e-r6', source: 'res-projet-jeux-video', target: 'skill-analyse-differences-individuelles', type: 'acquired_in', strength: 0.9, label: 'Comparaison de profils' },
 
-    // Expériences Professionnelles -> Compétences
+    // Expériences -> Missions -> Compétences (traçabilité fine)
+    { id: 'e-m1', source: 'exp-sncf', target: 'mission-sncf-protocoles', type: 'composed_of', strength: 1, label: 'Mission documentée' },
+    { id: 'e-m2', source: 'exp-sncf', target: 'mission-sncf-restitution', type: 'composed_of', strength: 0.9, label: 'Mission à confirmer' },
+    { id: 'e-m3', source: 'exp-catie', target: 'mission-catie-etat-art', type: 'composed_of', strength: 1, label: 'Mission documentée' },
+    { id: 'e-m4', source: 'exp-catie', target: 'mission-catie-experimentation', type: 'composed_of', strength: 1, label: 'Mission documentée' },
+    { id: 'e-m5', source: 'exp-tutorat', target: 'mission-tutorat-transmission', type: 'composed_of', strength: 1, label: 'Mission documentée' },
+    { id: 'e-m6', source: 'exp-sobeca', target: 'mission-sobeca-pilotage', type: 'composed_of', strength: 1, label: 'Mission documentée' },
+    { id: 'e-m7', source: 'exp-sobeca', target: 'mission-sobeca-securite', type: 'composed_of', strength: 0.9, label: 'Périmètre à confirmer' },
+    { id: 'e-m8', source: 'exp-colas', target: 'mission-colas-controle', type: 'composed_of', strength: 0.9, label: 'Inférence forte' },
+    { id: 'e-ms1', source: 'mission-sncf-protocoles', target: 'skill-metho-experimentale', type: 'acquired_in', strength: 0.98 },
+    { id: 'e-ms2', source: 'mission-sncf-protocoles', target: 'skill-gestion-participants', type: 'acquired_in', strength: 0.98 },
+    { id: 'e-ms3', source: 'mission-sncf-restitution', target: 'skill-traduction-recherche-reco', type: 'acquired_in', strength: 0.9 },
+    { id: 'e-ms4', source: 'mission-catie-etat-art', target: 'skill-revue-litterature', type: 'acquired_in', strength: 0.98 },
+    { id: 'e-ms5', source: 'mission-catie-experimentation', target: 'skill-eye-tracking', type: 'acquired_in', strength: 0.98 },
+    { id: 'e-ms6', source: 'mission-catie-experimentation', target: 'skill-gestion-participants', type: 'acquired_in', strength: 0.95 },
+    { id: 'e-ms7', source: 'mission-tutorat-transmission', target: 'skill-pedagogie', type: 'acquired_in', strength: 0.98 },
+    { id: 'e-ms8', source: 'mission-tutorat-transmission', target: 'skill-collaboration-ecoute', type: 'acquired_in', strength: 0.9 },
+    { id: 'e-ms9', source: 'mission-sobeca-pilotage', target: 'skill-gestion-financiere-contrat', type: 'acquired_in', strength: 0.95 },
+    { id: 'e-ms10', source: 'mission-sobeca-pilotage', target: 'skill-encadrement-equipes', type: 'acquired_in', strength: 0.95 },
+    { id: 'e-ms11', source: 'mission-sobeca-securite', target: 'skill-securite-sst', type: 'acquired_in', strength: 0.98 },
+    { id: 'e-ms12', source: 'mission-colas-controle', target: 'skill-controle-operationnel', type: 'acquired_in', strength: 0.95 },
+
+    // Expériences Professionnelles -> Compétences (raccourcis de synthèse)
     { id: 'e-exp1', source: 'exp-sncf', target: 'skill-cognition-spatiale', type: 'acquired_in', strength: 0.98, label: 'Wayfinding en gare' },
     { id: 'e-exp2', source: 'exp-sncf', target: 'skill-gestion-participants', type: 'acquired_in', strength: 0.98, label: '160 participants' },
     { id: 'e-exp3', source: 'exp-sncf', target: 'skill-traduction-recherche-reco', type: 'acquired_in', strength: 0.95, label: 'Préconisations design' },
@@ -1395,6 +1581,8 @@ export const NATHAN_PROFILE: CognitiveProfile = {
     { id: 'e-exp12', source: 'exp-sobeca', target: 'skill-encadrement-equipes', type: 'acquired_in', strength: 0.95, label: '4 équipes travaux' },
     { id: 'e-exp13', source: 'exp-sobeca', target: 'skill-securite-sst', type: 'acquired_in', strength: 0.98, label: 'AIPR & SST' },
     { id: 'e-exp14', source: 'exp-colas', target: 'skill-controle-operationnel', type: 'acquired_in', strength: 0.95, label: 'Implantation laser' },
+    { id: 'e-exp15', source: 'exp-sncf', target: 'skill-outils-bureautiques-planification', type: 'acquired_in', strength: 0.75, label: 'Livrables & planification' },
+    { id: 'e-exp16', source: 'exp-sobeca', target: 'skill-outils-bureautiques-planification', type: 'acquired_in', strength: 0.85, label: 'Planning de chantier' },
 
     // Compétences -> Capacités Méta
     { id: 'e-c1', source: 'skill-metho-experimentale', target: 'cap-controle-adaptatif', type: 'feeds_capacity', strength: 0.95 },
@@ -1417,6 +1605,8 @@ export const NATHAN_PROFILE: CognitiveProfile = {
     { id: 'e-c18', source: 'skill-securite-sst', target: 'cap-arbitrage-stress', type: 'feeds_capacity', strength: 0.95 },
     { id: 'e-c19', source: 'skill-biais-cognitifs', target: 'cap-arbitrage-stress', type: 'feeds_capacity', strength: 0.9 },
     { id: 'e-c20', source: 'skill-gestion-financiere-contrat', target: 'cap-arbitrage-stress', type: 'feeds_capacity', strength: 0.88 },
+    { id: 'e-c21', source: 'skill-analyse-differences-individuelles', target: 'cap-analyse-systemique', type: 'feeds_capacity', strength: 0.86 },
+    { id: 'e-c22', source: 'skill-outils-bureautiques-planification', target: 'cap-traduction-action', type: 'feeds_capacity', strength: 0.75 },
 
     // Capacités Méta -> Horizons ROME
     { id: 'e-h1', source: 'cap-spatial-syst', target: 'job-ergonome-facteurs-humains', type: 'unlocks_horizon', strength: 0.98 },

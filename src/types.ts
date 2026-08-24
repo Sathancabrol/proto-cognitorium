@@ -22,6 +22,8 @@ export interface EvidenceItem {
   confidenceScore: number; // 0 - 100
   inferenceType?: InferenceType;
   inferenceMethod?: string;
+  sourceDocument?: string;
+  sourcePage?: number;
   date?: string;
   volumeMetric?: string;
 }

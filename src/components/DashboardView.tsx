@@ -242,7 +242,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <strong className="text-slate-900 group-hover:text-orange-600 truncate pr-2">
                       {h.name}
                     </strong>
-                    <span className="font-bold text-orange-600 shrink-0">{h.matchScore}%</span>
+                    <span className="font-bold text-orange-600 shrink-0">{h.compatibilityLevel || 'À explorer'}</span>
                   </div>
                   {h.romeCode && (
                     <span className="text-[10px] px-1.5 py-0.5 bg-orange-100 text-orange-800 rounded font-semibold">

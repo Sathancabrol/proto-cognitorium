@@ -22,7 +22,7 @@ import {
   ComplexityMode 
 } from './types';
 
-const STORAGE_KEY = 'cognitorium_active_profile_v3_core';
+const STORAGE_KEY = 'cognitorium_active_profile_v4_cv_enriched';
 
 export default function App() {
   const [profile, setProfile] = useState<CognitiveProfile>(() => {
@@ -74,26 +74,30 @@ export default function App() {
     }
   };
 
-  const handleValidateNode = (nodeId: string) => {
+  const handleValidateNode = (nodeId: string, updatedFields?: Partial<AnyCognitiveNode>) => {
+    const validationDate = new Date().toISOString().split('T')[0];
+
     setProfile((prev) => ({
       ...prev,
       nodes: prev.nodes.map((n) =>
         n.id === nodeId
           ? {
               ...n,
+              ...updatedFields,
               verificationStatus: 'verified',
-              confidenceScore: 100,
+              verifiedBy: 'utilisateur',
+              verifiedAt: validationDate,
               evidence: [
                 ...(n.evidence || []),
                 {
                   id: `ev-val-${Date.now()}`,
                   source: 'validation_humaine',
-                  label: 'Validé et certifié par l\'utilisateur',
-                  date: new Date().toISOString().split('T')[0],
+                  label: 'Confirmé par l\'utilisateur',
+                  date: validationDate,
                   confidenceScore: 100
                 }
               ]
-            }
+            } as AnyCognitiveNode
           : n
       )
     }));
@@ -119,7 +123,8 @@ export default function App() {
           ? {
               ...n,
               verificationStatus: 'verified',
-              confidenceScore: 100
+              verifiedBy: 'utilisateur',
+              verifiedAt: new Date().toISOString().split('T')[0]
             }
           : n
       )
@@ -232,7 +237,7 @@ export default function App() {
             onSelectNode={setSelectedNode}
             onOpenDistiller={() => setIsDistillerOpen(true)}
             onOpenValidationCenter={() => setIsValidationCenterOpen(true)}
-            pendingValidationCount={pendingNodes.length}
+            onReactivateSkill={handleReactivateSkill}
             complexityMode={complexityMode}
             onToggleComplexity={() =>
               setComplexityMode((m) => (m === 'essential' ? 'expert' : 'essential'))
@@ -275,21 +280,20 @@ export default function App() {
         {/* VIEW 2: TREE & MISSIONS DECOMPOSITION */}
         {activeTab === 'tree' && (
           <TreeView
-            nodes={profile.nodes}
-            edges={profile.edges}
+            profile={profile}
+            simulationYear={simulationYear}
             onSelectNode={setSelectedNode}
-            onOpenDistiller={() => setIsDistillerOpen(true)}
           />
         )}
 
         {/* VIEW 3: TABLE & MATRIX VIEW */}
         {activeTab === 'table' && (
           <TableView
-            nodes={profile.nodes}
+            profile={profile}
             simulationYear={simulationYear}
             onSelectNode={setSelectedNode}
             onValidateNode={handleValidateNode}
-            onOpenDistiller={() => setIsDistillerOpen(true)}
+            onReactivateSkill={handleReactivateSkill}
           />
         )}
 
@@ -345,7 +349,7 @@ export default function App() {
       <ValidationCenterModal
         isOpen={isValidationCenterOpen}
         onClose={() => setIsValidationCenterOpen(false)}
-        pendingNodes={pendingNodes}
+        nodes={profile.nodes}
         onValidateNode={handleValidateNode}
         onRejectNode={handleRejectNode}
         onValidateAll={handleValidateAll}
@@ -355,7 +359,7 @@ export default function App() {
       <OnboardingModal
         isOpen={isOnboardingOpen}
         onClose={() => setIsOnboardingOpen(false)}
-        onSelectPresetProfile={handleSelectProfile}
+        onSelectProfile={handleSelectProfile}
         onCreateCustomProfile={(custom) => {
           handleSelectProfile(custom);
           setIsOnboardingOpen(false);

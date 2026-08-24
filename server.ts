@@ -273,7 +273,7 @@ ${experienceText}
         ...c,
         id: `cap-${idPrefix}-${idx + 1}`,
         category: 'capacity_cognitive',
-        underlyingSkills: skillNodes.map(s => s.id)
+        underlyingSkills: skillNodes.map((s: { id: string }) => s.id)
       }));
 
       const jobNodes = (parsed.potentialJobs || []).map((j: any, idx: number) => ({
