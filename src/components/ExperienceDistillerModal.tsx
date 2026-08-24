@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Sparkles, Loader2, CheckCircle2, BookOpen, Layers, ArrowRight, ShieldCheck, AlertCircle, Check } from 'lucide-react';
-import { AnyCognitiveNode, GraphEdge, SkillNode, CapacityNode, HorizonJobNode, ExperienceNode } from '../types';
+import { AnyCognitiveNode, GraphEdge, SkillNode, CapacityNode, HorizonJobNode, ExperienceNode, TaskNode } from '../types';
 import confetti from 'canvas-confetti';
 
 interface ExperienceDistillerModalProps {
@@ -144,25 +144,59 @@ export const ExperienceDistillerModal: React.FC<ExperienceDistillerModalProps> =
     const finalSkills = extractedData.skills.filter((s) => selectedSkillIds[s.id]);
     const finalCapacities = extractedData.capacities.filter((c) => selectedCapacityIds[c.id]);
     const finalHorizons = extractedData.potentialJobs.filter((h) => selectedHorizonIds[h.id]);
+    const taskLabels = extractedData.experience.missions?.length
+      ? extractedData.experience.missions
+      : ['Décrire les actions réalisées'];
+    const finalTasks: TaskNode[] = taskLabels.map((label, index) => ({
+      id: `task-${extractedData.experience.id}-${index + 1}`,
+      name: label,
+      category: 'task',
+      experienceId: extractedData.experience.id,
+      context: extractedData.experience.institutionOrContext,
+      actions: [label],
+      skillsProduced: finalSkills.map((skill) => skill.id),
+      description: 'Tâche extraite du récit utilisateur et reliée aux compétences proposées.',
+      verificationStatus: 'pending',
+      confidenceScore: 85,
+      inferenceType: 'inference_a_valider',
+      evidence: [{
+        id: `ev-task-${extractedData.experience.id}-${index + 1}`,
+        source: 'ai_inference',
+        label: 'Tâche extraite du récit utilisateur',
+        confidenceScore: 85
+      }]
+    }));
 
     const newNodes: AnyCognitiveNode[] = [
       extractedData.experience,
+      ...finalTasks,
       ...finalSkills,
       ...finalCapacities,
       ...finalHorizons
     ];
 
-    // Build edges
+    // Build the complete five-level chain.
     const newEdges: GraphEdge[] = [];
 
-    finalSkills.forEach((s) => {
+    finalTasks.forEach((task) => {
       newEdges.push({
-        id: `edge-${extractedData.experience.id}-${s.id}`,
+        id: `edge-${extractedData.experience.id}-${task.id}`,
         source: extractedData.experience.id,
-        target: s.id,
-        type: 'acquired_in',
-        strength: 0.9,
-        label: 'Acquis dans ce parcours'
+        target: task.id,
+        type: 'composed_of',
+        strength: 0.95,
+        label: 'Tâche réalisée dans cette expérience'
+      });
+
+      finalSkills.forEach((skill) => {
+        newEdges.push({
+          id: `edge-${task.id}-${skill.id}`,
+          source: task.id,
+          target: skill.id,
+          type: 'demonstrates_skill',
+          strength: 0.85,
+          label: 'Cette tâche démontre la compétence'
+        });
       });
     });
 
@@ -282,7 +316,7 @@ export const ExperienceDistillerModal: React.FC<ExperienceDistillerModalProps> =
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-xs text-slate-600 space-y-1">
                 <strong className="text-slate-800 block font-semibold">Ce que Cognitorium va extraire :</strong>
                 <p className="text-[11px]">
-                  1. <strong>Missions & Tâches</strong> précises avec charges cognitives.
+                  1. <strong>Tâches & Actions</strong> précises avec charges cognitives.
                   <br />
                   2. <strong>Compétences techniques & humaines</strong> avec demi-vie temporelle.
                   <br />
@@ -349,7 +383,7 @@ export const ExperienceDistillerModal: React.FC<ExperienceDistillerModalProps> =
               {extractedData.capacities.length > 0 && (
                 <div className="space-y-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-600 block">
-                    Capacités Méta Détectées
+                    Cognition Détectées
                   </span>
                   <div className="space-y-1.5">
                     {extractedData.capacities.map((cap) => (

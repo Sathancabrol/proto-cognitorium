@@ -2,7 +2,7 @@ export type NodeCategory =
   | 'experience' 
   | 'formation' 
   | 'research_project'
-  | 'mission'
+  | 'task'
   | 'skill_tech' 
   | 'skill_transversal' 
   | 'skill_relational' 
@@ -22,6 +22,8 @@ export interface EvidenceItem {
   confidenceScore: number; // 0 - 100
   inferenceType?: InferenceType;
   inferenceMethod?: string;
+  sourceDocument?: string;
+  sourcePage?: number;
   date?: string;
   volumeMetric?: string;
 }
@@ -75,8 +77,8 @@ export interface ExperienceNode extends BaseNode {
   cognitiveEfforts: string[];
 }
 
-export interface MissionNode extends BaseNode {
-  category: 'mission';
+export interface TaskNode extends BaseNode {
+  category: 'task';
   experienceId: string;
   context: string;
   actions: string[];
@@ -149,7 +151,7 @@ export interface HorizonJobNode extends BaseNode {
 
 export type AnyCognitiveNode = 
   | ExperienceNode 
-  | MissionNode
+  | TaskNode
   | SkillNode 
   | CapacityNode 
   | KnowledgeNode 
@@ -157,7 +159,8 @@ export type AnyCognitiveNode =
 
 export type EdgeRelationType = 
   | 'acquired_in'       // Compétence acquise dans une expérience
-  | 'composed_of'       // Expérience composée de missions
+  | 'composed_of'       // Expérience composée de tâches
+  | 'demonstrates_skill' // Tâche apportant une preuve de compétence
   | 'decomposes_into'  // Compétence composée de sous-compétences
   | 'feeds_capacity'   // Compétence alimentant une capacité cognitive
   | 'requires_knowledge' // Compétence nécessitant un savoir

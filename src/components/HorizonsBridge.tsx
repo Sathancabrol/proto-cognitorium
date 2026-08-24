@@ -194,8 +194,8 @@ export const HorizonsBridge: React.FC<HorizonsBridgeProps> = ({
                   </div>
 
                   <div className="text-right shrink-0">
-                    <span className="text-2xl font-black text-orange-600">{job.matchScore}%</span>
-                    <span className="block text-[10px] font-semibold text-slate-400 uppercase">Affinité</span>
+                    <span className="text-sm font-black text-orange-600">{job.compatibilityLevel || 'À explorer'}</span>
+                    <span className="block text-[10px] font-semibold text-slate-400 uppercase">Compatibilité estimée</span>
                   </div>
                 </div>
 

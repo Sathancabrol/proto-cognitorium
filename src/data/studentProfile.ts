@@ -108,6 +108,32 @@ export const STUDENT_PROFILE: CognitiveProfile = {
       y: 400
     },
     {
+      id: 'task-lea-model-explicability',
+      name: 'Développer un modèle d’explicabilité médicale',
+      category: 'task',
+      experienceId: 'exp-lea-master',
+      context: 'Master 2 Data Science & IA',
+      actions: ['Préparer les données', 'Entraîner et évaluer le modèle', 'Expliquer les résultats'],
+      skillsProduced: ['skill-lea-python-sql', 'skill-lea-vulgarisation'],
+      description: 'Tâche de projet reliant la pratique technique à la communication des résultats.',
+      verificationStatus: 'verified',
+      confidenceScore: 96,
+      evidence: [{ id: 'ev-task-lea-1', source: 'project', label: 'Projet de classification médicale', confidenceScore: 96 }]
+    },
+    {
+      id: 'task-lea-dashboard-clinical',
+      name: 'Construire des tableaux de bord cliniques',
+      category: 'task',
+      experienceId: 'exp-lea-stage-analyst',
+      context: 'Stage Data Analyst — HealthTech',
+      actions: ['Nettoyer les données hétérogènes', 'Écrire les requêtes SQL', 'Restituer les indicateurs dans Streamlit'],
+      skillsProduced: ['skill-lea-python-sql', 'skill-lea-vulgarisation'],
+      description: 'Tâche opérationnelle issue du stage Data Analyst.',
+      verificationStatus: 'verified',
+      confidenceScore: 96,
+      evidence: [{ id: 'ev-task-lea-2', source: 'cv', label: 'Stage Data Analyst — dashboards et données cliniques', confidenceScore: 96 }]
+    },
+    {
       id: 'skill-lea-python-sql',
       name: 'Python, PyTorch & SQL Avancé',
       category: 'skill_tech',
@@ -181,8 +207,11 @@ export const STUDENT_PROFILE: CognitiveProfile = {
     }
   ],
   edges: [
-    { id: 'el-1', source: 'exp-lea-master', target: 'skill-lea-python-sql', type: 'acquired_in', strength: 0.95 },
-    { id: 'el-2', source: 'exp-lea-stage-analyst', target: 'skill-lea-vulgarisation', type: 'acquired_in', strength: 0.9 },
+    { id: 'el-1', source: 'exp-lea-master', target: 'task-lea-model-explicability', type: 'composed_of', strength: 0.95 },
+    { id: 'el-2', source: 'task-lea-model-explicability', target: 'skill-lea-python-sql', type: 'demonstrates_skill', strength: 0.95 },
+    { id: 'el-2b', source: 'exp-lea-stage-analyst', target: 'task-lea-dashboard-clinical', type: 'composed_of', strength: 0.95 },
+    { id: 'el-2c', source: 'task-lea-dashboard-clinical', target: 'skill-lea-python-sql', type: 'demonstrates_skill', strength: 0.92 },
+    { id: 'el-2d', source: 'task-lea-dashboard-clinical', target: 'skill-lea-vulgarisation', type: 'demonstrates_skill', strength: 0.88 },
     { id: 'el-3', source: 'skill-lea-python-sql', target: 'cap-lea-abstraction', type: 'feeds_capacity', strength: 0.95 },
     { id: 'el-4', source: 'cap-lea-abstraction', target: 'job-lea-data-pm', type: 'unlocks_horizon', strength: 0.93 }
   ]

@@ -148,7 +148,7 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             <ListTree className="w-3.5 h-3.5" />
-            <span>Arbre & Missions</span>
+            <span>Arbre & Tâches</span>
           </button>
 
           <button

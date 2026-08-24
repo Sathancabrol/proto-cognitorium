@@ -1,5 +1,5 @@
 import React from 'react';
-import { AnyCognitiveNode, GraphEdge, SkillNode, ExperienceNode, CapacityNode, HorizonJobNode } from '../types';
+import { AnyCognitiveNode, GraphEdge, SkillNode, ExperienceNode, TaskNode, CapacityNode, HorizonJobNode } from '../types';
 import { calculateSkillVitality, getVitalityStatus } from '../utils/decay';
 import { 
   X, 
@@ -89,6 +89,7 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
               {node.category === 'experience' && '🏗️ Expérience de Terrain'}
               {node.category === 'formation' && '🎓 Formation / Diplôme'}
               {node.category === 'research_project' && '🔬 Projet de Recherche Universitaire'}
+              {node.category === 'task' && '📋 Tâche & Actions'}
               {node.category === 'skill_tech' && '⚙️ Compétence Technique'}
               {node.category === 'skill_transversal' && '🔄 Compétence Transversale'}
               {node.category === 'skill_relational' && '🤝 Compétence Humaine'}
@@ -183,7 +184,7 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
 
             <div className="grid grid-cols-3 gap-2 text-center text-xs pt-2 border-t border-slate-200/70">
               <div>
-                <span className="text-slate-400 block text-[10px]">Pic d'acquisition</span>
+                <span className="text-slate-400 block text-[10px]">Référence indicative</span>
                 <span className="font-semibold text-slate-800">{skillNode.baseMastery}% ({skillNode.acquiredYear})</span>
               </div>
               <div>
@@ -281,6 +282,11 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
                   {ev.detail && (
                     <p className="text-[11px] text-blue-800 italic">« {ev.detail} »</p>
                   )}
+                  {ev.sourceDocument && (
+                    <span className="text-[10px] text-blue-700 block">
+                      Document : {ev.sourceDocument}{ev.sourcePage ? ` · p. ${ev.sourcePage}` : ''}
+                    </span>
+                  )}
                   {ev.date && (
                     <span className="text-[10px] text-slate-400 block">Date / Période : {ev.date}</span>
                   )}
@@ -290,13 +296,31 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
           </div>
         )}
 
+        {/* Mission-level actions keep the chain Experience → Mission → Skill inspectable. */}
+        {node.category === 'task' && (
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold uppercase text-slate-400 tracking-wider">Actions documentées</h3>
+            <div className="space-y-1.5">
+              {(node as TaskNode).actions.map((action) => (
+                <div key={action} className="flex items-start gap-2 text-xs text-slate-700">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500 mt-0.5 shrink-0" />
+                  <span>{action}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-[11px] text-slate-500 bg-indigo-50 border border-indigo-100 rounded-xl p-2.5">
+              <strong>Contexte :</strong> {(node as TaskNode).context}
+            </p>
+          </div>
+        )}
+
         {/* Specific Details for Experience, Formation & Research */}
         {(node.category === 'experience' || node.category === 'formation' || node.category === 'research_project') && (
           <div className="space-y-4">
             {(node as ExperienceNode).missions && (node as ExperienceNode).missions.length > 0 && (
               <div>
                 <h3 className="text-xs font-bold uppercase text-slate-400 tracking-wider mb-2">
-                  {node.category === 'research_project' ? 'Actions & Protocoles Conduits' : 'Missions Opérationnelles'}
+                  {node.category === 'research_project' ? 'Actions & Protocoles Conduits' : 'Tâches Opérationnelles'}
                 </h3>
                 <ul className="space-y-1.5">
                   {(node as ExperienceNode).missions.map((m, idx) => (
@@ -347,7 +371,7 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
                 <span className="text-xs font-bold uppercase text-orange-800">
                   Compatibilité Estimée : {(node as HorizonJobNode).compatibilityLevel || 'Élevée'}
                 </span>
-                <span className="text-base font-bold text-orange-600">{(node as HorizonJobNode).matchScore}%</span>
+                <span className="text-sm font-bold text-orange-600">Indice heuristique — non psychométrique</span>
               </div>
               <p className="text-xs text-orange-950 leading-relaxed">
                 {(node as HorizonJobNode).rationale}

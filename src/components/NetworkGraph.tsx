@@ -12,6 +12,8 @@ interface NetworkGraphProps {
   onAddExperienceClick: () => void;
 }
 
+type GraphLevel = 'all' | 'experience' | 'task' | 'skill' | 'cognition' | 'matching';
+
 type SimulatedNode = AnyCognitiveNode & {
   x: number;
   y: number;
@@ -22,6 +24,14 @@ type SimulatedNode = AnyCognitiveNode & {
   vitality?: number;
 };
 
+const getNodeLevel = (node: AnyCognitiveNode): Exclude<GraphLevel, 'all'> => {
+  if (['experience', 'formation', 'research_project'].includes(node.category)) return 'experience';
+  if (node.category === 'task') return 'task';
+  if (node.category.startsWith('skill_') || node.category === 'knowledge') return 'skill';
+  if (node.category === 'capacity_cognitive') return 'cognition';
+  return 'matching';
+};
+
 const CATEGORY_STYLES: Record<NodeCategory, { label: string; color: string; ringColor: string; bg: string; icon: string }> = {
   experience: {
     label: 'Expériences & Terrains',
@@ -30,8 +40,8 @@ const CATEGORY_STYLES: Record<NodeCategory, { label: string; color: string; ring
     bg: '#eff6ff',
     icon: '🏗️'
   },
-  mission: {
-    label: 'Missions & Tâches',
+  task: {
+    label: 'Tâches & Actions',
     color: '#6366f1', // Indigo
     ringColor: 'rgba(99, 102, 241, 0.4)',
     bg: '#eef2ff',
@@ -73,7 +83,7 @@ const CATEGORY_STYLES: Record<NodeCategory, { label: string; color: string; ring
     icon: '🤝'
   },
   capacity_cognitive: {
-    label: 'Capacités Cognitives Méta',
+    label: 'Cognition & Capacités',
     color: '#ec4899', // Pink
     ringColor: 'rgba(236, 72, 153, 0.4)',
     bg: '#fdf2f8',
@@ -87,7 +97,7 @@ const CATEGORY_STYLES: Record<NodeCategory, { label: string; color: string; ring
     icon: '📚'
   },
   horizon_job: {
-    label: 'Horizons & Métiers Potentiels',
+    label: 'Matching & Métiers compatibles',
     color: '#f97316', // Orange
     ringColor: 'rgba(249, 115, 22, 0.4)',
     bg: '#fff7ed',
@@ -106,7 +116,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const [activeFilter, setActiveFilter] = useState<string>('all');
+  const [activeFilter, setActiveFilter] = useState<GraphLevel>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [zoom, setZoom] = useState<number>(1);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -131,9 +141,12 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       let defaultX = width * 0.5;
       let defaultY = height * 0.5;
 
-      if (node.category === 'experience' || node.category === 'formation') {
-        defaultX = width * 0.15;
+      if (node.category === 'experience' || node.category === 'formation' || node.category === 'research_project') {
+        defaultX = width * 0.12;
         defaultY = height * (0.2 + (index % 4) * 0.22);
+      } else if (node.category === 'task') {
+        defaultX = width * 0.30;
+        defaultY = height * (0.15 + (index % 6) * 0.14);
       } else if (node.category.startsWith('skill_') || node.category === 'knowledge') {
         defaultX = width * 0.45;
         defaultY = height * (0.15 + (index % 6) * 0.14);
@@ -240,10 +253,11 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
           }
         });
 
-        // Layer anchor affinity (maintains left-to-right cognitive flow: Expériences -> Compétences -> Capacités -> Horizons)
+        // Five-level reading path: Experience -> Task -> Skill -> Cognition -> Matching.
         let targetColumnX = width * 0.5;
-        if (n1.category === 'experience' || n1.category === 'formation') targetColumnX = width * 0.16;
-        else if (n1.category.startsWith('skill_') || n1.category === 'knowledge') targetColumnX = width * 0.44;
+        if (n1.category === 'experience' || n1.category === 'formation' || n1.category === 'research_project') targetColumnX = width * 0.12;
+        else if (n1.category === 'task') targetColumnX = width * 0.30;
+        else if (n1.category.startsWith('skill_') || n1.category === 'knowledge') targetColumnX = width * 0.48;
         else if (n1.category === 'capacity_cognitive') targetColumnX = width * 0.70;
         else if (n1.category === 'horizon_job') targetColumnX = width * 0.88;
 
@@ -271,10 +285,11 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
 
       // Draw subtle background structural layer columns
       const columnLabels = [
-        { label: '1. Expériences & Projets', x: width * 0.16 },
-        { label: '2. Compétences & Savoirs', x: width * 0.44 },
-        { label: '3. Capacités Cognitives (Méta)', x: width * 0.70 },
-        { label: '4. Horizons & Métiers Possibles', x: width * 0.88 },
+        { label: '1. Expériences', x: width * 0.12 },
+        { label: '2. Tâches', x: width * 0.30 },
+        { label: '3. Compétences', x: width * 0.48 },
+        { label: '4. Cognition', x: width * 0.70 },
+        { label: '5. Matching', x: width * 0.88 },
       ];
 
       ctx.save();
@@ -300,8 +315,8 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         if (!sourceNode || !targetNode) return;
 
         // Filter check
-        const isSourceVisible = activeFilter === 'all' || sourceNode.category.includes(activeFilter);
-        const isTargetVisible = activeFilter === 'all' || targetNode.category.includes(activeFilter);
+        const isSourceVisible = activeFilter === 'all' || getNodeLevel(sourceNode) === activeFilter;
+        const isTargetVisible = activeFilter === 'all' || getNodeLevel(targetNode) === activeFilter;
         if (!isSourceVisible && !isTargetVisible) return;
 
         const isHighlighted =
@@ -316,8 +331,15 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         const midY = (sourceNode.y + targetNode.y) / 2 - 10;
         ctx.quadraticCurveTo(midX, midY, targetNode.x, targetNode.y);
 
+        const relationColor =
+          edge.type === 'composed_of' ? 'rgba(99, 102, 241, 0.65)' :
+          edge.type === 'demonstrates_skill' || edge.type === 'acquired_in' ? 'rgba(6, 182, 212, 0.65)' :
+          edge.type === 'feeds_capacity' ? 'rgba(236, 72, 153, 0.65)' :
+          edge.type === 'unlocks_horizon' ? 'rgba(249, 115, 22, 0.7)' :
+          'rgba(148, 163, 184, 0.45)';
+
         if (isHighlighted) {
-          ctx.strokeStyle = '#3b82f6';
+          ctx.strokeStyle = '#2563eb';
           ctx.lineWidth = 2.5;
           ctx.setLineDash([]);
         } else if (hasActiveFocus) {
@@ -325,15 +347,32 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
           ctx.lineWidth = 1;
           ctx.setLineDash([]);
         } else {
-          ctx.strokeStyle = 'rgba(148, 163, 184, 0.4)';
-          ctx.lineWidth = 1.2;
-          if (edge.type === 'synergy_with') {
-            ctx.setLineDash([3, 4]);
-          } else {
-            ctx.setLineDash([]);
-          }
+          ctx.strokeStyle = relationColor;
+          ctx.lineWidth = 1.4;
+          ctx.setLineDash(edge.type === 'synergy_with' ? [3, 4] : []);
         }
         ctx.stroke();
+
+        // Direction marker: the graph is a causal reading path from experience to matching.
+        if (edge.type !== 'synergy_with') {
+          const angle = Math.atan2(targetNode.y - midY, targetNode.x - midX);
+          const arrowX = targetNode.x - Math.cos(angle) * (targetNode.radius + 3);
+          const arrowY = targetNode.y - Math.sin(angle) * (targetNode.radius + 3);
+          const arrowSize = isHighlighted ? 7 : 5;
+          ctx.beginPath();
+          ctx.moveTo(arrowX, arrowY);
+          ctx.lineTo(
+            arrowX - Math.cos(angle - Math.PI / 6) * arrowSize,
+            arrowY - Math.sin(angle - Math.PI / 6) * arrowSize
+          );
+          ctx.lineTo(
+            arrowX - Math.cos(angle + Math.PI / 6) * arrowSize,
+            arrowY - Math.sin(angle + Math.PI / 6) * arrowSize
+          );
+          ctx.closePath();
+          ctx.fillStyle = isHighlighted ? '#2563eb' : relationColor;
+          ctx.fill();
+        }
 
         // Pulsing energy particle along highlighted lines
         if (isHighlighted) {
@@ -354,12 +393,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       // Draw Nodes
       simNodes.forEach((node) => {
         // Filter match
-        const matchesFilter =
-          activeFilter === 'all' ||
-          (activeFilter === 'skill' && node.category.startsWith('skill_')) ||
-          (activeFilter === 'capacity' && node.category === 'capacity_cognitive') ||
-          (activeFilter === 'experience' && (node.category === 'experience' || node.category === 'formation')) ||
-          (activeFilter === 'horizon' && node.category === 'horizon_job');
+        const matchesFilter = activeFilter === 'all' || getNodeLevel(node) === activeFilter;
 
         const matchesSearch =
           !searchQuery ||
@@ -460,11 +494,11 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
           ctx.fillText(`${node.vitality}% vitalité`, node.x, lineY + 14);
         }
 
-        // Match percentage tag for Horizon Jobs
-        if (node.category === 'horizon_job' && (node as any).matchScore) {
+        // Qualitative compatibility avoids presenting a heuristic as an objective measure.
+        if (node.category === 'horizon_job') {
           ctx.font = 'bold 10px sans-serif';
           ctx.fillStyle = '#ea580c';
-          ctx.fillText(`Match ${(node as any).matchScore}%`, node.x, lineY + 14);
+          ctx.fillText(`Compatibilité ${(node as any).compatibilityLevel || 'à explorer'}`, node.x, lineY + 14);
         }
 
         ctx.restore();
@@ -498,7 +532,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
   // Mouse Interaction Helpers
   const getCanvasCoords = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return { x: 0, y: 0 };
+    if (!rect) return { x: 0, y: 0, rawX: 0, rawY: 0 };
     const clientX = e.clientX - rect.left;
     const clientY = e.clientY - rect.top;
     return {
@@ -594,7 +628,18 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
                 : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
-            🏗️ Expériences ({nodes.filter((n) => n.category === 'experience' || n.category === 'formation').length})
+            🏗️ Expériences ({nodes.filter((n) => getNodeLevel(n) === 'experience').length})
+          </button>
+          <button
+            id="filter-btn-tasks"
+            onClick={() => setActiveFilter('task')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+              activeFilter === 'task'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            📋 Tâches ({nodes.filter((n) => getNodeLevel(n) === 'task').length})
           </button>
           <button
             id="filter-btn-skills"
@@ -609,25 +654,25 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
           </button>
           <button
             id="filter-btn-capacities"
-            onClick={() => setActiveFilter('capacity')}
+            onClick={() => setActiveFilter('cognition')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-              activeFilter === 'capacity'
+              activeFilter === 'cognition'
                 ? 'bg-pink-600 text-white shadow-xs'
                 : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
-            🧠 Capacités Méta ({nodes.filter((n) => n.category === 'capacity_cognitive').length})
+            🧠 Cognition ({nodes.filter((n) => n.category === 'capacity_cognitive').length})
           </button>
           <button
             id="filter-btn-horizons"
-            onClick={() => setActiveFilter('horizon')}
+            onClick={() => setActiveFilter('matching')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-              activeFilter === 'horizon'
+              activeFilter === 'matching'
                 ? 'bg-orange-600 text-white shadow-xs'
                 : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
-            🧭 Horizons Possibles ({nodes.filter((n) => n.category === 'horizon_job').length})
+            🧭 Matching métiers ({nodes.filter((n) => n.category === 'horizon_job').length})
           </button>
         </div>
 
@@ -703,16 +748,20 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
           <span>Expériences</span>
         </div>
         <div className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" />
+          <span>Tâches</span>
+        </div>
+        <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 inline-block" />
           <span>Compétences</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-pink-500 inline-block" />
-          <span>Capacités Méta</span>
+          <span>Cognition</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block" />
-          <span>Horizons Possibles</span>
+          <span>Matching</span>
         </div>
       </div>
     </div>
