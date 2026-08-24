@@ -1,15 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { Header, ActiveTab } from './components/Header';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Header } from './components/Header';
+import { DashboardView } from './components/DashboardView';
 import { NetworkGraph } from './components/NetworkGraph';
-import { DecayTimeline } from './components/DecayTimeline';
+import { TreeView } from './components/TreeView';
+import { TableView } from './components/TableView';
 import { HorizonsBridge } from './components/HorizonsBridge';
+import { DecayTimeline } from './components/DecayTimeline';
 import { CognitiveSignature } from './components/CognitiveSignature';
 import { NodeInspectorModal } from './components/NodeInspectorModal';
 import { ExperienceDistillerModal } from './components/ExperienceDistillerModal';
-import { INITIAL_COGNITORIUM_PROFILE } from './data/initialData';
-import { CognitiveProfile, AnyCognitiveNode, GraphEdge, SkillNode, HorizonJobNode } from './types';
+import { ValidationCenterModal } from './components/ValidationCenterModal';
+import { OnboardingModal } from './components/OnboardingModal';
+import { INITIAL_COGNITORIUM_PROFILE, PROFILES_PRESETS } from './data/initialData';
+import { 
+  CognitiveProfile, 
+  AnyCognitiveNode, 
+  GraphEdge, 
+  SkillNode, 
+  HorizonJobNode, 
+  AppActiveTab, 
+  ComplexityMode 
+} from './types';
 
-const STORAGE_KEY = 'cognitorium_active_profile_v3_nathan';
+const STORAGE_KEY = 'cognitorium_active_profile_v3_core';
 
 export default function App() {
   const [profile, setProfile] = useState<CognitiveProfile>(() => {
@@ -24,10 +37,15 @@ export default function App() {
     return INITIAL_COGNITORIUM_PROFILE;
   });
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>('network');
+  const [activeTab, setActiveTab] = useState<AppActiveTab>('dashboard');
+  const [complexityMode, setComplexityMode] = useState<ComplexityMode>('essential');
   const [simulationYear, setSimulationYear] = useState<number>(2026);
   const [selectedNode, setSelectedNode] = useState<AnyCognitiveNode | null>(null);
+
+  // Modals state
   const [isDistillerOpen, setIsDistillerOpen] = useState<boolean>(false);
+  const [isValidationCenterOpen, setIsValidationCenterOpen] = useState<boolean>(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
 
   // Persist profile changes to localStorage
   useEffect(() => {
@@ -38,6 +56,13 @@ export default function App() {
     }
   }, [profile]);
 
+  // Compute pending validation count
+  const pendingNodes = useMemo(() => {
+    return profile.nodes.filter(
+      (n) => n.verificationStatus === 'pending' || n.verificationStatus === 'inferred'
+    );
+  }, [profile.nodes]);
+
   const handleSelectNode = (node: AnyCognitiveNode | null) => {
     setSelectedNode(node);
   };
@@ -46,6 +71,69 @@ export default function App() {
     const found = profile.nodes.find((n) => n.id === nodeId);
     if (found) {
       setSelectedNode(found);
+    }
+  };
+
+  const handleValidateNode = (nodeId: string) => {
+    setProfile((prev) => ({
+      ...prev,
+      nodes: prev.nodes.map((n) =>
+        n.id === nodeId
+          ? {
+              ...n,
+              verificationStatus: 'verified',
+              confidenceScore: 100,
+              evidence: [
+                ...(n.evidence || []),
+                {
+                  id: `ev-val-${Date.now()}`,
+                  source: 'validation_humaine',
+                  label: 'Validé et certifié par l\'utilisateur',
+                  date: new Date().toISOString().split('T')[0],
+                  confidenceScore: 100
+                }
+              ]
+            }
+          : n
+      )
+    }));
+
+    if (selectedNode && selectedNode.id === nodeId) {
+      setSelectedNode((prev) =>
+        prev
+          ? {
+              ...prev,
+              verificationStatus: 'verified',
+              confidenceScore: 100
+            }
+          : null
+      );
+    }
+  };
+
+  const handleValidateAll = () => {
+    setProfile((prev) => ({
+      ...prev,
+      nodes: prev.nodes.map((n) =>
+        n.verificationStatus === 'pending' || n.verificationStatus === 'inferred'
+          ? {
+              ...n,
+              verificationStatus: 'verified',
+              confidenceScore: 100
+            }
+          : n
+      )
+    }));
+  };
+
+  const handleRejectNode = (nodeId: string) => {
+    setProfile((prev) => ({
+      ...prev,
+      nodes: prev.nodes.filter((n) => n.id !== nodeId),
+      edges: prev.edges.filter((e) => e.source !== nodeId && e.target !== nodeId)
+    }));
+    if (selectedNode?.id === nodeId) {
+      setSelectedNode(null);
     }
   };
 
@@ -99,8 +187,14 @@ export default function App() {
     }));
   };
 
+  const handleSelectProfile = (newProfile: CognitiveProfile) => {
+    setProfile(newProfile);
+    setSelectedNode(null);
+    setSimulationYear(2026);
+  };
+
   const handleResetToDemo = () => {
-    if (window.confirm("Réinitialiser avec le profil complet (Chantier VRD, Russe B2/B1, SIG & Horizons) ?")) {
+    if (window.confirm("Réinitialiser le profil courant avec les données initiales certifiées ?")) {
       setProfile(INITIAL_COGNITORIUM_PROFILE);
       setSimulationYear(2026);
       setSelectedNode(null);
@@ -114,12 +208,38 @@ export default function App() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         simulationYear={simulationYear}
+        currentProfile={profile}
+        onSelectProfile={handleSelectProfile}
         onOpenDistiller={() => setIsDistillerOpen(true)}
+        onOpenOnboarding={() => setIsOnboardingOpen(true)}
+        onOpenValidationCenter={() => setIsValidationCenterOpen(true)}
+        pendingValidationCount={pendingNodes.length}
+        complexityMode={complexityMode}
+        onToggleComplexity={() =>
+          setComplexityMode((m) => (m === 'essential' ? 'expert' : 'essential'))
+        }
         onResetToDemo={handleResetToDemo}
       />
 
-      {/* Main App Container */}
+      {/* Main App Content Body */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+        {/* VIEW 0: DASHBOARD OVERVIEW */}
+        {activeTab === 'dashboard' && (
+          <DashboardView
+            profile={profile}
+            simulationYear={simulationYear}
+            onNavigateTab={setActiveTab}
+            onSelectNode={setSelectedNode}
+            onOpenDistiller={() => setIsDistillerOpen(true)}
+            onOpenValidationCenter={() => setIsValidationCenterOpen(true)}
+            pendingValidationCount={pendingNodes.length}
+            complexityMode={complexityMode}
+            onToggleComplexity={() =>
+              setComplexityMode((m) => (m === 'essential' ? 'expert' : 'essential'))
+            }
+          />
+        )}
+
         {/* VIEW 1: DYNAMIC NETWORK GRAPH */}
         {activeTab === 'network' && (
           <div className="space-y-4">
@@ -129,7 +249,7 @@ export default function App() {
                   Cartographie Dynamique du Réseau Cognitif
                 </h1>
                 <p className="text-xs text-slate-500">
-                  Traçabilité continue : Expériences & Projets → Compétences décomposées → Capacités cognitives méta → Horizons accessibles
+                  Traçabilité continue : Expériences ➔ Compétences ➔ Capacités cognitives méta ➔ Horizons ROME
                 </p>
               </div>
 
@@ -152,7 +272,37 @@ export default function App() {
           </div>
         )}
 
-        {/* VIEW 2: DECAY TIMELINE & REACTIVATION */}
+        {/* VIEW 2: TREE & MISSIONS DECOMPOSITION */}
+        {activeTab === 'tree' && (
+          <TreeView
+            nodes={profile.nodes}
+            edges={profile.edges}
+            onSelectNode={setSelectedNode}
+            onOpenDistiller={() => setIsDistillerOpen(true)}
+          />
+        )}
+
+        {/* VIEW 3: TABLE & MATRIX VIEW */}
+        {activeTab === 'table' && (
+          <TableView
+            nodes={profile.nodes}
+            simulationYear={simulationYear}
+            onSelectNode={setSelectedNode}
+            onValidateNode={handleValidateNode}
+            onOpenDistiller={() => setIsDistillerOpen(true)}
+          />
+        )}
+
+        {/* VIEW 4: HORIZONS & BRIDGES EXPLORER */}
+        {activeTab === 'horizons' && (
+          <HorizonsBridge
+            nodes={profile.nodes}
+            onSelectNode={setSelectedNode}
+            onAddHorizon={handleAddHorizon}
+          />
+        )}
+
+        {/* VIEW 5: DECAY TIMELINE & REACTIVATION */}
         {activeTab === 'decay' && (
           <DecayTimeline
             nodes={profile.nodes}
@@ -163,16 +313,7 @@ export default function App() {
           />
         )}
 
-        {/* VIEW 3: HORIZONS & BRIDGES EXPLORER */}
-        {activeTab === 'horizons' && (
-          <HorizonsBridge
-            nodes={profile.nodes}
-            onSelectNode={setSelectedNode}
-            onAddHorizon={handleAddHorizon}
-          />
-        )}
-
-        {/* VIEW 4: COGNITIVE SIGNATURE & PASSPORT */}
+        {/* VIEW 6: COGNITIVE SIGNATURE & PASSPORT */}
         {activeTab === 'signature' && (
           <CognitiveSignature
             profile={profile}
@@ -190,6 +331,7 @@ export default function App() {
         onClose={() => setSelectedNode(null)}
         onSelectNodeById={handleSelectNodeById}
         onReactivateSkill={handleReactivateSkill}
+        onValidateNode={handleValidateNode}
       />
 
       {/* AI Experience Distiller Modal */}
@@ -197,6 +339,27 @@ export default function App() {
         isOpen={isDistillerOpen}
         onClose={() => setIsDistillerOpen(false)}
         onDistillComplete={handleDistillComplete}
+      />
+
+      {/* Validation Center Modal (Human-in-the-loop) */}
+      <ValidationCenterModal
+        isOpen={isValidationCenterOpen}
+        onClose={() => setIsValidationCenterOpen(false)}
+        pendingNodes={pendingNodes}
+        onValidateNode={handleValidateNode}
+        onRejectNode={handleRejectNode}
+        onValidateAll={handleValidateAll}
+      />
+
+      {/* Profile Onboarding & Switcher Modal */}
+      <OnboardingModal
+        isOpen={isOnboardingOpen}
+        onClose={() => setIsOnboardingOpen(false)}
+        onSelectPresetProfile={handleSelectProfile}
+        onCreateCustomProfile={(custom) => {
+          handleSelectProfile(custom);
+          setIsOnboardingOpen(false);
+        }}
       />
     </div>
   );

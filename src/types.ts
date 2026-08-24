@@ -1,12 +1,25 @@
 export type NodeCategory = 
   | 'experience' 
   | 'formation' 
+  | 'mission'
   | 'skill_tech' 
   | 'skill_transversal' 
   | 'skill_relational' 
   | 'capacity_cognitive' 
   | 'knowledge' 
   | 'horizon_job';
+
+export type VerificationStatus = 'verified' | 'pending' | 'inferred' | 'rejected';
+
+export interface EvidenceItem {
+  id: string;
+  source: 'cv' | 'declaration' | 'project' | 'diploma' | 'ai_inference' | 'peer_review';
+  label: string;
+  detail?: string;
+  confidenceScore: number; // 0 - 100
+  inferenceMethod?: string;
+  date?: string;
+}
 
 export interface BaseNode {
   id: string;
@@ -17,6 +30,20 @@ export interface BaseNode {
   y?: number;
   vx?: number;
   vy?: number;
+  // Core Knowledge Model: Provenance & Confiance
+  verificationStatus?: VerificationStatus;
+  confidenceScore?: number; // 0 - 100
+  evidence?: EvidenceItem[];
+  verifiedAt?: string;
+  verifiedBy?: string;
+}
+
+export interface MissionDetail {
+  id: string;
+  title: string;
+  actions: string[];
+  associatedSkillIds?: string[];
+  cognitiveLoad?: 'faible' | 'modérée' | 'élevée';
 }
 
 export interface ExperienceNode extends BaseNode {
@@ -27,7 +54,16 @@ export interface ExperienceNode extends BaseNode {
   institutionOrContext: string;
   role: string;
   missions: string[];
+  detailedMissions?: MissionDetail[];
   cognitiveEfforts: string[];
+}
+
+export interface MissionNode extends BaseNode {
+  category: 'mission';
+  experienceId: string;
+  context: string;
+  actions: string[];
+  skillsProduced: string[];
 }
 
 export interface SkillNode extends BaseNode {
@@ -40,6 +76,8 @@ export interface SkillNode extends BaseNode {
   isReactivated?: boolean;
   subSkills: string[];
   transferabilityScore: number; // 1 - 10 (how easily it transfers to other domains)
+  originExperienceIds?: string[];
+  connectedCapacityIds?: string[];
 }
 
 export interface CapacityNode extends BaseNode {
@@ -56,9 +94,20 @@ export interface KnowledgeNode extends BaseNode {
   decayRate: 'lent' | 'moyen' | 'rapide';
 }
 
+export interface TrainingPathway {
+  title: string;
+  providerOrType: string;
+  duration: string;
+  format: 'Certifiante' | 'Autodidacte' | 'Universitaire' | 'Micro-learning';
+  url?: string;
+  targetedSkill: string;
+}
+
 export interface HorizonJobNode extends BaseNode {
   category: 'horizon_job';
   domain: string;
+  romeCode?: string; // e.g. 'F1208', 'K2102', 'M1508'
+  romeTitle?: string;
   matchScore: number; // 0 - 100%
   rationale: string;
   matchingSkills: string[];
@@ -66,12 +115,19 @@ export interface HorizonJobNode extends BaseNode {
     name: string;
     importance: 'critique' | 'recommandée' | 'bonus';
     learningBridge: string;
+    recommendedTraining?: TrainingPathway;
   }[];
   unlockedOpportunities: string[];
+  explainabilityFactors?: {
+    strengthPoints: string[];
+    riskPoints: string[];
+    suggestedNextAction: string;
+  };
 }
 
 export type AnyCognitiveNode = 
   | ExperienceNode 
+  | MissionNode
   | SkillNode 
   | CapacityNode 
   | KnowledgeNode 
@@ -79,6 +135,7 @@ export type AnyCognitiveNode =
 
 export type EdgeRelationType = 
   | 'acquired_in'       // Compétence acquise dans une expérience
+  | 'composed_of'       // Expérience composée de missions
   | 'decomposes_into'  // Compétence composée de sous-compétences
   | 'feeds_capacity'   // Compétence alimentant une capacité cognitive
   | 'requires_knowledge' // Compétence nécessitant un savoir
@@ -117,6 +174,8 @@ export interface MatchMetiersProfile {
   recommendedRomeCodes: { code: string; title: string; matchScore: number; description: string }[];
 }
 
+export type UserJourneyType = 'student' | 'professional' | 'transition';
+
 export interface CognitiveProfile {
   id: string;
   personName: string;
@@ -124,6 +183,7 @@ export interface CognitiveProfile {
   coreMotto: string;
   location?: string;
   email?: string;
+  journeyType?: UserJourneyType;
   currentSimulationYear: number;
   riasec?: RiasecScores;
   matchMetiers?: MatchMetiersProfile;
@@ -139,3 +199,15 @@ export interface CognitiveProfile {
   nodes: AnyCognitiveNode[];
   edges: GraphEdge[];
 }
+
+export type AppActiveTab = 
+  | 'dashboard'   // Mon Cognitorium (Accueil & Synthèse)
+  | 'network'     // Graphe Réseau Dynamique (Canvas interactif)
+  | 'tree'        // Vue Arbre & Décomposition Hiérarchique
+  | 'table'       // Vue Tableau & Matrice de Maîtrise
+  | 'horizons'    // Passerelles ROME & Horizons Métiers
+  | 'decay'       // Vitalité & Temporalité (Decay Engine)
+  | 'signature';  // Signature Cognitive & Passeport
+
+export type ComplexityMode = 'essential' | 'expert';
+

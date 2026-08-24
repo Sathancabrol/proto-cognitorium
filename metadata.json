@@ -1,6 +1,6 @@
 {
   "name": "Cognitorium",
-  "description": "Système de représentation dynamique du capital cognitif, expérientiel et professionnel d'un individu.",
+  "description": "Système de représentation dynamique et d'audit du capital cognitif : traçabilité des preuves, décomposition par missions, passerelles ROME, courbe d'oubli et validation humaine.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

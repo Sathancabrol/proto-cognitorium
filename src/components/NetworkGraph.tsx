@@ -30,6 +30,13 @@ const CATEGORY_STYLES: Record<NodeCategory, { label: string; color: string; ring
     bg: '#eff6ff',
     icon: '🏗️'
   },
+  mission: {
+    label: 'Missions & Tâches',
+    color: '#6366f1', // Indigo
+    ringColor: 'rgba(99, 102, 241, 0.4)',
+    bg: '#eef2ff',
+    icon: '📋'
+  },
   formation: {
     label: 'Formations & Langues',
     color: '#8b5cf6', // Violet
@@ -350,7 +357,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         const matchesSearch =
           !searchQuery ||
           node.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          node.description.toLowerCase().includes(searchQuery.toLowerCase());
+          (node.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
 
         const isSelected = selectedNodeId === node.id;
         const isHovered = hoveredNodeId === node.id;
