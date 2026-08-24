@@ -86,6 +86,16 @@ Le scénario complet est désormais jouable : **Onboarding → Ajouter un vécu/
 
 ---
 
+## Nouveaux profils issus des CV (24/08/2026)
+
+| Profil | Source | Contenu |
+|---|---|---|
+| **Amélie Cruagnes** (`src/data/amelieProfile.ts`) | `raw/CV_2021-11-10_AMELIE_CRUAGNES (3).pdf` | Technicienne du son & sonorisatrice : Bac STL → Licence Ciné/AV → BTS Audiovisuel Métiers du son → RNCP III. 4 expériences (Collectif Orchestré, La Cabane Cie, Orchestre Paul Selmer, DEMD), 9 compétences alignées référentiel, 3 capacités, 3 horizons ROME (L1508, L1511, L1101). |
+| **Gianni Ducoeur** (`src/data/gianniProfile.ts`) | `raw/CV_-_Agriculture gianni.pdf` + `raw/CV_2025_BAT gianni.pdf` | Parcours voyageur polyvalent (2 CV fusionnés) : agriculture/viticulture/cueillette, élevage & fromagerie, logistique, restauration bâtiment, contrôle routier (NZ), maçonnerie (Vinci), cordiste. 11 expériences, 16 compétences, 3 capacités, 4 horizons ROME (F1505, F1703, F1611, A1447/A1407). |
+| *Näthan Cabrol (CV spécialisé 2021)* | `raw/cv_spA_cialisA_2021.pdf` | **Déjà couvert** : c'est la source historique de `nathanProfile.ts` (référencé comme `cv_spécialisé_2020.pdf` dans les preuves). Pas de doublon créé. |
+
+**Cohérence anti « chiffres magiques »** : les horizons de ces profils affichent désormais la compatibilité **recalculée par le moteur ROME** (via `computeFicheMatch` dans `HorizonsBridge`), pas les valeurs codées en dur dans les données. Le moteur a aussi été durci : il exige ≥ 1 correspondance **exacte** avec le référentiel (élimine le bruit type « travailler en équipe » → métiers aberrants), et le score est plafonné à 100 avec un socle de ~6 compétences clés.
+
 ## Limites connues / prochaines étapes possibles
 
 1. **Taille du bundle** : `romeData.ts` = 5,4 Mo (1,17 Mo gzip). Un lazy-loading du référentiel (dynamic import au premier accès à « Mes possibilités ») est possible en V2 de cette consolidation.

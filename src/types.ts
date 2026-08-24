@@ -16,7 +16,7 @@ export type InferenceType = 'explicite' | 'inference_forte' | 'inference_a_valid
 
 export interface EvidenceItem {
   id: string;
-  source: 'cv' | 'declaration' | 'project' | 'diploma' | 'ai_inference' | 'peer_review' | 'validation_humaine';
+  source: 'cv' | 'declaration' | 'project' | 'diploma' | 'exp' | 'attest' | 'ai_inference' | 'peer_review' | 'validation_humaine';
   label: string;
   detail?: string;
   confidenceScore: number; // 0 - 100

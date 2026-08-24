@@ -127,6 +127,7 @@ function ficheLabel(score: number): RomeMatchResult['label'] {
 // ---------------------------------------------------------------------------
 interface ProfileSkillIndex {
   bySkill: Map<string, Set<string>>;
+  bySkillTypes: Map<string, { code: string; matchType: 'exact' | 'fuzzy' }[]>;
   skills: RomeMatchSkill[];
 }
 
@@ -138,6 +139,7 @@ function getProfileSkillIndex(profile: CognitiveProfile): ProfileSkillIndex {
 
   const skills = profile.nodes.filter((n) => n.category.startsWith('skill_')) as SkillNode[];
   const bySkill = new Map<string, Set<string>>();
+  const bySkillTypes = new Map<string, { code: string; matchType: 'exact' | 'fuzzy' }[]>();
   const entries: RomeMatchSkill[] = [];
 
   for (const s of skills) {
@@ -145,6 +147,7 @@ function getProfileSkillIndex(profile: CognitiveProfile): ProfileSkillIndex {
     const codeSet = new Set<string>();
     for (const c of codes) codeSet.add(c.code);
     bySkill.set(s.id, codeSet);
+    bySkillTypes.set(s.id, codes);
     entries.push({
       skillId: s.id,
       name: s.name,
@@ -158,7 +161,7 @@ function getProfileSkillIndex(profile: CognitiveProfile): ProfileSkillIndex {
     });
   }
 
-  const index: ProfileSkillIndex = { bySkill, skills: entries };
+  const index: ProfileSkillIndex = { bySkill, bySkillTypes, skills: entries };
   profileIndexCache.set(profile, index);
   return index;
 }
@@ -172,14 +175,38 @@ export function computeFicheMatch(
   const required = ROME_CODE_SKILLS[fiche.code] || [];
   const requiredNorm = new Set(required.map((r) => normalizeName(r)).filter(Boolean));
 
-  // Compétences du profil qui mobilisent cette fiche
-  const matched: RomeMatchSkill[] = [];
+  // Compétences du profil qui mobilisent cette fiche (exactes et floues)
+  const matchedAll: RomeMatchSkill[] = [];
   for (const entry of index.skills) {
     const codeSet = index.bySkill.get(entry.skillId);
     if (codeSet && codeSet.has(fiche.code)) {
-      matched.push(entry);
+      const types = index.bySkillTypes.get(entry.skillId) || [];
+      const matchType = types.find((t) => t.code === fiche.code)?.matchType || 'fuzzy';
+      matchedAll.push({ ...entry, matchType });
     }
   }
+  // Compter les correspondances EXACTES (seuil anti-bruit)
+  const exactCount = matchedAll.filter((m) => m.matchType === 'exact').length;
+
+  // Exiger au moins une correspondance EXACTE : sinon la fiche est du bruit
+  // (compétences génériques partagées type "travailler en équipe").
+  if (exactCount === 0) {
+    return {
+      fiche,
+      score: 0,
+      label: 'explorer',
+      matchedSkills: [],
+      missingSkills: required.slice(0, 12),
+      matchedSkillCount: 0,
+      requiredSkillCount: required.length,
+      coverageRatio: 0,
+      formations: ROME_FORMACODE[fiche.code] || [],
+      experiences: [],
+      unverifiedCount: 0,
+      evaluated: false
+    };
+  }
+  const matched = matchedAll;
 
   // Compétences requises manquantes (par correspondance de nom)
   const missing: string[] = [];
@@ -216,11 +243,16 @@ export function computeFicheMatch(
   const requiredSkillCount = required.length;
   const coverageRatio = requiredSkillCount > 0 ? matched.length / requiredSkillCount : 0;
 
-  // Score = proximité (couverture) × qualité des preuves (maîtrise + confiance)
+  // Qualité des preuves (maîtrise + confiance), avec bonus pour les matches exacts
   const quality = matched.length > 0
     ? matched.reduce((acc, m) => acc + Math.min(1, m.baseMastery / 100) * (0.6 + 0.4 * Math.min(1, m.confidence / 100)), 0) / matched.length
     : 0;
-  const score = Math.round(100 * (0.72 * coverageRatio + 0.28 * quality));
+  const exactBonus = exactCount >= 2 ? 0.06 : 0;
+
+  // Score : un socle de ~6 compétences clés suffit à couvrir un métier ;
+  // la couverture est plafonnée pour ne pas pénaliser les profils compacts.
+  const rawScore = 100 * Math.min(1, matched.length / 6) * (0.68 + 0.32 * quality) + 8 * exactBonus;
+  const score = Math.max(0, Math.min(100, Math.round(rawScore)));
 
   const unverifiedCount = matched.filter((m) => !m.verified || m.confidence < 70).length;
 
@@ -236,7 +268,7 @@ export function computeFicheMatch(
     formations: ROME_FORMACODE[fiche.code] || [],
     experiences,
     unverifiedCount,
-    evaluated: requiredSkillCount > 0
+    evaluated: true
   };
 }
 

@@ -22,6 +22,9 @@ import {
 import confetti from 'canvas-confetti';
 import { computeAllRomeMatches, computeFicheMatch, searchRomeFiches, getCompatibilityInfo, RomeMatchResult } from '../utils/romeMatching';
 import { getEpistemicLevel } from '../utils/epistemics';
+import { ROME_FICHES } from '../data/romeData';
+
+const ROME_FICHES_BY_CODE = new Map(ROME_FICHES.map((f) => [f.code, f]));
 
 interface HorizonsBridgeProps {
   nodes: AnyCognitiveNode[];
@@ -441,13 +444,20 @@ export const HorizonsBridge: React.FC<HorizonsBridgeProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {filteredJobs.map((job) => {
           const epistemic = getEpistemicLevel(job);
-          const labelInfo = getCompatibilityInfo(
-            job.compatibilityLevel === 'Très Élevée' ? 'tres_forte'
-              : job.compatibilityLevel === 'Élevée' ? 'tres_forte'
-              : job.compatibilityLevel === 'Modérée' ? 'moderee'
-              : job.compatibilityLevel === 'En développement' ? 'forte'
-              : (job.matchScore >= 75 ? 'tres_forte' : job.matchScore >= 50 ? 'forte' : job.matchScore >= 25 ? 'moderee' : 'explorer')
-          );
+          // Compatibilité recalculée par le moteur ROME réel (jamais de score codé en dur affiché nu)
+          const romeFiche = job.romeCode ? ROME_FICHES_BY_CODE.get(job.romeCode) : undefined;
+          const moteurMatch = romeFiche ? computeFicheMatch(profile, romeFiche) : null;
+          const moteurEvaluated = moteurMatch !== null && moteurMatch.evaluated;
+          const labelInfo = moteurEvaluated && moteurMatch
+            ? getCompatibilityInfo(moteurMatch.label)
+            : getCompatibilityInfo(
+                job.compatibilityLevel === 'Très Élevée' ? 'tres_forte'
+                  : job.compatibilityLevel === 'Élevée' ? 'tres_forte'
+                  : job.compatibilityLevel === 'Modérée' ? 'moderee'
+                  : job.compatibilityLevel === 'En développement' ? 'forte'
+                  : (job.matchScore >= 75 ? 'tres_forte' : job.matchScore >= 50 ? 'forte' : job.matchScore >= 25 ? 'moderee' : 'explorer')
+              );
+          const affichageScore = moteurEvaluated && moteurMatch ? moteurMatch.score : job.matchScore;
           const verifiedCount = job.matchingSkills?.length || 0;
           const pendingCount = job.missingSkills?.length || 0;
           return (
@@ -483,7 +493,7 @@ export const HorizonsBridge: React.FC<HorizonsBridgeProps> = ({
                     </span>
                     {complexityMode === 'expert' && (
                       <span className="block text-[10px] font-bold text-slate-400 mt-1">
-                        {job.matchScore}/100
+                        {affichageScore}/100{moteurEvaluated ? ' (moteur ROME)' : ''}
                       </span>
                     )}
                   </div>
