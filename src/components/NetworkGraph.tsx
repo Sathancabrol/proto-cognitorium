@@ -1,8 +1,29 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { AnyCognitiveNode, GraphEdge, NodeCategory } from '../types';
 import { calculateSkillVitality, getVitalityStatus } from '../utils/decay';
 import { getNodeVisualDescriptor } from '../utils/nodeVisualDescriptor';
-import { ZoomIn, ZoomOut, RotateCcw, Filter, Eye, Sparkles, Search, Layers, Compass } from 'lucide-react';
+import { 
+  DimensionMode, 
+  NodeSpatialData, 
+  getNodeStrataLayer, 
+  extractNodeYear 
+} from '../utils/graphDimensions';
+import { 
+  ZoomIn, 
+  ZoomOut, 
+  RotateCcw, 
+  Search, 
+  Play, 
+  Pause, 
+  Sparkles, 
+  Clock, 
+  Share2,
+  X,
+  Layers,
+  Network,
+  Lock,
+  Unlock
+} from 'lucide-react';
 
 interface NetworkGraphProps {
   nodes: AnyCognitiveNode[];
@@ -10,100 +31,69 @@ interface NetworkGraphProps {
   selectedNodeId: string | null;
   onSelectNode: (node: AnyCognitiveNode | null) => void;
   simulationYear: number;
-  onAddExperienceClick: () => void;
+  onAddExperienceClick?: () => void;
 }
 
-type GraphLevel = 'all' | 'experience' | 'task' | 'skill' | 'cognition' | 'matching';
+export type FilterCategoryKey = 'experience' | 'task' | 'skill' | 'cognition' | 'matching';
 
-type SimulatedNode = AnyCognitiveNode & {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  radius: number;
-  color: string;
-  vitality?: number;
-};
+interface CategoryGroupDef {
+  key: FilterCategoryKey;
+  label: string;
+  dotColor: string;
+  bgActive: string;
+  categories: string[];
+}
 
-const getNodeLevel = (node: AnyCognitiveNode): Exclude<GraphLevel, 'all'> => {
-  if (['experience', 'formation', 'research_project'].includes(node.category)) return 'experience';
-  if (node.category === 'task') return 'task';
-  if (node.category.startsWith('skill_') || node.category === 'knowledge') return 'skill';
-  if (node.category === 'capacity_cognitive') return 'cognition';
-  return 'matching';
-};
-
-const CATEGORY_STYLES: Record<NodeCategory, { label: string; color: string; ringColor: string; bg: string; icon: string }> = {
-  experience: {
-    label: 'Expériences & Terrains',
-    color: '#3b82f6', // Blue
-    ringColor: 'rgba(59, 130, 246, 0.4)',
-    bg: '#eff6ff',
-    icon: '🏗️'
+const CATEGORY_GROUPS: CategoryGroupDef[] = [
+  {
+    key: 'experience',
+    label: 'Expériences & Formations',
+    dotColor: '#3b82f6',
+    bgActive: 'bg-blue-600',
+    categories: ['experience', 'formation', 'research_project']
   },
-  task: {
-    label: 'Tâches & Actions',
-    color: '#6366f1', // Indigo
-    ringColor: 'rgba(99, 102, 241, 0.4)',
-    bg: '#eef2ff',
-    icon: '📋'
+  {
+    key: 'task',
+    label: 'Missions & Tâches',
+    dotColor: '#6366f1',
+    bgActive: 'bg-indigo-600',
+    categories: ['task']
   },
-  formation: {
-    label: 'Formations & Diplômes',
-    color: '#8b5cf6', // Violet
-    ringColor: 'rgba(139, 92, 246, 0.4)',
-    bg: '#f5f3ff',
-    icon: '🎓'
+  {
+    key: 'skill',
+    label: 'Compétences & Savoirs',
+    dotColor: '#06b6d4',
+    bgActive: 'bg-cyan-600',
+    categories: ['skill_tech', 'skill_transversal', 'skill_relational', 'knowledge']
   },
-  research_project: {
-    label: 'Recherche & Protocoles',
-    color: '#7c3aed', // Deep Purple
-    ringColor: 'rgba(124, 58, 237, 0.4)',
-    bg: '#f5f3ff',
-    icon: '🔬'
+  {
+    key: 'cognition',
+    label: 'Cognition',
+    dotColor: '#ec4899',
+    bgActive: 'bg-pink-600',
+    categories: ['capacity_cognitive']
   },
-  skill_tech: {
-    label: 'Compétences Techniques',
-    color: '#06b6d4', // Cyan
-    ringColor: 'rgba(6, 182, 212, 0.4)',
-    bg: '#ecfeff',
-    icon: '⚙️'
-  },
-  skill_transversal: {
-    label: 'Compétences Transverses',
-    color: '#10b981', // Emerald
-    ringColor: 'rgba(16, 185, 129, 0.4)',
-    bg: '#ecfdf5',
-    icon: '🔄'
-  },
-  skill_relational: {
-    label: 'Compétences Humaines',
-    color: '#f59e0b', // Amber
-    ringColor: 'rgba(245, 158, 11, 0.4)',
-    bg: '#fffbeb',
-    icon: '🤝'
-  },
-  capacity_cognitive: {
-    label: 'Cognition & Capacités',
-    color: '#ec4899', // Pink
-    ringColor: 'rgba(236, 72, 153, 0.4)',
-    bg: '#fdf2f8',
-    icon: '🧠'
-  },
-  knowledge: {
-    label: 'Savoirs & Normes',
-    color: '#64748b', // Slate
-    ringColor: 'rgba(100, 116, 139, 0.4)',
-    bg: '#f8fafc',
-    icon: '📚'
-  },
-  horizon_job: {
-    label: 'Matching & Métiers compatibles',
-    color: '#f97316', // Orange
-    ringColor: 'rgba(249, 115, 22, 0.4)',
-    bg: '#fff7ed',
-    icon: '🧭'
+  {
+    key: 'matching',
+    label: 'Horizons Métiers',
+    dotColor: '#f59e0b',
+    bgActive: 'bg-amber-600',
+    categories: ['horizon_job']
   }
+];
+
+// Obsidian Category Color Palette
+const OBSIDIAN_COLORS: Record<string, { main: string; glow: string; label: string }> = {
+  formation: { main: '#a855f7', glow: 'rgba(168, 85, 247, 0.45)', label: 'Formation' },
+  experience: { main: '#3b82f6', glow: 'rgba(59, 130, 246, 0.45)', label: 'Expérience' },
+  research_project: { main: '#60a5fa', glow: 'rgba(96, 165, 250, 0.45)', label: 'Recherche' },
+  task: { main: '#6366f1', glow: 'rgba(99, 102, 241, 0.45)', label: 'Mission / Tâche' },
+  skill_tech: { main: '#06b6d4', glow: 'rgba(6, 182, 212, 0.45)', label: 'Compétence Tech' },
+  skill_transversal: { main: '#14b8a6', glow: 'rgba(20, 184, 166, 0.45)', label: 'Compétence Transverse' },
+  skill_relational: { main: '#10b981', glow: 'rgba(16, 185, 129, 0.45)', label: 'Compétence Humaine' },
+  knowledge: { main: '#0284c7', glow: 'rgba(2, 132, 199, 0.45)', label: 'Savoir Fondamental' },
+  capacity_cognitive: { main: '#ec4899', glow: 'rgba(236, 72, 153, 0.45)', label: 'Capacité Cognitive' },
+  horizon_job: { main: '#f59e0b', glow: 'rgba(245, 158, 11, 0.45)', label: 'Horizon Métier ROME' }
 };
 
 export const NetworkGraph: React.FC<NetworkGraphProps> = ({
@@ -117,54 +107,139 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const [activeFilter, setActiveFilter] = useState<GraphLevel>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [zoom, setZoom] = useState<number>(1);
+  // Dimension Mode: '2d' (Obsidian Graphe Réseau) ou 'timeline' (Ligne temporelle)
+  const [dimensionMode, setDimensionMode] = useState<DimensionMode>('2d');
+  
+  // Lock / Unlock Physics & Motion state (false = en mouvement, true = figé/verrouillé)
+  const [isPhysicsLocked, setIsPhysicsLocked] = useState<boolean>(false);
+  
+  // Multi-select Category Filters (Set of active keys)
+  const [selectedFilterKeys, setSelectedFilterKeys] = useState<Set<FilterCategoryKey>>(
+    new Set<FilterCategoryKey>(['experience', 'task', 'skill', 'cognition', 'matching'])
+  );
+
+  // Timeline Player state
+  const [timelineYear, setTimelineYear] = useState<number>(2026);
+  const [isPlayingTimeline, setIsPlayingTimeline] = useState<boolean>(false);
+  const [timelineSpeed, setTimelineSpeed] = useState<number>(1);
+
+  // Interactive Viewport State (Zoom & Pan)
+  const [zoom, setZoom] = useState<number>(0.95);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  
+  const [isDraggingCanvas, setIsDraggingCanvas] = useState<boolean>(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
-  // Nodes simulation positions
-  const simNodesRef = useRef<SimulatedNode[]>([]);
+  // Spatial node storage with velocity for Obsidian force-directed physics
+  const spatialNodesRef = useRef<NodeSpatialData[]>([]);
 
-  // Initialize and synchronize simulation nodes
-  useEffect(() => {
-    const width = containerRef.current?.clientWidth || 900;
-    const height = containerRef.current?.clientHeight || 650;
+  // Timeline bounds
+  const minTimelineYear = 2013;
+  const maxTimelineYear = 2026;
 
-    // Preserve existing node positions or initialize in structural columns/clusters
-    simNodesRef.current = nodes.map((node, index) => {
-      const existing = simNodesRef.current.find((n) => n.id === node.id);
+  // Degrees of nodes (number of connections)
+  const nodeDegrees = useMemo(() => {
+    const degMap = new Map<string, number>();
+    nodes.forEach(n => degMap.set(n.id, 0));
+    edges.forEach(e => {
+      degMap.set(e.source, (degMap.get(e.source) || 0) + 1);
+      degMap.set(e.target, (degMap.get(e.target) || 0) + 1);
+    });
+    return degMap;
+  }, [nodes, edges]);
 
-      // Deterministic layout initialization based on category layer
-      let defaultX = width * 0.5;
-      let defaultY = height * 0.5;
+  // Transitive Connected Subgraph computation when a node is selected/focused
+  // Returns all entities linked directly or transitively (Experience -> Tasks -> Skills -> Capacities -> Horizons)
+  const reactivatedSubgraph = useMemo(() => {
+    if (!selectedNodeId) return null;
 
-      if (node.category === 'experience' || node.category === 'formation' || node.category === 'research_project') {
-        defaultX = width * 0.12;
-        defaultY = height * (0.2 + (index % 4) * 0.22);
-      } else if (node.category === 'task') {
-        defaultX = width * 0.30;
-        defaultY = height * (0.15 + (index % 6) * 0.14);
-      } else if (node.category.startsWith('skill_') || node.category === 'knowledge') {
-        defaultX = width * 0.45;
-        defaultY = height * (0.15 + (index % 6) * 0.14);
-      } else if (node.category === 'capacity_cognitive') {
-        defaultX = width * 0.68;
-        defaultY = height * (0.2 + (index % 4) * 0.22);
-      } else if (node.category === 'horizon_job') {
-        defaultX = width * 0.88;
-        defaultY = height * (0.22 + (index % 3) * 0.28);
+    const targetNode = nodes.find(n => n.id === selectedNodeId);
+    if (!targetNode) return null;
+
+    const visitedNodeIds = new Set<string>();
+    visitedNodeIds.add(selectedNodeId);
+
+    // Breadth-First-Search across edges (depth up to 3)
+    let currentQueue = [selectedNodeId];
+    for (let depth = 0; depth < 3; depth++) {
+      const nextQueue: string[] = [];
+      for (const currId of currentQueue) {
+        edges.forEach((edge) => {
+          if (edge.source === currId && !visitedNodeIds.has(edge.target)) {
+            visitedNodeIds.add(edge.target);
+            nextQueue.push(edge.target);
+          } else if (edge.target === currId && !visitedNodeIds.has(edge.source)) {
+            visitedNodeIds.add(edge.source);
+            nextQueue.push(edge.source);
+          }
+        });
       }
+      currentQueue = nextQueue;
+      if (currentQueue.length === 0) break;
+    }
 
-      const categoryStyle = CATEGORY_STYLES[node.category] || CATEGORY_STYLES.skill_tech;
+    const connectedNodesList = nodes.filter(n => visitedNodeIds.has(n.id));
+    
+    // Group breakdown
+    const skillsCount = connectedNodesList.filter(n => n.category.startsWith('skill_') || n.category === 'knowledge').length;
+    const tasksCount = connectedNodesList.filter(n => n.category === 'task').length;
+    const cognitionCount = connectedNodesList.filter(n => n.category === 'capacity_cognitive').length;
+    const horizonsCount = connectedNodesList.filter(n => n.category === 'horizon_job').length;
+    const expCount = connectedNodesList.filter(n => ['experience', 'formation', 'research_project'].includes(n.category)).length;
 
-      let radius = 24;
-      if (node.category === 'experience') radius = 32;
-      if (node.category === 'capacity_cognitive') radius = 28;
-      if (node.category === 'horizon_job') radius = 30;
+    return {
+      rootNode: targetNode,
+      nodeIds: visitedNodeIds,
+      count: visitedNodeIds.size,
+      breakdown: {
+        skillsCount,
+        tasksCount,
+        cognitionCount,
+        horizonsCount,
+        expCount
+      }
+    };
+  }, [selectedNodeId, nodes, edges]);
+
+  // Immediate neighbor set for hover feedback
+  const hoveredNeighbors = useMemo(() => {
+    if (!hoveredNodeId) return new Set<string>();
+    const set = new Set<string>();
+    set.add(hoveredNodeId);
+    edges.forEach((edge) => {
+      if (edge.source === hoveredNodeId) set.add(edge.target);
+      if (edge.target === hoveredNodeId) set.add(edge.source);
+    });
+    return set;
+  }, [hoveredNodeId, edges]);
+
+  // Initialize node layout data with organic circular layout for Obsidian
+  useEffect(() => {
+    const existingMap = new Map(spatialNodesRef.current.map((n) => [n.id, n]));
+
+    spatialNodesRef.current = nodes.map((node, index) => {
+      const existing = existingMap.get(node.id);
+      const layerIndex = getNodeStrataLayer(node);
+      const year = extractNodeYear(node);
+      const degree = nodeDegrees.get(node.id) || 1;
+
+      // Obsidian dynamic node radius based on connection degree and importance
+      let baseRadius = 13 + Math.min(22, degree * 2.1);
+      if (node.category === 'experience' || node.category === 'formation') baseRadius += 5;
+      if (node.category === 'horizon_job') baseRadius += 4;
+
+      // Initial organic nebula position (polar coordinates for natural graph clustering)
+      const angle = (index / nodes.length) * Math.PI * 2 + (layerIndex * 1.25);
+      const dist = 120 + ((index * 47) % 240);
+      const default2dX = Math.cos(angle) * dist;
+      const default2dY = Math.sin(angle) * dist;
+
+      const yearProgress = (year - minTimelineYear) / (maxTimelineYear - minTimelineYear);
+      const timelineX = (yearProgress - 0.5) * 1200;
+      const timelineY = (layerIndex - 2) * 110 + ((index % 3) - 1) * 28;
 
       let vitality: number | undefined = undefined;
       if (node.category.startsWith('skill_')) {
@@ -172,356 +247,526 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       }
 
       return {
-        ...node,
-        x: existing?.x ?? (node.x ?? defaultX),
-        y: existing?.y ?? (node.y ?? defaultY),
+        id: node.id,
+        name: node.name,
+        category: node.category,
+        radius: baseRadius,
+        vitality,
+        yearAcquired: year,
+        layerIndex,
+        x2d: existing?.x2d ?? default2dX,
+        y2d: existing?.y2d ?? default2dY,
         vx: existing?.vx ?? 0,
         vy: existing?.vy ?? 0,
-        radius,
-        color: categoryStyle.color,
-        vitality
+        x3d: 0,
+        y3d: 0,
+        z3d: 0,
+        xTimeline: timelineX,
+        yTimeline: timelineY
       };
     });
-  }, [nodes, simulationYear]);
+  }, [nodes, nodeDegrees, simulationYear]);
 
-  // Compute connected nodes for highlighting lineage
-  const connectedNodeIds = useMemo(() => {
-    if (!selectedNodeId && !hoveredNodeId) return new Set<string>();
-    const activeId = hoveredNodeId || selectedNodeId;
-    if (!activeId) return new Set<string>();
-
-    const set = new Set<string>([activeId]);
-    edges.forEach((edge) => {
-      if (edge.source === activeId) set.add(edge.target);
-      if (edge.target === activeId) set.add(edge.source);
-    });
-    return set;
-  }, [selectedNodeId, hoveredNodeId, edges]);
-
-  // Physics animation loop
+  // Timeline Auto-play Loop
   useEffect(() => {
-    let animationFrameId: number;
+    let intervalId: any;
+    if (isPlayingTimeline && dimensionMode === 'timeline') {
+      intervalId = setInterval(() => {
+        setTimelineYear((prev) => {
+          if (prev >= maxTimelineYear) {
+            setIsPlayingTimeline(false);
+            return maxTimelineYear;
+          }
+          return prev + 1;
+        });
+      }, 1400 / timelineSpeed);
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isPlayingTimeline, dimensionMode, timelineSpeed]);
 
+  // Main Canvas Rendering & Real Data Obsidian Physics Engine
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let time = 0;
+    let animationFrameId: number;
 
     const render = () => {
-      time += 0.03;
-      const width = canvas.width;
-      const height = canvas.height;
+      const dpr = window.devicePixelRatio || 1;
+      const width = canvas.width / dpr;
+      const height = canvas.height / dpr;
 
-      // Soft physics tick to maintain readable organic spacing
-      const simNodes = simNodesRef.current;
-      for (let i = 0; i < simNodes.length; i++) {
-        const n1 = simNodes[i];
-        if (n1.id === draggedNodeId) continue;
-
-        // Node-to-node soft repulsion
-        for (let j = i + 1; j < simNodes.length; j++) {
-          const n2 = simNodes[j];
-          const dx = n2.x - n1.x;
-          const dy = n2.y - n1.y;
-          const dist = Math.hypot(dx, dy) || 1;
-          const minDist = n1.radius + n2.radius + 40;
-
-          if (dist < minDist) {
-            const force = (minDist - dist) / dist * 0.04;
-            n1.vx -= dx * force;
-            n1.vy -= dy * force;
-            n2.vx += dx * force;
-            n2.vy += dy * force;
-          }
-        }
-
-        // Edge spring attraction
-        edges.forEach((edge) => {
-          if (edge.source === n1.id || edge.target === n1.id) {
-            const targetId = edge.source === n1.id ? edge.target : edge.source;
-            const targetNode = simNodes.find((n) => n.id === targetId);
-            if (targetNode) {
-              const dx = targetNode.x - n1.x;
-              const dy = targetNode.y - n1.y;
-              const dist = Math.hypot(dx, dy) || 1;
-              const idealDist = 140;
-              const springForce = (dist - idealDist) * 0.0008 * (edge.strength || 0.8);
-              n1.vx += (dx / dist) * springForce;
-              n1.vy += (dy / dist) * springForce;
-            }
-          }
-        });
-
-        // Five-level reading path: Experience -> Task -> Skill -> Cognition -> Matching.
-        let targetColumnX = width * 0.5;
-        if (n1.category === 'experience' || n1.category === 'formation' || n1.category === 'research_project') targetColumnX = width * 0.12;
-        else if (n1.category === 'task') targetColumnX = width * 0.30;
-        else if (n1.category.startsWith('skill_') || n1.category === 'knowledge') targetColumnX = width * 0.48;
-        else if (n1.category === 'capacity_cognitive') targetColumnX = width * 0.70;
-        else if (n1.category === 'horizon_job') targetColumnX = width * 0.88;
-
-        n1.vx += (targetColumnX - n1.x) * 0.002;
-
-        // Damping
-        n1.vx *= 0.85;
-        n1.vy *= 0.85;
-
-        n1.x += n1.vx;
-        n1.y += n1.vy;
-
-        // Bounds clamping
-        n1.x = Math.max(n1.radius + 20, Math.min(width - n1.radius - 20, n1.x));
-        n1.y = Math.max(n1.radius + 20, Math.min(height - n1.radius - 20, n1.y));
-      }
-
-      // Clear Canvas
+      ctx.save();
       ctx.clearRect(0, 0, width, height);
 
-      // Save transform for zoom & pan
-      ctx.save();
+      // --- OBSIDIAN BACKGROUND (Deep Charcoal / Slate Nebula) ---
+      const bgGrad = ctx.createRadialGradient(width / 2, height / 2, 40, width / 2, height / 2, Math.max(width, height) * 0.85);
+      bgGrad.addColorStop(0, '#1c1d22');
+      bgGrad.addColorStop(0.65, '#131417');
+      bgGrad.addColorStop(1, '#0c0d0f');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, width, height);
+
       ctx.translate(pan.x, pan.y);
       ctx.scale(zoom, zoom);
 
-      // Draw subtle background structural layer columns
-      const columnLabels = [
-        { label: '1. Expériences', x: width * 0.12 },
-        { label: '2. Tâches', x: width * 0.30 },
-        { label: '3. Compétences', x: width * 0.48 },
-        { label: '4. Cognition', x: width * 0.70 },
-        { label: '5. Matching', x: width * 0.88 },
-      ];
+      // --- OBSIDIAN SUBTLE GRID DOTS ---
+      if (dimensionMode === '2d') {
+        const gridSize = 45;
+        const startX = -pan.x / zoom - 400;
+        const endX = startX + width / zoom + 800;
+        const startY = -pan.y / zoom - 400;
+        const endY = startY + height / zoom + 800;
 
-      ctx.save();
-      ctx.font = '11px sans-serif';
-      ctx.fillStyle = '#94a3b8';
-      ctx.textAlign = 'center';
-      columnLabels.forEach((col) => {
-        ctx.fillText(col.label.toUpperCase(), col.x, 30);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+        for (let x = Math.floor(startX / gridSize) * gridSize; x < endX; x += gridSize) {
+          for (let y = Math.floor(startY / gridSize) * gridSize; y < endY; y += gridSize) {
+            ctx.beginPath();
+            ctx.arc(x + width / 2, y + height / 2, 1.2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+
+      // --- TIMELINE AXIS & BARS ---
+      if (dimensionMode === 'timeline') {
+        const lineY = height / 2;
+        const startX = (-0.5) * 1200 + width / 2;
+        const endX = 0.5 * 1200 + width / 2;
+
         ctx.beginPath();
-        ctx.setLineDash([4, 6]);
-        ctx.strokeStyle = 'rgba(226, 232, 240, 0.7)';
-        ctx.lineWidth = 1;
-        ctx.moveTo(col.x, 42);
-        ctx.lineTo(col.x, height - 20);
+        ctx.moveTo(startX - 60, lineY + 230);
+        ctx.lineTo(endX + 60, lineY + 230);
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.25)';
+        ctx.lineWidth = 3;
         ctx.stroke();
-      });
-      ctx.restore();
 
-      // Draw Edges (Relationships)
-      edges.forEach((edge) => {
-        const sourceNode = simNodes.find((n) => n.id === edge.source);
-        const targetNode = simNodes.find((n) => n.id === edge.target);
-        if (!sourceNode || !targetNode) return;
+        for (let y = minTimelineYear; y <= maxTimelineYear; y++) {
+          const prog = (y - minTimelineYear) / (maxTimelineYear - minTimelineYear);
+          const tickX = (prog - 0.5) * 1200 + width / 2;
+          const isPassed = y <= timelineYear;
 
-        // Filter check
-        const isSourceVisible = activeFilter === 'all' || getNodeLevel(sourceNode) === activeFilter;
-        const isTargetVisible = activeFilter === 'all' || getNodeLevel(targetNode) === activeFilter;
-        if (!isSourceVisible && !isTargetVisible) return;
-
-        const isHighlighted =
-          connectedNodeIds.has(sourceNode.id) && connectedNodeIds.has(targetNode.id);
-        const hasActiveFocus = connectedNodeIds.size > 0;
-
-        ctx.beginPath();
-        ctx.moveTo(sourceNode.x, sourceNode.y);
-
-        // Curved Bezier line for dynamic biological / neural feel
-        const midX = (sourceNode.x + targetNode.x) / 2;
-        const midY = (sourceNode.y + targetNode.y) / 2 - 10;
-        ctx.quadraticCurveTo(midX, midY, targetNode.x, targetNode.y);
-
-        const relationColor =
-          edge.type === 'composed_of' ? 'rgba(99, 102, 241, 0.65)' :
-          edge.type === 'demonstrates_skill' || edge.type === 'acquired_in' ? 'rgba(6, 182, 212, 0.65)' :
-          edge.type === 'feeds_capacity' ? 'rgba(236, 72, 153, 0.65)' :
-          edge.type === 'unlocks_horizon' ? 'rgba(249, 115, 22, 0.7)' :
-          'rgba(148, 163, 184, 0.45)';
-
-        if (isHighlighted) {
-          ctx.strokeStyle = '#2563eb';
-          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.moveTo(tickX, lineY - 260);
+          ctx.lineTo(tickX, lineY + 230);
+          ctx.strokeStyle = isPassed 
+            ? (y === timelineYear ? 'rgba(56, 189, 248, 0.55)' : 'rgba(148, 163, 184, 0.12)') 
+            : 'rgba(51, 65, 85, 0.08)';
+          ctx.lineWidth = y === timelineYear ? 2 : 1;
+          if (y !== timelineYear) ctx.setLineDash([4, 4]);
+          ctx.stroke();
           ctx.setLineDash([]);
-        } else if (hasActiveFocus) {
-          ctx.strokeStyle = 'rgba(203, 213, 225, 0.25)';
-          ctx.lineWidth = 1;
-          ctx.setLineDash([]);
+
+          ctx.font = y === timelineYear ? 'bold 13px sans-serif' : '11px sans-serif';
+          ctx.fillStyle = isPassed ? (y === timelineYear ? '#38bdf8' : '#94a3b8') : '#475569';
+          ctx.textAlign = 'center';
+          ctx.fillText(`${y}`, tickX, lineY + 250);
+
+          if (y === timelineYear) {
+            ctx.beginPath();
+            ctx.arc(tickX, lineY + 230, 6, 0, Math.PI * 2);
+            ctx.fillStyle = '#38bdf8';
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          }
+        }
+      }
+
+      const pNodes = spatialNodesRef.current;
+      const rawNodeMap = new Map(nodes.map((n) => [n.id, n]));
+      const pNodeMap = new Map(pNodes.map((n) => [n.id, n]));
+
+      // --- REAL DATA CALIBRATED OBSIDIAN PHYSICS SIMULATION (2D Mode) ---
+      if (dimensionMode === '2d') {
+        if (!isPhysicsLocked) {
+          const timeNow = performance.now() * 0.001;
+
+          // 1. Coulomb Repulsion based on node degrees and masses (safely capped & bounded)
+          const baseRepel = 750;
+          const minDist = 30;
+          for (let i = 0; i < pNodes.length; i++) {
+            const n1 = pNodes[i];
+            const deg1 = nodeDegrees.get(n1.id) || 1;
+
+            // Gentle zero-sum organic breathing (living motion without drift)
+            const phase = i * 1.1;
+            n1.vx += Math.sin(timeNow + phase) * 0.04;
+            n1.vy += Math.cos(timeNow * 0.85 + phase) * 0.04;
+
+            for (let j = i + 1; j < pNodes.length; j++) {
+              const n2 = pNodes[j];
+              const deg2 = nodeDegrees.get(n2.id) || 1;
+              const dx = n2.x2d - n1.x2d;
+              const dy = n2.y2d - n1.y2d;
+              const dist = Math.hypot(dx, dy) || 1;
+              
+              if (dist < 320) {
+                const effectiveDist = Math.max(dist, minDist);
+                const repelMultiplier = 1 + (deg1 + deg2) * 0.1;
+                const rawForce = (baseRepel * repelMultiplier) / (effectiveDist * effectiveDist);
+                const force = Math.min(2.8, rawForce);
+                const fx = (dx / dist) * force;
+                const fy = (dy / dist) * force;
+                n1.vx -= fx;
+                n1.vy -= fy;
+                n2.vx += fx;
+                n2.vy += fy;
+              }
+            }
+          }
+
+          // 2. Real Semantic Edge Spring Attraction (Hooke's Law calibrated by relationship type)
+          edges.forEach((edge) => {
+            const n1 = pNodeMap.get(edge.source);
+            const n2 = pNodeMap.get(edge.target);
+            if (!n1 || !n2) return;
+
+            // Real Semantic Relationship Distance & Elasticity Mapping based on relation type & strength
+            let targetDist = 95;
+            let springStiffness = 0.018;
+
+            const edgeStrength = typeof edge.strength === 'number' ? edge.strength : 0.7;
+
+            if (edge.type === 'composed_of') {
+              targetDist = 65;
+              springStiffness = 0.028 * (0.8 + edgeStrength * 0.4);
+            } else if (edge.type === 'demonstrates_skill' || edge.type === 'acquired_in') {
+              targetDist = 80;
+              springStiffness = 0.024 * (0.8 + edgeStrength * 0.4);
+            } else if (edge.type === 'requires_knowledge' || edge.type === 'decomposes_into') {
+              targetDist = 75;
+              springStiffness = 0.024 * (0.8 + edgeStrength * 0.4);
+            } else if (edge.type === 'feeds_capacity') {
+              targetDist = 110;
+              springStiffness = 0.016 * (0.8 + edgeStrength * 0.4);
+            } else if (edge.type === 'unlocks_horizon') {
+              targetDist = 140;
+              springStiffness = 0.012 * (0.8 + edgeStrength * 0.4);
+            } else if (edge.type === 'synergy_with') {
+              targetDist = 120;
+              springStiffness = 0.014 * (0.8 + edgeStrength * 0.4);
+            }
+
+            const dx = n2.x2d - n1.x2d;
+            const dy = n2.y2d - n1.y2d;
+            const dist = Math.hypot(dx, dy) || 1;
+            const displacement = dist - targetDist;
+            const rawForce = displacement * springStiffness;
+            const force = Math.max(-2.5, Math.min(2.5, rawForce));
+            const fx = (dx / dist) * force;
+            const fy = (dy / dist) * force;
+
+            n1.vx += fx;
+            n1.vy += fy;
+            n2.vx -= fx;
+            n2.vy -= fy;
+          });
+
+          // 3. Central Gravity, Soft Boundary Wall & Velocity Integration with High Damping
+          const gravity = 0.0032;
+          pNodes.forEach((n) => {
+            n.vx -= n.x2d * gravity;
+            n.vy -= n.y2d * gravity;
+
+            // Soft boundary wall to keep constellations centered and prevent drifting away
+            const distFromCenter = Math.hypot(n.x2d, n.y2d);
+            if (distFromCenter > 420) {
+              const excess = distFromCenter - 420;
+              n.vx -= (n.x2d / distFromCenter) * (excess * 0.012);
+              n.vy -= (n.y2d / distFromCenter) * (excess * 0.012);
+            }
+
+            // High damping factor for smooth, stable settling (no wild oscillation)
+            n.vx *= 0.78;
+            n.vy *= 0.78;
+
+            // Cap maximum speed per frame
+            const speed = Math.hypot(n.vx, n.vy);
+            if (speed > 2.5) {
+              n.vx = (n.vx / speed) * 2.5;
+              n.vy = (n.vy / speed) * 2.5;
+            }
+
+            if (n.id !== draggedNodeId) {
+              n.x2d += n.vx;
+              n.y2d += n.vy;
+            } else {
+              n.vx = 0;
+              n.vy = 0;
+            }
+          });
         } else {
-          ctx.strokeStyle = relationColor;
-          ctx.lineWidth = 1.4;
-          ctx.setLineDash(edge.type === 'synergy_with' ? [3, 4] : []);
+          // When physics is locked, freeze velocities immediately
+          pNodes.forEach((n) => {
+            n.vx = 0;
+            n.vy = 0;
+          });
         }
+      }
+
+      // --- MULTI-FILTER VISIBILITY & REACTIVATED SUBGRAPH LOGIC ---
+      const isCategoryActive = (node: AnyCognitiveNode) => {
+        // If categories are selected, check if node matches any active category
+        for (const group of CATEGORY_GROUPS) {
+          if (selectedFilterKeys.has(group.key) && group.categories.includes(node.category)) {
+            return true;
+          }
+        }
+        return false;
+      };
+
+      const isVisible = (node: AnyCognitiveNode) => {
+        // If a node is focused in subgraph reactivation mode:
+        if (reactivatedSubgraph) {
+          // The selected root node and all its connected entities are always highlighted/visible
+          if (reactivatedSubgraph.nodeIds.has(node.id)) return true;
+        }
+
+        // Otherwise check category multi-filters
+        if (!isCategoryActive(node)) return false;
+
+        // Check text search query
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase();
+          return (
+            node.name.toLowerCase().includes(q) ||
+            node.category.toLowerCase().includes(q) ||
+            (node.description && node.description.toLowerCase().includes(q))
+          );
+        }
+        return true;
+      };
+
+      // Project positions
+      const projectedList = pNodes.map((n) => {
+        const raw = rawNodeMap.get(n.id);
+        let x = 0;
+        let y = 0;
+        let isTimelineActive = true;
+
+        if (dimensionMode === '2d') {
+          x = width / 2 + n.x2d;
+          y = height / 2 + n.y2d;
+        } else if (dimensionMode === 'timeline') {
+          x = width / 2 + n.xTimeline;
+          y = height / 2 + n.yTimeline;
+          isTimelineActive = n.yearAcquired <= timelineYear;
+        }
+
+        return {
+          node: n,
+          rawNode: raw,
+          x,
+          y,
+          isTimelineActive,
+          radiusScreen: n.radius
+        };
+      });
+
+      const projectedMap = new Map(projectedList.map((p) => [p.node.id, p]));
+
+      // Active focus target (hovered or selected)
+      const activeFocusNodeId = hoveredNodeId || selectedNodeId;
+
+      // --- 1. DESSIN DES LIENS OBSIDIAN (Luminous Glowing Connection Lines) ---
+      edges.forEach((edge) => {
+        const src = projectedMap.get(edge.source);
+        const tgt = projectedMap.get(edge.target);
+        if (!src || !tgt || !src.rawNode || !tgt.rawNode) return;
+
+        if (!isVisible(src.rawNode) || !isVisible(tgt.rawNode)) return;
+
+        if (dimensionMode === 'timeline' && (!src.isTimelineActive || !tgt.isTimelineActive)) {
+          return;
+        }
+
+        // Subgraph focus link status
+        const isReactivatedLink = reactivatedSubgraph && 
+          reactivatedSubgraph.nodeIds.has(edge.source) && 
+          reactivatedSubgraph.nodeIds.has(edge.target);
+
+        const isDirectConnection = activeFocusNodeId && (edge.source === activeFocusNodeId || edge.target === activeFocusNodeId);
+        const isDimmed = (reactivatedSubgraph && !isReactivatedLink) || (activeFocusNodeId && !isDirectConnection && !reactivatedSubgraph);
+
+        let strokeColor = 'rgba(161, 161, 170, 0.22)';
+        let lineWidth = 1.2;
+
+        if (isReactivatedLink || isDirectConnection) {
+          strokeColor = 'rgba(56, 189, 248, 0.95)';
+          lineWidth = 2.4;
+        } else if (isDimmed) {
+          strokeColor = 'rgba(100, 116, 139, 0.05)';
+          lineWidth = 0.8;
+        } else {
+          const colorMeta = OBSIDIAN_COLORS[src.node.category] || OBSIDIAN_COLORS.experience;
+          strokeColor = colorMeta.glow.replace('0.45', '0.28');
+        }
+
+        ctx.beginPath();
+        ctx.moveTo(src.x, src.y);
+        ctx.lineTo(tgt.x, tgt.y);
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = lineWidth;
         ctx.stroke();
 
-        // Direction marker: the graph is a causal reading path from experience to matching.
-        if (edge.type !== 'synergy_with') {
-          const angle = Math.atan2(targetNode.y - midY, targetNode.x - midX);
-          const arrowX = targetNode.x - Math.cos(angle) * (targetNode.radius + 3);
-          const arrowY = targetNode.y - Math.sin(angle) * (targetNode.radius + 3);
-          const arrowSize = isHighlighted ? 7 : 5;
+        // Obsidian Arrow Heads on links
+        if (!isDimmed && (zoom > 0.6 || isDirectConnection || isReactivatedLink)) {
+          const arrowLength = 7 * Math.min(1.4, Math.max(0.7, zoom));
+          const angle = Math.atan2(tgt.y - src.y, tgt.x - src.x);
+          const midX = src.x + (tgt.x - src.x) * 0.58;
+          const midY = src.y + (tgt.y - src.y) * 0.58;
+
+          ctx.save();
+          ctx.translate(midX, midY);
+          ctx.rotate(angle);
           ctx.beginPath();
-          ctx.moveTo(arrowX, arrowY);
-          ctx.lineTo(
-            arrowX - Math.cos(angle - Math.PI / 6) * arrowSize,
-            arrowY - Math.sin(angle - Math.PI / 6) * arrowSize
-          );
-          ctx.lineTo(
-            arrowX - Math.cos(angle + Math.PI / 6) * arrowSize,
-            arrowY - Math.sin(angle + Math.PI / 6) * arrowSize
-          );
+          ctx.moveTo(0, 0);
+          ctx.lineTo(-arrowLength, -arrowLength * 0.45);
+          ctx.lineTo(-arrowLength, arrowLength * 0.45);
           ctx.closePath();
-          ctx.fillStyle = isHighlighted ? '#2563eb' : relationColor;
+          ctx.fillStyle = (isDirectConnection || isReactivatedLink) ? '#38bdf8' : 'rgba(148, 163, 184, 0.4)';
           ctx.fill();
-        }
-
-        // Pulsing energy particle along highlighted lines
-        if (isHighlighted) {
-          const t = (Math.sin(time * 2 + edge.strength * 5) + 1) / 2;
-          const px = (1 - t) * (1 - t) * sourceNode.x + 2 * (1 - t) * t * midX + t * t * targetNode.x;
-          const py = (1 - t) * (1 - t) * sourceNode.y + 2 * (1 - t) * t * midY + t * t * targetNode.y;
-
-          ctx.beginPath();
-          ctx.arc(px, py, 3.5, 0, Math.PI * 2);
-          ctx.fillStyle = '#60a5fa';
-          ctx.shadowColor = '#3b82f6';
-          ctx.shadowBlur = 8;
-          ctx.fill();
-          ctx.shadowBlur = 0;
+          ctx.restore();
         }
       });
 
-      // Draw Nodes
-      simNodes.forEach((node) => {
-        // Filter match
-        const matchesFilter = activeFilter === 'all' || getNodeLevel(node) === activeFilter;
+      // --- 2. DESSIN DES NŒUDS OBSIDIAN (Luminous Glowing Orbs) ---
+      const sortedNodes = [...projectedList].sort((a, b) => {
+        // Draw reactivated and focused nodes on top
+        const aReactivated = reactivatedSubgraph && reactivatedSubgraph.nodeIds.has(a.node.id);
+        const bReactivated = reactivatedSubgraph && reactivatedSubgraph.nodeIds.has(b.node.id);
+        if (aReactivated && !bReactivated) return 1;
+        if (!aReactivated && bReactivated) return -1;
+        if (a.node.id === activeFocusNodeId) return 1;
+        if (b.node.id === activeFocusNodeId) return -1;
+        return 0;
+      });
 
-        const matchesSearch =
-          !searchQuery ||
-          node.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (node.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+      sortedNodes.forEach(({ node, rawNode, x, y, isTimelineActive, radiusScreen }) => {
+        if (!rawNode || !isVisible(rawNode)) return;
+
+        if (dimensionMode === 'timeline' && !isTimelineActive) {
+          ctx.save();
+          ctx.globalAlpha = 0.15;
+          ctx.beginPath();
+          ctx.arc(x, y, radiusScreen * 0.7, 0, Math.PI * 2);
+          ctx.fillStyle = '#27272a';
+          ctx.fill();
+          ctx.strokeStyle = '#52525b';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([2, 2]);
+          ctx.stroke();
+          ctx.restore();
+          return;
+        }
 
         const isSelected = selectedNodeId === node.id;
         const isHovered = hoveredNodeId === node.id;
-        const isConnected = connectedNodeIds.has(node.id);
-        const hasActiveFocus = connectedNodeIds.size > 0;
+        const isHoverConnected = hoveredNeighbors.has(node.id);
+        const isReactivatedInSubgraph = reactivatedSubgraph && reactivatedSubgraph.nodeIds.has(node.id);
 
-        const opacity = (!matchesFilter || !matchesSearch)
-          ? 0.15
-          : hasActiveFocus && !isConnected
-          ? 0.25
-          : 1.0;
+        let isDimmed = false;
+        if (reactivatedSubgraph) {
+          isDimmed = !isReactivatedInSubgraph;
+        } else if (activeFocusNodeId) {
+          isDimmed = !isSelected && !isHovered && !isHoverConnected;
+        }
+
+        const visualDesc = getNodeVisualDescriptor(rawNode, simulationYear);
+        const colorMeta = OBSIDIAN_COLORS[node.category] || { main: visualDesc.color, glow: 'rgba(56, 189, 248, 0.4)', label: node.category };
+        let baseColor = colorMeta.main;
+
+        if (node.vitality !== undefined) {
+          const vStat = getVitalityStatus(node.vitality);
+          baseColor = vStat.colorHex;
+        }
+
+        const opacity = isDimmed ? 0.14 : 1;
 
         ctx.save();
         ctx.globalAlpha = opacity;
 
-        // Calculate visual descriptor (icons, sub-type, colors, decay badge)
-        const visualDesc = getNodeVisualDescriptor(node, simulationYear);
-        let fillColor = visualDesc.color;
-
-        if (node.vitality !== undefined) {
-          const vitalityStatus = getVitalityStatus(node.vitality);
-          fillColor = vitalityStatus.colorHex;
-        }
-
-        // Selected / Hovered halo
-        if (isSelected || isHovered) {
+        // --- OBSIDIAN NEON HALO / GLOW ---
+        if ((isSelected || isHovered || isHoverConnected || isReactivatedInSubgraph) && !isDimmed) {
+          const isRoot = isSelected;
+          const glowRadius = radiusScreen + (isRoot ? 16 : (isHovered ? 12 : 7));
+          const glowGrad = ctx.createRadialGradient(x, y, radiusScreen * 0.4, x, y, glowRadius);
+          glowGrad.addColorStop(0, isRoot ? 'rgba(56, 189, 248, 0.85)' : colorMeta.glow);
+          glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
           ctx.beginPath();
-          ctx.arc(node.x, node.y, node.radius + 8, 0, Math.PI * 2);
-          ctx.fillStyle = isSelected ? 'rgba(59, 130, 246, 0.25)' : 'rgba(148, 163, 184, 0.2)';
+          ctx.arc(x, y, glowRadius, 0, Math.PI * 2);
+          ctx.fillStyle = glowGrad;
           ctx.fill();
         }
 
-        // Vitality decay halo ring for skills
-        if (node.vitality !== undefined) {
+        // --- VITALITY RING ---
+        if (node.vitality !== undefined && !isDimmed) {
           ctx.beginPath();
-          ctx.arc(node.x, node.y, node.radius + 4, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * (node.vitality / 100)));
-          ctx.strokeStyle = fillColor;
-          ctx.lineWidth = 3;
+          ctx.arc(x, y, radiusScreen + 3.5, -Math.PI / 2, -Math.PI / 2 + (node.vitality / 100) * 2 * Math.PI);
+          ctx.strokeStyle = baseColor;
+          ctx.lineWidth = 2.5;
           ctx.stroke();
         }
 
-        // Main Node Body
+        // --- NODE BODY ORB ---
         ctx.beginPath();
-        ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
-        ctx.fillStyle = '#ffffff';
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.08)';
-        ctx.shadowBlur = 10;
-        ctx.shadowOffsetY = 3;
+        ctx.arc(x, y, radiusScreen, 0, Math.PI * 2);
+        const bodyGrad = ctx.createRadialGradient(x, y, 0, x, y, radiusScreen);
+        bodyGrad.addColorStop(0, baseColor);
+        bodyGrad.addColorStop(0.85, baseColor);
+        bodyGrad.addColorStop(1, 'rgba(0,0,0,0.45)');
+        ctx.fillStyle = bodyGrad;
         ctx.fill();
-        ctx.shadowBlur = 0;
-        ctx.shadowOffsetY = 0;
 
-        ctx.strokeStyle = fillColor;
-        ctx.lineWidth = isSelected ? 3.5 : 2;
+        ctx.strokeStyle = isSelected 
+          ? '#ffffff' 
+          : (isReactivatedInSubgraph ? 'rgba(255, 255, 255, 0.75)' : 'rgba(255, 255, 255, 0.4)');
+        ctx.lineWidth = isSelected ? 2.8 : (isReactivatedInSubgraph ? 2.0 : 1.2);
         ctx.stroke();
 
-        // Category & Criteria Dynamic Icon inside Node
-        ctx.font = `${Math.round(node.radius * 0.85)}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(visualDesc.symbol, node.x, node.y - (visualDesc.badgeSymbol ? 1 : 0));
-
-        // Optional Top-Right Status Badge (e.g. ⚡ Reactivated, ⏳ Decayed, ⭐ Expert)
-        if (visualDesc.badgeSymbol) {
-          const badgeX = node.x + node.radius * 0.65;
-          const badgeY = node.y - node.radius * 0.65;
-          ctx.beginPath();
-          ctx.arc(badgeX, badgeY, 7.5, 0, Math.PI * 2);
-          ctx.fillStyle = '#ffffff';
-          ctx.fill();
-          ctx.strokeStyle = fillColor;
-          ctx.lineWidth = 1.5;
-          ctx.stroke();
-
-          ctx.font = '9px "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
-          ctx.fillText(visualDesc.badgeSymbol, badgeX, badgeY + 0.5);
+        // --- INNER ICON GLYPH ---
+        if (radiusScreen > 15 || isHovered || isSelected || isReactivatedInSubgraph) {
+          const fontSize = Math.max(9, Math.round(radiusScreen * 0.72));
+          ctx.font = `${fontSize}px "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(visualDesc.symbol, x, y);
         }
 
-        // Sub-Type pill text under icon on hover/select
-        if (isSelected || isHovered) {
-          ctx.font = 'bold 8px sans-serif';
-          ctx.fillStyle = fillColor;
-          ctx.fillText(visualDesc.subTypeLabel, node.x, node.y + node.radius + 4);
-        }
+        // --- OBSIDIAN TEXT LABELS ---
+        const shouldShowLabel = !isDimmed && (
+          zoom >= 0.65 || 
+          isSelected || 
+          isHovered || 
+          isHoverConnected ||
+          isReactivatedInSubgraph ||
+          (nodeDegrees.get(node.id) || 0) >= 3
+        );
 
-        // Node Title Label below
-        ctx.font = isSelected ? '600 12px sans-serif' : '500 11px sans-serif';
-        ctx.fillStyle = isSelected ? '#1e293b' : '#334155';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
+        if (shouldShowLabel) {
+          const isHighPrio = isSelected || isHovered || isReactivatedInSubgraph;
+          ctx.font = isHighPrio ? '600 11px Inter, system-ui, sans-serif' : '400 10px Inter, system-ui, sans-serif';
+          
+          ctx.fillStyle = isHighPrio ? '#ffffff' : 'rgba(212, 212, 216, 0.8)';
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+          ctx.shadowBlur = 4;
 
-        // Multi-line wrap for long node names
-        const maxLineWidth = 130;
-        const words = node.name.split(' ');
-        let line = '';
-        let lineY = node.y + node.radius + (isSelected || isHovered ? 14 : 6);
-
-        for (let w = 0; w < words.length; w++) {
-          const testLine = line + words[w] + ' ';
-          const metrics = ctx.measureText(testLine);
-          if (metrics.width > maxLineWidth && w > 0) {
-            ctx.fillText(line.trim(), node.x, lineY);
-            line = words[w] + ' ';
-            lineY += 13;
-          } else {
-            line = testLine;
+          let displayName = node.name;
+          if (displayName.length > 24 && !isHighPrio) {
+            displayName = displayName.substring(0, 22) + '…';
           }
-        }
-        ctx.fillText(line.trim(), node.x, lineY);
-
-        // Vitality percentage tag for skills
-        if (node.vitality !== undefined) {
-          ctx.font = 'bold 9px sans-serif';
-          ctx.fillStyle = fillColor;
-          ctx.fillText(`${node.vitality}% vitalité`, node.x, lineY + 14);
-        }
-
-        // Qualitative compatibility avoids presenting a heuristic as an objective measure.
-        if (node.category === 'horizon_job') {
-          ctx.font = 'bold 10px sans-serif';
-          ctx.fillStyle = '#ea580c';
-          ctx.fillText(`Compatibilité ${(node as any).compatibilityLevel || 'à explorer'}`, node.x, lineY + 14);
+          
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          ctx.fillText(displayName, x, y + radiusScreen + (isHighPrio ? 6 : 4));
+          
+          ctx.shadowBlur = 0;
         }
 
         ctx.restore();
@@ -532,19 +777,41 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       animationFrameId = requestAnimationFrame(render);
     };
 
-    render();
+    animationFrameId = requestAnimationFrame(render);
 
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [edges, selectedNodeId, hoveredNodeId, connectedNodeIds, zoom, pan, activeFilter, searchQuery, draggedNodeId]);
+  }, [
+    nodes, 
+    edges, 
+    selectedNodeId, 
+    hoveredNodeId, 
+    hoveredNeighbors,
+    reactivatedSubgraph,
+    zoom, 
+    pan, 
+    selectedFilterKeys, 
+    searchQuery, 
+    draggedNodeId, 
+    dimensionMode, 
+    simulationYear, 
+    timelineYear,
+    nodeDegrees,
+    isPhysicsLocked
+  ]);
 
-  // Handle Resize
+  // Window Resize handling
   useEffect(() => {
     const handleResize = () => {
-      if (!canvasRef.current || !containerRef.current) return;
-      canvasRef.current.width = containerRef.current.clientWidth;
-      canvasRef.current.height = containerRef.current.clientHeight;
+      const canvas = canvasRef.current;
+      const container = containerRef.current;
+      if (!canvas || !container) return;
+
+      const dpr = window.devicePixelRatio || 1;
+      const rect = container.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
     };
 
     handleResize();
@@ -552,30 +819,59 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Mouse Interaction Helpers
   const getCanvasCoords = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return { x: 0, y: 0, rawX: 0, rawY: 0 };
-    const clientX = e.clientX - rect.left;
-    const clientY = e.clientY - rect.top;
-    return {
-      x: (clientX - pan.x) / zoom,
-      y: (clientY - pan.y) / zoom,
-      rawX: clientX,
-      rawY: clientY
-    };
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0, rawX: 0, rawY: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const rawX = e.clientX - rect.left;
+    const rawY = e.clientY - rect.top;
+
+    const x = (rawX - pan.x) / zoom;
+    const y = (rawY - pan.y) / zoom;
+    return { x, y, rawX, rawY };
   };
 
-  const findNodeAt = (x: number, y: number): SimulatedNode | undefined => {
-    return simNodesRef.current.find((node) => {
-      const dist = Math.hypot(node.x - x, node.y - y);
-      return dist <= node.radius + 8;
-    });
+  const findNodeAt = (mouseX: number, mouseY: number): AnyCognitiveNode | undefined => {
+    const canvas = canvasRef.current;
+    if (!canvas) return undefined;
+    const width = canvas.width / (window.devicePixelRatio || 1);
+    const height = canvas.height / (window.devicePixelRatio || 1);
+
+    const pNodes = spatialNodesRef.current;
+    const rawNodeMap = new Map(nodes.map((n) => [n.id, n]));
+
+    for (let i = pNodes.length - 1; i >= 0; i--) {
+      const n = pNodes[i];
+      const raw = rawNodeMap.get(n.id);
+      if (!raw) continue;
+
+      let screenX = 0;
+      let screenY = 0;
+      let hitRadius = n.radius + 5;
+
+      if (dimensionMode === '2d') {
+        screenX = width / 2 + n.x2d;
+        screenY = height / 2 + n.y2d;
+      } else if (dimensionMode === 'timeline') {
+        if (n.yearAcquired > timelineYear) continue;
+        screenX = width / 2 + n.xTimeline;
+        screenY = height / 2 + n.yTimeline;
+      }
+
+      const dx = (mouseX - pan.x) / zoom - screenX;
+      const dy = (mouseY - pan.y) / zoom - screenY;
+
+      if (dx * dx + dy * dy <= hitRadius * hitRadius) {
+        return raw;
+      }
+    }
+    return undefined;
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (e.button !== 0) return;
     const coords = getCanvasCoords(e);
-    const clickedNode = findNodeAt(coords.x, coords.y);
+    const clickedNode = findNodeAt(coords.rawX, coords.rawY);
 
     if (clickedNode) {
       setDraggedNodeId(clickedNode.id);
@@ -589,13 +885,14 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const coords = getCanvasCoords(e);
 
-    if (draggedNodeId) {
-      const node = simNodesRef.current.find((n) => n.id === draggedNodeId);
+    if (draggedNodeId && dimensionMode === '2d') {
+      const node = spatialNodesRef.current.find((n) => n.id === draggedNodeId);
       if (node) {
-        node.x = coords.x;
-        node.y = coords.y;
-        node.vx = 0;
-        node.vy = 0;
+        const canvas = canvasRef.current;
+        const width = (canvas?.width || 950) / (window.devicePixelRatio || 1);
+        const height = (canvas?.height || 680) / (window.devicePixelRatio || 1);
+        node.x2d = coords.x - width / 2;
+        node.y2d = coords.y - height / 2;
       }
     } else if (isDraggingCanvas) {
       setPan({
@@ -603,7 +900,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         y: coords.rawY - dragStart.y
       });
     } else {
-      const hovered = findNodeAt(coords.x, coords.y);
+      const hovered = findNodeAt(coords.rawX, coords.rawY);
       setHoveredNodeId(hovered ? hovered.id : null);
     }
   };
@@ -616,113 +913,241 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
   const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
-    setZoom((prev) => Math.max(0.4, Math.min(2.5, prev * zoomFactor)));
+    setZoom((prev) => Math.max(0.25, Math.min(3.2, prev * zoomFactor)));
   };
 
   const handleResetView = () => {
-    setZoom(1);
+    setZoom(0.95);
     setPan({ x: 0, y: 0 });
     onSelectNode(null);
+    // Soft recenter nodes into balanced constellation
+    const total = Math.max(1, spatialNodesRef.current.length);
+    spatialNodesRef.current.forEach((n, index) => {
+      n.vx = 0;
+      n.vy = 0;
+      const angle = (index / total) * Math.PI * 2 + (n.layerIndex * 1.25);
+      const dist = 110 + ((index * 37) % 210);
+      n.x2d = Math.cos(angle) * dist;
+      n.y2d = Math.sin(angle) * dist;
+    });
   };
 
+  // Toggle multi-filter categories
+  const toggleFilter = (key: FilterCategoryKey) => {
+    setSelectedFilterKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        // Don't empty completely unless all are unselected
+        if (next.size > 1) {
+          next.delete(key);
+        } else {
+          // If only 1 was active, reset to all
+          return new Set<FilterCategoryKey>(['experience', 'task', 'skill', 'cognition', 'matching']);
+        }
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
+  const toggleAllFilters = () => {
+    if (selectedFilterKeys.size === CATEGORY_GROUPS.length) {
+      // If all are selected, keep just the primary experiences
+      setSelectedFilterKeys(new Set<FilterCategoryKey>(['experience']));
+    } else {
+      // Select all
+      setSelectedFilterKeys(new Set<FilterCategoryKey>(['experience', 'task', 'skill', 'cognition', 'matching']));
+    }
+  };
+
+  const hoveredNode = useMemo(() => {
+    if (!hoveredNodeId) return null;
+    return nodes.find(n => n.id === hoveredNodeId) || null;
+  }, [hoveredNodeId, nodes]);
+
   return (
-    <div id="cognitorium-network-view" className="relative w-full h-[680px] bg-slate-900/5 rounded-2xl border border-slate-200/80 overflow-hidden flex flex-col">
-      {/* Top Floating Control Bar */}
-      <div className="absolute top-4 left-4 right-4 z-10 flex flex-wrap items-center justify-between gap-3 pointer-events-none">
-        {/* Category Filters */}
-        <div className="flex items-center gap-1.5 p-1 bg-white/95 backdrop-blur-md rounded-xl shadow-sm border border-slate-200 pointer-events-auto overflow-x-auto max-w-full">
-          <button
-            id="filter-btn-all"
-            onClick={() => setActiveFilter('all')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-              activeFilter === 'all'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            Tout le réseau ({nodes.length})
-          </button>
-          <button
-            id="filter-btn-experiences"
-            onClick={() => setActiveFilter('experience')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-              activeFilter === 'experience'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            🏗️ Expériences ({nodes.filter((n) => getNodeLevel(n) === 'experience').length})
-          </button>
-          <button
-            id="filter-btn-tasks"
-            onClick={() => setActiveFilter('task')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-              activeFilter === 'task'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            📋 Tâches ({nodes.filter((n) => getNodeLevel(n) === 'task').length})
-          </button>
-          <button
-            id="filter-btn-skills"
-            onClick={() => setActiveFilter('skill')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-              activeFilter === 'skill'
-                ? 'bg-cyan-600 text-white shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            ⚙️ Compétences ({nodes.filter((n) => n.category.startsWith('skill_')).length})
-          </button>
-          <button
-            id="filter-btn-capacities"
-            onClick={() => setActiveFilter('cognition')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-              activeFilter === 'cognition'
-                ? 'bg-pink-600 text-white shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            🧠 Cognition ({nodes.filter((n) => n.category === 'capacity_cognitive').length})
-          </button>
-          <button
-            id="filter-btn-horizons"
-            onClick={() => setActiveFilter('matching')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-              activeFilter === 'matching'
-                ? 'bg-orange-600 text-white shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            🧭 Matching métiers ({nodes.filter((n) => n.category === 'horizon_job').length})
-          </button>
+    <div id="cognitorium-network-view" className="relative w-full h-[740px] bg-[#141416] rounded-2xl border border-zinc-800 shadow-2xl overflow-hidden flex flex-col font-sans select-none">
+      
+      {/* TOP FLOATING OBSIDIAN TOOLBAR */}
+      <div className="absolute top-3.5 left-3.5 right-3.5 z-20 flex flex-wrap items-center justify-between gap-2.5 pointer-events-none">
+        
+        {/* Left Section: 2D (Obsidian) vs Ligne temporelle & Multi-Category Filters */}
+        <div className="flex flex-wrap items-center gap-2 pointer-events-auto">
+          {/* Dimension Mode Capsule */}
+          <div className="flex items-center p-1 bg-[#1e1f24]/90 backdrop-blur-md border border-zinc-700/70 rounded-xl shadow-lg text-xs font-medium text-zinc-200">
+            {/* 2D Obsidian View */}
+            <button
+              id="dimension-btn-2d"
+              onClick={() => setDimensionMode('2d')}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                dimensionMode === '2d' 
+                  ? 'bg-purple-600/90 text-white shadow-md font-semibold ring-1 ring-purple-400/50' 
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+              }`}
+              title="Graphe Obsidian 2D Force-Directed"
+            >
+              <Network className="w-3.5 h-3.5" />
+              <span>Graphe Réseau</span>
+            </button>
+
+            {/* Ligne Temporelle */}
+            <button
+              id="dimension-btn-timeline"
+              onClick={() => setDimensionMode('timeline')}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                dimensionMode === 'timeline' 
+                  ? 'bg-amber-600/90 text-white shadow-md font-semibold ring-1 ring-amber-400/50' 
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+              }`}
+              title="Ligne temporelle chronologique"
+            >
+              <Clock className="w-3.5 h-3.5" />
+              <span>Ligne temporelle</span>
+            </button>
+          </div>
+
+          {/* Lock / Delock Motion Capsule (Bulles en mouvement vs Bulles figées) */}
+          {dimensionMode === '2d' && (
+            <button
+              id="graph-lock-toggle-btn"
+              onClick={() => setIsPhysicsLocked((prev) => !prev)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all backdrop-blur-md shadow-lg border ${
+                isPhysicsLocked
+                  ? 'bg-[#1e1f24]/90 text-zinc-400 border-zinc-700/70 hover:text-zinc-200 hover:border-zinc-500'
+                  : 'bg-emerald-600/90 text-white border-emerald-400/50 shadow-emerald-950/40 hover:bg-emerald-500 ring-1 ring-emerald-400/40'
+              }`}
+              title={
+                isPhysicsLocked
+                  ? "Positions verrouillées (figé). Cliquez pour déverrouiller et mettre les bulles en mouvement dynamique."
+                  : "Bulles en mouvement dynamique et flottement actif. Cliquez pour verrouiller et figer les positions."
+              }
+            >
+              {isPhysicsLocked ? (
+                <>
+                  <Lock className="w-3.5 h-3.5 text-zinc-400" />
+                  <span>Figé (Lock)</span>
+                </>
+              ) : (
+                <>
+                  <Unlock className="w-3.5 h-3.5 text-emerald-200 animate-pulse" />
+                  <span className="font-semibold">En mouvement (Délock)</span>
+                </>
+              )}
+            </button>
+          )}
+
+          {/* Multi-Select Category Filters Bar */}
+          <div className="flex items-center gap-1 p-1 bg-[#1e1f24]/90 backdrop-blur-md border border-zinc-700/70 rounded-xl shadow-lg overflow-x-auto max-w-[620px]">
+            <button
+              id="filter-btn-all"
+              onClick={toggleAllFilters}
+              className={`px-2.5 py-1 rounded-lg text-xs transition-all ${
+                selectedFilterKeys.size === CATEGORY_GROUPS.length
+                  ? 'bg-zinc-700 text-white font-semibold shadow-xs'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
+              }`}
+              title="Afficher toutes les catégories"
+            >
+              Tout ({nodes.length})
+            </button>
+
+            {CATEGORY_GROUPS.map((group) => {
+              const isActive = selectedFilterKeys.has(group.key);
+              const count = nodes.filter(n => group.categories.includes(n.category)).length;
+
+              return (
+                <button
+                  key={group.key}
+                  id={`filter-btn-${group.key}`}
+                  onClick={() => toggleFilter(group.key)}
+                  className={`px-2.5 py-1 rounded-lg text-xs transition-all flex items-center gap-1.5 ${
+                    isActive
+                      ? `${group.bgActive} text-white font-semibold shadow-xs ring-1 ring-white/20`
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50 opacity-60'
+                  }`}
+                  title={`Basculer le filtre ${group.label}`}
+                >
+                  <span 
+                    className="w-2 h-2 rounded-full shrink-0" 
+                    style={{ backgroundColor: group.dotColor }}
+                  />
+                  <span>{group.label.split(' ')[0]}</span>
+                  <span className="text-[10px] opacity-75">({count})</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Right Search & Action */}
+        {/* Right Section: Search & Quick Distill */}
         <div className="flex items-center gap-2 pointer-events-auto">
+          {/* Quick Search */}
           <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
             <input
               id="graph-search-input"
               type="text"
-              placeholder="Chercher une compétence, métier..."
+              placeholder="Rechercher un nœud..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 pr-3 py-1.5 bg-white/95 backdrop-blur-md rounded-xl text-xs border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48 lg:w-60 shadow-sm"
+              className="pl-8 pr-3 py-1.5 bg-[#1e1f24]/90 backdrop-blur-md rounded-xl text-xs text-zinc-200 placeholder-zinc-500 border border-zinc-700/70 focus:outline-none focus:ring-2 focus:ring-purple-500 w-36 lg:w-48 shadow-lg"
             />
           </div>
 
-          <button
-            id="btn-distill-quick"
-            onClick={onAddExperienceClick}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>+ Distiller un vécu</span>
-          </button>
+          {onAddExperienceClick && (
+            <button
+              id="btn-distill-quick"
+              onClick={onAddExperienceClick}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-semibold shadow-md transition-all"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">+ Distiller</span>
+            </button>
+          )}
         </div>
       </div>
+
+      {/* REACTIVATED SUBGRAPH FOCUS BANNER (When a node like Experience is clicked) */}
+      {reactivatedSubgraph && (
+        <div className="absolute top-16 left-3.5 right-3.5 z-20 flex items-center justify-between gap-3 bg-[#1e1f24]/95 backdrop-blur-xl border border-sky-500/50 px-3.5 py-2 rounded-xl shadow-2xl text-xs text-zinc-200 animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="flex items-center gap-2.5 overflow-hidden">
+            <span 
+              className="w-3 h-3 rounded-full shrink-0 animate-pulse shadow-sm"
+              style={{ backgroundColor: OBSIDIAN_COLORS[reactivatedSubgraph.rootNode.category]?.main || '#38bdf8' }}
+            />
+            <div className="flex items-center gap-2 truncate">
+              <span className="font-semibold text-sky-300">Focus réactivé :</span>
+              <span className="font-bold text-white truncate">{reactivatedSubgraph.rootNode.name}</span>
+            </div>
+            <div className="hidden md:flex items-center gap-1.5 ml-2 text-[11px] text-zinc-400 border-l border-zinc-700 pl-3">
+              <span>{reactivatedSubgraph.count} entités reliées</span>
+              <span className="text-zinc-600">•</span>
+              {reactivatedSubgraph.breakdown.skillsCount > 0 && (
+                <span className="text-cyan-400">{reactivatedSubgraph.breakdown.skillsCount} compétences</span>
+              )}
+              {reactivatedSubgraph.breakdown.tasksCount > 0 && (
+                <span className="text-indigo-400">{reactivatedSubgraph.breakdown.tasksCount} missions</span>
+              )}
+              {reactivatedSubgraph.breakdown.cognitionCount > 0 && (
+                <span className="text-pink-400">{reactivatedSubgraph.breakdown.cognitionCount} cognitions</span>
+              )}
+              {reactivatedSubgraph.breakdown.horizonsCount > 0 && (
+                <span className="text-amber-400">{reactivatedSubgraph.breakdown.horizonsCount} horizons</span>
+              )}
+            </div>
+          </div>
+
+          <button
+            onClick={() => onSelectNode(null)}
+            className="flex items-center gap-1 px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white rounded-lg font-medium text-[11px] transition-colors shrink-0 border border-zinc-700"
+            title="Désactiver le focus et réafficher l'ensemble du réseau"
+          >
+            <X className="w-3.5 h-3.5" />
+            <span>Réinitialiser le focus</span>
+          </button>
+        </div>
+      )}
 
       {/* Main Interactive Canvas */}
       <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing">
@@ -731,62 +1156,174 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
           onWheel={handleWheel}
           className="w-full h-full block"
         />
       </div>
 
-      {/* Bottom Zoom & Reset Controls */}
-      <div className="absolute bottom-4 right-4 z-10 flex items-center gap-1 bg-white/90 backdrop-blur-md p-1 rounded-xl shadow-sm border border-slate-200">
+      {/* OBSIDIAN HOVER CARD TOOLTIP (Bottom-Left preview on hover) */}
+      {hoveredNode && (
+        <div className="absolute bottom-4 left-4 z-20 max-w-sm bg-[#1b1c22]/95 backdrop-blur-xl border border-zinc-700/80 p-3 rounded-2xl shadow-2xl text-zinc-200 pointer-events-none animate-in fade-in slide-in-from-bottom-2 duration-100">
+          <div className="flex items-center gap-2.5 mb-1.5">
+            <span 
+              className="w-3 h-3 rounded-full shrink-0 shadow-sm"
+              style={{ backgroundColor: OBSIDIAN_COLORS[hoveredNode.category]?.main || '#a855f7' }}
+            />
+            <h4 className="text-xs font-bold text-white truncate">{hoveredNode.name}</h4>
+            <span className="ml-auto text-[10px] px-2 py-0.5 bg-zinc-800 text-zinc-400 rounded-md font-mono">
+              {OBSIDIAN_COLORS[hoveredNode.category]?.label || hoveredNode.category}
+            </span>
+          </div>
+          {hoveredNode.description && (
+            <p className="text-[11px] text-zinc-400 line-clamp-2 leading-relaxed">
+              {hoveredNode.description}
+            </p>
+          )}
+          <div className="mt-2 pt-1.5 border-t border-zinc-800/80 flex items-center justify-between text-[10px] text-zinc-500">
+            <span>Connexions : {nodeDegrees.get(hoveredNode.id) || 0}</span>
+            <span className="text-sky-400 font-medium">Cliquez pour réactiver le sous-graphe</span>
+          </div>
+        </div>
+      )}
+
+      {/* LIGNE TEMPORELLE CONTROLLER BAR */}
+      {dimensionMode === 'timeline' && (
+        <div className="absolute bottom-4 left-4 right-20 z-20 bg-[#1e1f24]/95 backdrop-blur-md border border-amber-500/40 p-3 rounded-2xl shadow-2xl text-white flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 bg-amber-500/20 text-amber-300 rounded-lg">
+                <Clock className="w-4 h-4" />
+              </span>
+              <div>
+                <div className="text-xs font-bold text-amber-200 flex items-center gap-2">
+                  <span>Ligne temporelle d'Acquisition</span>
+                  <span className="px-2 py-0.5 bg-amber-500 text-slate-950 rounded font-black text-[11px]">
+                    Année : {timelineYear}
+                  </span>
+                </div>
+                <p className="text-[11px] text-zinc-400">
+                  Visualisez l'apparition chronologique des diplômes, chantiers, missions et compétences.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsPlayingTimeline((p) => !p)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs transition-all shadow-md"
+              >
+                {isPlayingTimeline ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
+                <span>{isPlayingTimeline ? 'Pause' : 'Lecture'}</span>
+              </button>
+
+              <button
+                onClick={() => setTimelineSpeed((s) => (s === 1 ? 2 : 1))}
+                className="px-2.5 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold rounded-xl text-xs"
+              >
+                {timelineSpeed}x
+              </button>
+
+              <button
+                onClick={() => setTimelineYear(minTimelineYear)}
+                className="px-2.5 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold rounded-xl text-xs"
+                title="2013"
+              >
+                2013
+              </button>
+              <button
+                onClick={() => setTimelineYear(maxTimelineYear)}
+                className="px-2.5 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold rounded-xl text-xs"
+                title="2026"
+              >
+                2026
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 pt-1">
+            <span className="text-[11px] font-mono text-zinc-400">2013</span>
+            <input
+              type="range"
+              min={minTimelineYear}
+              max={maxTimelineYear}
+              step={1}
+              value={timelineYear}
+              onChange={(e) => setTimelineYear(parseInt(e.target.value, 10))}
+              className="flex-1 accent-amber-500 cursor-pointer h-2 bg-zinc-800 rounded-lg"
+            />
+            <span className="text-[11px] font-mono text-zinc-400">2026</span>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom Right Obsidian Navigation Controls */}
+      <div className="absolute bottom-4 right-4 z-20 flex flex-col items-center gap-1 bg-[#1e1f24]/90 backdrop-blur-md p-1 rounded-xl shadow-lg border border-zinc-700/80">
+        {dimensionMode === '2d' && (
+          <button
+            id="quick-lock-btn"
+            onClick={() => setIsPhysicsLocked((prev) => !prev)}
+            title={isPhysicsLocked ? "Déverrouiller le mouvement (Mettre en mouvement)" : "Verrouiller les positions (Figer)"}
+            className={`p-1.5 rounded-lg transition-colors ${
+              isPhysicsLocked
+                ? 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                : 'text-emerald-400 bg-emerald-950/60 ring-1 ring-emerald-500/40 hover:bg-emerald-900/60'
+            }`}
+          >
+            {isPhysicsLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+          </button>
+        )}
         <button
           id="zoom-in-btn"
-          onClick={() => setZoom((prev) => Math.min(2.5, prev * 1.15))}
+          onClick={() => setZoom((prev) => Math.min(3.2, prev * 1.18))}
           title="Zoom avant"
-          className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors"
+          className="p-1.5 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors"
         >
           <ZoomIn className="w-4 h-4" />
         </button>
         <button
           id="zoom-out-btn"
-          onClick={() => setZoom((prev) => Math.max(0.4, prev * 0.85))}
+          onClick={() => setZoom((prev) => Math.max(0.25, prev * 0.82))}
           title="Zoom arrière"
-          className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors"
+          className="p-1.5 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors"
         >
           <ZoomOut className="w-4 h-4" />
         </button>
         <button
           id="reset-view-btn"
           onClick={handleResetView}
-          title="Recentrer la vue"
-          className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors"
+          title="Recentrer la vue Réseau"
+          className="p-1.5 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors"
         >
           <RotateCcw className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Bottom Left Legend */}
-      <div className="absolute bottom-4 left-4 z-10 hidden sm:flex items-center gap-3 bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-xl shadow-sm border border-slate-200 text-xs text-slate-600">
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs">🏢/🎓</span>
-          <span>Expériences</span>
+      {/* Bottom Obsidian Group Tags Legend */}
+      {dimensionMode === '2d' && !hoveredNode && !reactivatedSubgraph && (
+        <div className="absolute bottom-4 left-4 z-10 hidden sm:flex items-center gap-3 bg-[#1e1f24]/90 backdrop-blur-md px-3.5 py-2 rounded-xl shadow-lg border border-zinc-700/70 text-xs text-zinc-400">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6] shadow-xs" />
+            <span>Expériences</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#6366f1] shadow-xs" />
+            <span>Missions</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#06b6d4] shadow-xs" />
+            <span>Compétences</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#ec4899] shadow-xs" />
+            <span>Cognition</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] shadow-xs" />
+            <span>Horizons</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs">🎯/🏆</span>
-          <span>Missions</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs">🧠/🎨/⚙️</span>
-          <span>Compétences</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs">📐/🌐</span>
-          <span>Cognition</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs">🚀/🧭</span>
-          <span>Horizons</span>
-        </div>
-      </div>
+      )}
     </div>
   );
 };
