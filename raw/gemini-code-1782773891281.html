@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hyper-Cognition Skill Tree</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #050508;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #e0e0e6;
+            user-select: none;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+        /* Interface utilisateur overlay */
+        .interface {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Laisse passer les clics vers le canvas 3D */
+            display: grid;
+            grid-template-columns: 300px 1fr 320px;
+            grid-template-rows: 60px 1fr 80px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .interactive-ui { pointer-events: auto; } /* Réactive les clics pour les boutons */
+        
+        header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(10, 10, 15, 0.8);
+            border-bottom: 1px solid #2a2a3a;
+            padding: 10px 20px;
+            border-radius: 8px;
+            backdrop-filter: blur(5px);
+        }
+        h1 { margin: 0; font-size: 1.2rem; letter-spacing: 2px; color: #4fc3f7; }
+        
+        .dimension-selector button {
+            background: #1a1a26;
+            border: 1px solid #3a3a56;
+            color: #8a8a9a;
+            padding: 6px 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        .dimension-selector button.active {
+            background: #4fc3f7;
+            color: #050508;
+            border-color: #4fc3f7;
+            box-shadow: 0 0 10px rgba(79, 195, 247, 0.5);
+        }
+
+        .panel {
+            background: rgba(10, 10, 15, 0.85);
+            border: 1px solid #2a2a3a;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+            backdrop-filter: blur(5px);
+        }
+        #stats-panel { grid-column: 1; }
+        #info-panel { grid-column: 3; }
+        
+        footer {
+            grid-column: 1 / -1;
+            grid-row: 3;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(10, 10, 15, 0.8);
+            border-top: 1px solid #2a2a3a;
+            border-radius: 8px;
+            padding: 10px;
+        }
+        .state-selector label {
+            margin: 0 15px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .state-selector input { margin-right: 5px; }
+
+        .stat-bar {
+            background: #222;
+            height: 8px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .stat-fill { height: 100%; width: 100%; transition: width 0.5s, background-color 0.5s; }
+        #ram-fill { background: #4fc3f7; }
+        #energy-fill { background: #aed581; }
+
+        .hidden { display: none !important; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div class="interface">
+        <header class="interactive-ui">
+            <h1>HYPER-COGNITION v1.0</h1>
+            <div class="dimension-selector">
+                <button id="btn-2d" class="active" onclick="setDimension('2D')">2D</button>
+                <button id="btn-3d" onclick="setDimension('3D')">3D</button>
+                <button id="btn-4d" onclick="setDimension('4D')">4D</button>
+            </div>
+        </header>
+
+        <div id="stats-panel" class="panel interactive-ui">
+            <h3>Ressources</h3>
+            <div>RAM Attentionnelle</div>
+            <div class="stat-bar"><div id="ram-fill" class="stat-fill"></div></div>
+            <div>Énergie Métabolique</div>
+            <div class="stat-bar"><div id="energy-fill" class="stat-fill"></div></div>
+        </div>
+
+        <div id="info-panel" class="panel interactive-ui">
+            <h3>Inspection</h3>
+            <div id="node-info">Survolez ou cliquez sur un neurone pour l'analyser.</div>
+        </div>
+
+        <footer id="footer-4d" class="interactive-ui hidden">
+            <div class="state-selector">
+                <strong>État Temporel (4D) : </strong>
+                <label><input type="radio" name="state4d" value="calme" checked onchange="changeState4D('calme')"> Calme</label>
+                <label><input type="radio" name="state4d" value="stress" onchange="changeState4D('stress')"> Stress (Panique)</label>
+                <label><input type="radio" name="state4d" value="flow" onchange="changeState4D('flow')"> Flow</label>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // --- DONNÉES DU GRAPHE ---
+        const nodesData = [
+            // Branche Perception (Bleu)
+            { id: "p1", nom: "Sensation", branche: "Perception", pos2D: [-4, 2, 0], pos3D: [-3, 1, 2], desc: "Capture brute des signaux physiques de l'environnement.", color: 0x00bcd4 },
+            { id: "p2", nom: "Pattern Recognition", branche: "Perception", pos2D: [-4, 0, 0], pos3D: [-4, -1, 1], desc: "Identification des formes et visages connus.", color: 0x00bcd4 },
+            // Branche Attention (Vert)
+            { id: "a1", nom: "Alerte Réflexe", branche: "Attention", pos2D: [-1, 2, 0], pos3D: [-1, 3, 0], desc: "Réaction immédiate aux stimuli dangereux.", color: 0x4caf50 },
+            { id: "a2", nom: "Focus Soutenu", branche: "Attention", pos2D: [-1, 0, 0], pos3D: [0, 2, -2], desc: "Maintien de la concentration sur la durée.", color: 0x4caf50 },
+            // Branche Logique (Violet)
+            { id: "l1", nom: "Inhibition", branche: "Logique", pos2D: [2, 2, 0], pos3D: [2, 2, 2], desc: "Capacité à bloquer les pulsions automatiques.", color: 0x9c27b0 },
+            { id: "l2", nom: "Logique Fluide", branche: "Logique", pos2D: [2, 0, 0], pos3D: [4, 1, -1], desc: "Résolution de problèmes complexes et inconnus.", color: 0x9c27b0 },
+            // Nœud de Synergie Supérieur (Or)
+            { id: "s1", nom: "INTUITION (Synergie)", branche: "Mixte", pos2D: [0, -2, 0], pos3D: [0, -3, 0], desc: "Calcul logique inconscient ultra-rapide basé sur la perception croisée.", color: 0xffb74d }
+        ];
+
+        const linksData = [
+            { from: "p1", to: "p2" },
+            { from: "a1", to: "a2" },
+            { from: "l1", to: "l2" },
+            { from: "p2", to: "s1" }, // Lien inter-branche
+            { from: "l2", to: "s1" }  // Lien inter-branche
+        ];
+
+        // --- INITIALISATION THREE.JS ---
+        let scene, camera, renderer, controls, raycaster, mouse;
+        let nodeObjects = [], linkLines = [];
+        let currentDim = '2D';
+        let current4DState = 'calme';
+
+        function init() {
+            const container = document.getElementById('canvas-container');
+            
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x050508, 0.015);
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            updateCameraPosition();
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableRotate = false; // Désactivé par défaut en 2D
+            controls.enableZoom = true;
+
+            // Lumières
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(5, 10, 7);
+            scene.add(dirLight);
+
+            // Raycaster pour l'interactivité
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            // Création graphique du graphe
+            createGraph();
+
+            // Événements
+            window.addEventListener('resize', onWindowResize);
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('click', onMouseClick);
+
+            animate();
+        }
+
+        // --- CRÉATION DU GRAPHE ---
+        function createGraph() {
+            // Créer les nœuds (Sphères)
+            nodesData.forEach(data => {
+                const geometry = new THREE.SphereGeometry(0.3, 32, 32);
+                const material = new THREE.MeshStandardMaterial({
+                    color: data.color,
+                    roughness: 0.2,
+                    metalness: 0.1,
+                    emissive: data.color,
+                    emissiveIntensity: 0.2
+                });
+                const sphere = new THREE.Mesh(geometry, material);
+                
+                // Position initiale (2D)
+                sphere.position.set(data.pos2D[0], data.pos2D[1], data.pos2D[2]);
+                sphere.userData = data;
+                
+                scene.add(sphere);
+                nodeObjects.push(sphere);
+            });
+
+            // Créer les liens (Lignes)
+            linksData.forEach(link => {
+                const material = new THREE.LineBasicMaterial({ color: 0x3a3a56, transparent: true, opacity: 0.6, linewidth: 2 });
+                const geometry = new THREE.BufferGeometry();
+                
+                const line = new THREE.Line(geometry, material);
+                line.userData = link;
+                scene.add(line);
+                linkLines.push(line);
+            });
+            updateLines();
+        }
+
+        // Mettre à jour la position des lignes pour coller aux sphères
+        function updateLines() {
+            linkLines.forEach(line => {
+                const fromNode = nodeObjects.find(n => n.userData.id === line.userData.from);
+                const toNode = nodeObjects.find(n => n.userData.id === line.userData.to);
+                
+                if (fromNode && toNode) {
+                    const points = [fromNode.position, toNode.position];
+                    line.geometry.setFromPoints(points);
+                }
+            });
+        }
+
+        // --- BOUCLE D'ANIMATION (Moteur principal) ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Interpolation fluide vers les positions cibles (effet de transition physique)
+            nodeObjects.forEach(node => {
+                let targetX = node.userData.pos2D[0];
+                let targetY = node.userData.pos2D[1];
+                let targetZ = node.userData.pos2D[2];
+
+                if (currentDim === '3D' || currentDim === '4D') {
+                    targetX = node.userData.pos3D[0];
+                    targetY = node.userData.pos3D[1];
+                    targetZ = node.userData.pos3D[2];
+                }
+
+                // Effet de distorsion 4D (Ajout d'une perturbation mathématique temporelle)
+                if (currentDim === '4D') {
+                    const time = Date.now() * 0.003;
+                    if (current4DState === 'stress') {
+                        if (node.userData.branche === "Logique") {
+                            targetY -= 2; // Effondrement de la logique
+                            node.material.emissiveIntensity = 0.05;
+                        } else if (node.userData.branche === "Perception") {
+                            // Vibration de panique
+                            targetX += Math.sin(time + node.position.y) * 0.15;
+                            targetY += THREE.MathUtils.randFloat(-0.05, 0.05);
+                            node.material.emissiveIntensity = 1.5; // Brillance d'alerte
+                        }
+                    } else if (current4DState === 'flow') {
+                        // Respiration harmonieuse globale
+                        targetY += Math.sin(time + targetX) * 0.1;
+                        node.material.emissiveIntensity = 0.8;
+                    }
+                } else {
+                    node.material.emissiveIntensity = 0.2; // Reset intensité
+                }
+
+                // Lissage (Lerp)
+                node.position.x += (targetX - node.position.x) * 0.08;
+                node.position.y += (targetY - node.position.y) * 0.08;
+                node.position.z += (targetZ - node.position.z) * 0.08;
+            });
+
+            updateLines();
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- GESTION DE L'INTERFACE ET DES DIMENSIONS ---
+        function setDimension(dim) {
+            currentDim = dim;
+            
+            // UI active class
+            document.querySelectorAll('.dimension-selector button').forEach(b => b.classList.remove('active'));
+            document.getElementById(`btn-${dim.toLowerCase()}`).classList.add('active');
+
+            // Afficher/Cacher footer 4D
+            const footer = document.getElementById('footer-4d');
+            if (dim === '4D') footer.classList.remove('hidden');
+            else footer.classList.add('hidden');
+
+            // Configurer les contrôles de caméra selon la dimension
+            if (dim === '2D') {
+                controls.enableRotate = false;
+                // Forcer la remise à plat fluide de la caméra
+                animateCameraTo(new THREE.Vector3(0, 0, 8), new THREE.Vector3(0, 0, 0));
+            } else {
+                controls.enableRotate = true; // Permet de tourner en 3D et 4D
+            }
+            
+            // Simuler des variations d'UI de stats
+            const ramFill = document.getElementById('ram-fill');
+            const energyFill = document.getElementById('energy-fill');
+            if (dim === '4D') { changeState4D(current4DState); } 
+            else { ramFill.style.width = "70%"; energyFill.style.width = "100%"; }
+        }
+
+        function changeState4D(state) {
+            current4DState = state;
+            const ramFill = document.getElementById('ram-fill');
+            const energyFill = document.getElementById('energy-fill');
+
+            if (state === 'stress') {
+                ramFill.style.width = "20%"; // La panique détruit la mémoire de travail
+                energyFill.style.width = "40%"; // Épuisement rapide
+            } else if (state === 'flow') {
+                ramFill.style.width = "100%"; // Alignement parfait
+                energyFill.style.width = "90%";
+            } else {
+                ramFill.style.width = "60%";
+                energyFill.style.width = "80%";
+            }
+        }
+
+        function updateCameraPosition() {
+            camera.position.set(0, 0, 8);
+            camera.lookAt(0, 0, 0);
+        }
+
+        function animateCameraTo(position, target) {
+            // Transition simple
+            controls.target.copy(target);
+            camera.position.copy(position);
+        }
+
+        // --- INTERACTIVITÉ SOURIS ---
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(nodeObjects);
+
+            if (intersects.length > 0) {
+                document.body.style.cursor = 'pointer';
+                const nodeData = intersects[0].object.userData;
+                showInfo(nodeData);
+            } else {
+                document.body.style.cursor = 'default';
+            }
+        }
+
+        function onMouseClick(event) {
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(nodeObjects);
+
+            if (intersects.length > 0) {
+                const node = intersects[0].object;
+                // Effet de pulsation au clic
+                node.scale.set(1.5, 1.5, 1.5);
+                setTimeout(() => node.scale.set(1, 1, 1), 200);
+            }
+        }
+
+        function showInfo(data) {
+            const infoPanel = document.getElementById('node-info');
+            infoPanel.innerHTML = `
+                <strong style="color:#fff; font-size:1.1rem;">${data.nom}</strong><br>
+                <small style="color:${'#' + data.color.toString(16)}">Branche : ${data.branche}</small>
+                <p style="line-height:1.4">${data.desc}</p>
+            `;
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
