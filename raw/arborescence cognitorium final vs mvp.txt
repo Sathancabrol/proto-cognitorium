@@ -1,0 +1,909 @@
+Voici l’arborescence séparée entre le projet final individuel et le MVP Windows.
+
+1. Arborescence du projet final
+text
+COGNITORIUM — VERSION FINALE INDIVIDUELLE
+│
+├── 01. Portail d’entrée
+│   ├── Splash screen
+│   ├── Présentation
+│   ├── Tutoriel interactif
+│   ├── Création de compte
+│   ├── Connexion
+│   ├── Gestion des sessions
+│   ├── Choix de langue
+│   └── Onboarding personnalisé
+│
+├── 02. Comptes et identité
+│   ├── Comptes locaux
+│   ├── Comptes synchronisés
+│   ├── Profils multiples
+│   ├── Avatar
+│   ├── Identité
+│   ├── Situation personnelle
+│   ├── Situation professionnelle
+│   ├── Préférences
+│   └── Gestion des accès
+│
+├── 03. Profile Studio
+│   ├── Identité
+│   ├── CV
+│   ├── Parcours scolaire
+│   ├── Parcours professionnel
+│   ├── Formations
+│   ├── Diplômes
+│   ├── Certifications
+│   ├── Permis
+│   ├── Activités
+│   ├── Centres d’intérêt
+│   ├── Valeurs
+│   ├── Événements personnels
+│   ├── Objectifs
+│   ├── Contraintes
+│   ├── Compétences proposées
+│   ├── Validations
+│   └── Historique des modifications
+│
+├── 04. État global de l’utilisateur
+│   ├── Situation actuelle
+│   ├── Projet prioritaire
+│   ├── Objectifs actifs
+│   ├── Disponibilité
+│   ├── Motivation
+│   ├── Charge cognitive déclarée
+│   ├── Compétences fortes
+│   ├── Compétences en progression
+│   ├── Compétences en decay
+│   ├── Alertes
+│   └── Prochaines actions
+│
+├── 05. Parcours de vie
+│   ├── Parcours scolaire
+│   ├── Parcours professionnel
+│   ├── Formations
+│   ├── Expériences
+│   ├── Projets réalisés
+│   ├── Activités associatives
+│   ├── Activités sportives
+│   ├── Loisirs
+│   ├── Responsabilités personnelles
+│   ├── Événements marquants
+│   └── Transitions de vie
+│
+├── 06. Compétences
+│   ├── Compétences techniques
+│   ├── Compétences transversales
+│   ├── Compétences cognitives
+│   ├── Connaissances
+│   ├── Capacités
+│   ├── Compétences transférables
+│   ├── Compétences proposées
+│   ├── Compétences acceptées
+│   ├── Compétences validées
+│   ├── Compétences refusées
+│   ├── Compétences archivées
+│   ├── Niveau historique
+│   ├── Niveau actuel
+│   ├── Niveau confirmé
+│   ├── Score général 0–100
+│   ├── Score par contexte
+│   ├── Niveau de confiance
+│   └── Relations entre compétences
+│
+├── 07. Contextes et preuves
+│   ├── Contexte scolaire
+│   ├── Contexte professionnel
+│   ├── Contexte personnel
+│   ├── Contexte associatif
+│   ├── Contexte sportif
+│   ├── Contexte familial
+│   ├── Contexte de projet
+│   ├── Auto-évaluation
+│   ├── Diplôme
+│   ├── Certification
+│   ├── Expérience
+│   ├── Projet réalisé
+│   ├── Test
+│   ├── Note scolaire
+│   ├── Commentaire d’enseignant
+│   ├── Attestation
+│   ├── Évaluation externe
+│   └── Documents justificatifs
+│
+├── 08. Decay Engine
+│   ├── Niveau historique
+│   ├── Niveau actuel
+│   ├── Dernière pratique
+│   ├── Date exacte ou approximative
+│   ├── Fréquence de pratique
+│   ├── Durée de pratique
+│   ├── Résistance de la compétence
+│   ├── Compétences connexes
+│   ├── Courbe de déclin
+│   ├── Courbe de récupération
+│   ├── Statut de compétence
+│   ├── Potentiel de récupération
+│   ├── Rappels
+│   └── Impact sur les recommandations
+│
+├── 09. Journal d’apprentissage
+│   ├── Pratique
+│   ├── Leçon
+│   ├── Exercice
+│   ├── Projet
+│   ├── Expérience
+│   ├── Réussite
+│   ├── Difficulté
+│   ├── Temps consacré
+│   ├── Preuve associée
+│   └── Effet sur la compétence
+│
+├── 10. Profil cognitif
+│   ├── Attention
+│   ├── Mémoire
+│   ├── Raisonnement
+│   ├── Flexibilité
+│   ├── Créativité
+│   ├── Planification
+│   ├── Métacognition
+│   ├── Apprentissage
+│   ├── Prise de décision
+│   ├── Motivation
+│   ├── Biais cognitifs
+│   ├── Tests cognitifs
+│   ├── Résultats importés
+│   ├── Tendances estimées
+│   ├── Niveau de confiance
+│   ├── Contexte
+│   └── Limites d’interprétation
+│
+├── 11. Biais cognitifs
+│   ├── Questionnaire
+│   ├── Auto-évaluation
+│   ├── Exercices
+│   ├── Résultats
+│   ├── Score
+│   ├── Niveau
+│   ├── Confiance
+│   ├── Évolution temporelle
+│   ├── Explications
+│   └── Stratégies correctives
+│
+├── 12. Objectifs
+│   ├── Objectifs professionnels
+│   ├── Objectifs de formation
+│   ├── Objectifs de compétences
+│   ├── Objectifs personnels
+│   ├── Priorités
+│   ├── Dates cibles
+│   ├── Progression
+│   └── Actions associées
+│
+├── 13. Projets professionnels
+│   ├── Projets multiples
+│   ├── Métiers cibles
+│   ├── Projet prioritaire
+│   ├── Échéance
+│   ├── Durée estimée
+│   ├── Contraintes
+│   ├── Étapes
+│   ├── Compétences requises
+│   ├── Compétences manquantes
+│   ├── Formations
+│   ├── Actions
+│   ├── Progression
+│   ├── Timeline du projet
+│   ├── Comparaison des projets
+│   └── États du projet
+│
+├── 14. Career Navigator
+│   ├── Recherche de métiers
+│   ├── Suggestions
+│   ├── Métiers disponibles maintenant
+│   ├── Métiers proches
+│   ├── Formation rapide
+│   ├── Formation longue
+│   ├── Métiers réglementés
+│   ├── Score de compatibilité
+│   ├── Score détaillé
+│   ├── Radar profil / métier
+│   ├── Écart de compétences
+│   ├── Passerelles
+│   ├── Marché de l’emploi
+│   ├── Salaires
+│   └── Sources
+│
+├── 15. Learning Navigator
+│   ├── Objectif cible
+│   ├── Compétences à acquérir
+│   ├── Compétences à réactiver
+│   ├── Formations
+│   ├── Certifications
+│   ├── MOOCs
+│   ├── Livres
+│   ├── Vidéos
+│   ├── Exercices
+│   ├── Projets pratiques
+│   ├── Roadmap
+│   ├── Plan d’apprentissage
+│   └── Suivi
+│
+├── 16. Knowledge Graph
+│   ├── Vue univers
+│   ├── Arbre de compétences
+│   ├── Graphe relationnel
+│   ├── Graphe neuronal visuel
+│   ├── Graphe temporel
+│   ├── Domaines
+│   ├── Sous-domaines
+│   ├── Clusters
+│   ├── Relations sémantiques
+│   ├── Exploration libre
+│   ├── Filtres
+│   └── Historique de navigation
+│
+├── 17. Lentilles de visualisation
+│   ├── Lentille temporelle
+│   ├── Lentille cognitive
+│   ├── Lentille professionnelle
+│   ├── Lentille d’apprentissage
+│   ├── Lentille spatiale
+│   ├── Lentille sociale
+│   ├── Lentille de confiance
+│   └── Lentille de simulation
+│
+├── 18. Visualisations
+│   ├── Dashboard
+│   ├── Timeline
+│   ├── Arborescence
+│   ├── Réseau
+│   ├── Radar
+│   ├── Heatmap
+│   ├── Carte mentale
+│   ├── Tableau
+│   ├── Colonnes
+│   ├── Carte géographique
+│   ├── Vue 3D
+│   ├── Comparaison
+│   ├── Simulation
+│   ├── Export image
+│   └── Export PDF
+│
+├── 19. Simulation Lab
+│   ├── Si j’apprends une compétence
+│   ├── Si je réactive une compétence
+│   ├── Si je change de métier
+│   ├── Si je suis une formation
+│   ├── Si je change de ville
+│   ├── Si je modifie une contrainte
+│   ├── Scénarios
+│   ├── Comparaison
+│   ├── Impact sur le temps
+│   ├── Impact sur les compétences
+│   └── Impact sur les opportunités
+│
+├── 20. CV et documents
+│   ├── CV manuel
+│   ├── CV ciblé métier
+│   ├── CV ciblé projet
+│   ├── CV complet
+│   ├── CV compatible ATS
+│   ├── Éditeur de CV
+│   ├── Modèles
+│   ├── Versions
+│   ├── Portfolio
+│   ├── Diplômes
+│   ├── Certifications
+│   ├── Import PDF
+│   ├── Import image
+│   ├── Import futur LinkedIn
+│   └── Export PDF
+│
+├── 21. IA et moteurs
+│   ├── Extraction de compétences
+│   ├── Moteur de scoring
+│   ├── Trust Engine
+│   ├── Decay Engine
+│   ├── Moteur de recommandation
+│   ├── Moteur de simulation
+│   ├── Moteur d’explication
+│   ├── Assistant Cognitorium
+│   ├── Agent Orientation
+│   ├── Agent Formation
+│   ├── Agent Cognition
+│   ├── Agent Simulation
+│   ├── Agent Visualisation
+│   ├── IA locale
+│   └── IA externe avec consentement
+│
+├── 22. Sources et traçabilité
+│   ├── Sources personnelles
+│   ├── Sources ROME
+│   ├── Sources de formation
+│   ├── Sources scientifiques
+│   ├── Documents sources
+│   ├── Provenance
+│   ├── Version
+│   ├── Date d’import
+│   ├── Niveau de confiance
+│   ├── Historique
+│   └── Justification des recommandations
+│
+├── 23. Confidentialité et gouvernance
+│   ├── Données locales
+│   ├── Données sensibles
+│   ├── Données exportables
+│   ├── Données partageables
+│   ├── Consentements
+│   ├── Permissions
+│   ├── Journal d’audit
+│   ├── Suppression
+│   ├── Sauvegardes
+│   ├── Restauration
+│   ├── Support
+│   └── Gestion des accès
+│
+├── 24. Collaboration Hub
+│   ├── Mentor
+│   ├── Enseignant
+│   ├── Manager
+│   ├── Recruteur
+│   ├── Commentaires
+│   ├── Validation externe
+│   ├── Discussions
+│   └── Permissions
+│
+├── 25. Écosystème et connexions
+│   ├── France Travail
+│   ├── ROME
+│   ├── RNCP
+│   ├── RS
+│   ├── ESCO
+│   ├── O*NET
+│   ├── LinkedIn
+│   ├── GitHub
+│   ├── LMS
+│   ├── Google Drive
+│   ├── Microsoft 365
+│   └── Plugins
+│
+├── 26. Extensions futures
+│   ├── Mobile Companion
+│   ├── Version scolaire
+│   ├── Version étudiant
+│   ├── Version entreprise
+│   ├── Version recherche
+│   ├── Version territoire
+│   ├── Version santé
+│   ├── Atlas mondial
+│   └── Réseau de personnalités
+│
+└── 27. Infrastructure
+    ├── Windows
+    ├── macOS
+    ├── Linux
+    ├── Android
+    ├── Python
+    ├── PySide6
+    ├── SQLite
+    ├── JSON
+    ├── CSV
+    ├── API
+    ├── Tests
+    ├── Logs
+    ├── Packaging
+    └── Documentation
+2. Arborescence du MVP Windows
+Le MVP doit conserver la même logique générale, mais avec beaucoup moins de fonctions.
+
+text
+COGNITORIUM — MVP WINDOWS
+│
+├── 01. Portail d’entrée
+│   ├── Splash screen
+│   ├── Présentation courte
+│   ├── Création de compte local
+│   ├── Connexion
+│   └── Onboarding obligatoire
+│
+├── 02. Comptes locaux
+│   ├── Identifiant
+│   ├── Mot de passe
+│   ├── Plusieurs utilisateurs sur une machine
+│   ├── Séparation des données
+│   └── Suppression du compte avec double confirmation
+│
+├── 03. Profile Studio
+│   ├── Avatar décoratif
+│   ├── Prénom
+│   ├── Nom
+│   ├── Date de naissance
+│   ├── Âge calculé
+│   ├── Ville
+│   ├── Pays
+│   ├── Situation professionnelle
+│   ├── Parcours scolaire
+│   ├── Diplômes
+│   ├── Formations
+│   ├── Certifications
+│   ├── Permis
+│   ├── Expériences
+│   ├── Activités personnelles
+│   ├── Événements personnels
+│   ├── Objectif professionnel
+│   └── Contraintes principales
+│
+├── 04. Parcours et timeline
+│   ├── Parcours scolaire
+│   ├── Parcours professionnel
+│   ├── Formations
+│   ├── Expériences
+│   ├── Événements
+│   ├── Compétences liées
+│   └── Timeline du plus ancien au plus récent
+│
+├── 05. Compétences
+│   ├── Extraction déterministe
+│   ├── Compétences proposées
+│   ├── Validation utilisateur
+│   ├── Refus utilisateur
+│   ├── Niveau général 0–100
+│   ├── Niveau par contexte
+│   ├── Niveau historique
+│   ├── Niveau actuel
+│   ├── Niveau de confiance
+│   ├── Sources
+│   ├── Preuves
+│   └── Métiers liés
+│
+├── 06. Decay Engine
+│   ├── Dernière pratique
+│   ├── Date exacte ou approximative
+│   ├── Fréquence de pratique
+│   ├── Niveau historique
+│   ├── Niveau actuel estimé
+│   ├── Courbe de decay
+│   ├── Potentiel de récupération
+│   ├── Statut de compétence
+│   ├── Journal de pratique simple
+│   └── Impact sur les métiers
+│
+├── 07. Profil cognitif estimé
+│   ├── Questionnaire de biais
+│   ├── Dix biais environ
+│   ├── Une question par biais
+│   ├── Score
+│   ├── Niveau faible/moyen/élevé
+│   ├── Explication
+│   ├── Confiance
+│   └── Limites de l’estimation
+│
+├── 08. Projets professionnels
+│   ├── Création de projet
+│   ├── Plusieurs projets
+│   ├── Projet prioritaire
+│   ├── Métiers cibles
+│   ├── Contraintes
+│   ├── Échéance
+│   ├── Étapes
+│   ├── Progression
+│   ├── Projet actif
+│   ├── Projet en pause
+│   └── Projet terminé
+│
+├── 09. Career Navigator
+│   ├── Base ROME locale
+│   ├── Recherche libre
+│   ├── Métiers disponibles maintenant
+│   ├── Métiers proches
+│   ├── Formation rapide
+│   ├── Formation longue
+│   ├── Métiers réglementés
+│   ├── Score de compatibilité
+│   ├── Compétences couvertes
+│   ├── Compétences manquantes
+│   ├── Impact du decay
+│   ├── Explication
+│   └── Sources
+│
+├── 10. Learning Navigator simplifié
+│   ├── Compétences à acquérir
+│   ├── Compétences à réactiver
+│   ├── Formations recommandées
+│   ├── Étapes du parcours
+│   ├── Actions
+│   └── Progression
+│
+├── 11. Graphes et visualisations
+│   ├── Dashboard
+│   ├── Graphe arborescent
+│   ├── Graphe relationnel interactif
+│   ├── Graphe temporel
+│   ├── Timeline
+│   ├── Couleurs par type de relation
+│   ├── Filtres simples
+│   └── Export PDF ou image si possible
+│
+├── 12. Simulation simple
+│   ├── Si j’apprends une compétence
+│   ├── Si je réactive une compétence
+│   ├── Si je choisis une formation
+│   ├── Si je vise un autre métier
+│   └── Comparaison de deux projets
+│
+├── 13. CV et export
+│   ├── CV manuel
+│   ├── CV ciblé métier
+│   ├── CV ciblé projet
+│   ├── CV complet
+│   ├── CV compatible ATS
+│   ├── Éditeur simple
+│   ├── Prévisualisation
+│   ├── Sauvegarde de versions
+│   └── Export PDF
+│
+├── 14. Sources et confiance
+│   ├── Sources utilisateur
+│   ├── Sources ROME
+│   ├── Version ROME
+│   ├── Date d’import
+│   ├── Preuves
+│   ├── Niveau de confiance
+│   └── Explication des recommandations
+│
+├── 15. Confidentialité locale
+│   ├── Données hors ligne
+│   ├── Séparation des comptes
+│   ├── Données sensibles
+│   ├── Suppression du compte
+│   ├── Sauvegarde automatique
+│   ├── Sauvegarde manuelle
+│   ├── Choix du dossier
+│   └── Restauration
+│
+├── 16. Paramètres
+│   ├── Compte
+│   ├── Profil
+│   ├── Projet prioritaire
+│   ├── Apparence
+│   ├── Couleurs
+│   ├── Sauvegardes
+│   ├── Sources
+│   ├── Export
+│   └── Logs d’erreur
+│
+└── 17. Infrastructure MVP
+    ├── Python
+    ├── PySide6
+    ├── SQLite
+    ├── JSON
+    ├── CSV
+    ├── Tests
+    ├── Version portable
+    ├── Installateur Windows
+    └── Documentation
+3. Ce qui est volontairement absent du MVP
+Les éléments suivants appartiennent à la version finale, mais ne doivent pas bloquer le premier développement :
+
+text
+✗ macOS
+✗ Linux
+✗ Android
+✗ Multilingue
+✗ API France Travail
+✗ RNCP et RS
+✗ ESCO et O*NET
+✗ Import automatique PDF
+✗ Import d’images
+✗ Import LinkedIn
+✗ Import GitHub
+✗ IA locale
+✗ IA externe
+✗ Tests cognitifs avancés
+✗ Exercices cognitifs
+✗ Collaboration
+✗ Mentorat
+✗ Validation externe
+✗ Synchronisation
+✗ Partage réseau
+✗ Mobile Companion
+✗ Variante entreprise
+✗ Variante scolaire
+✗ Variante territoire
+✗ Atlas mondial
+Le MVP utilisera une base ROME locale préparée avant la distribution. Le ROME est adapté à la correspondance entre métiers et compétences, et ses données devront être versionnées et associées à leur source.
+
+4. Différence fondamentale
+La version finale est un écosystème de développement humain :
+
+text
+Profil
+  ↓
+Knowledge Graph
+  ↓
+Moteurs
+  ↓
+Hubs
+  ↓
+Lentilles de visualisation
+  ↓
+Collaboration et extensions
+Le MVP est une application individuelle d’orientation professionnelle :
+
+text
+Profil
+  ↓
+Compétences
+  ↓
+Decay
+  ↓
+Métiers ROME
+  ↓
+Projets professionnels
+  ↓
+Parcours recommandés
+La règle de développement doit donc être :
+
+Construire le MVP comme une version réduite de l’architecture finale, et non comme une application temporaire séparée.
+
+pourquoi faire un mvp et pas la version final ?
+
+Un MVP ne signifie pas faire une mauvaise version ou une simple maquette. Pour Cognitorium, il s’agit de construire la première version réelle et utilisable du produit, avec son cœur fonctionnel, avant d’ajouter toutes les extensions.
+
+Pourquoi ne pas tout construire directement ?
+La version finale de Cognitorium est très vaste. Elle comprendrait :
+
+orientation professionnelle ;
+
+cognition ;
+
+biais ;
+
+decay ;
+
+graphes ;
+
+simulations ;
+
+formations ;
+
+CV ;
+
+IA ;
+
+synchronisation ;
+
+collaboration ;
+
+mobile ;
+
+entreprise ;
+
+éducation ;
+
+territoire ;
+
+recherche.
+
+Construire tout cela immédiatement créerait plusieurs risques :
+
+architecture trop complexe ;
+
+erreurs difficiles à identifier ;
+
+fonctionnalités inutiles ou mal priorisées ;
+
+temps de développement très long ;
+
+modèle de données difficile à corriger ;
+
+interface trop chargée ;
+
+absence de retour d’utilisateurs réels.
+
+Un MVP sert à vérifier rapidement si le cœur du produit apporte réellement de la valeur et à améliorer la suite à partir de données concrètes plutôt que d’hypothèses.
+
+Le MVP de Cognitorium n’est pas une maquette
+Dans ton cas, le MVP doit être une vraie application Windows avec :
+
+comptes locaux ;
+
+onboarding complet ;
+
+profil réel ;
+
+parcours réel ;
+
+compétences réelles ;
+
+calcul du decay ;
+
+métiers ROME ;
+
+recommandations ;
+
+projets multiples ;
+
+graphes ;
+
+timeline ;
+
+CV PDF ;
+
+sauvegardes ;
+
+fonctionnement hors ligne.
+
+Ce ne sera donc pas une image interactive ni une démonstration vide. Ce sera une version réduite mais fonctionnelle du projet final.
+
+Ce que le MVP permet de vérifier
+Le MVP doit répondre à quelques questions essentielles :
+
+Un utilisateur comprend-il facilement son profil ?
+
+L’extraction des compétences est-elle pertinente ?
+
+Les utilisateurs acceptent-ils les compétences proposées ?
+
+Le decay est-il compréhensible et utile ?
+
+Les métiers recommandés semblent-ils cohérents ?
+
+Les parcours proposés sont-ils réalistes ?
+
+Les graphes aident-ils réellement à comprendre le profil ?
+
+Le dashboard est-il trop chargé ?
+
+La génération de CV apporte-t-elle une vraie valeur ?
+
+Quelles fonctions doivent être ajoutées en priorité ?
+
+Ce sont ces réponses qui permettront de décider si l’on doit modifier les scores, les graphes, les questionnaires, les recommandations ou la structure de navigation.
+
+Le MVP réduit surtout l’incertitude
+Cognitorium contient encore plusieurs éléments expérimentaux :
+
+comment convertir une preuve en score ;
+
+comment calculer le decay selon les compétences ;
+
+comment estimer la récupération ;
+
+comment présenter les biais ;
+
+comment définir un métier “accessible maintenant” ;
+
+comment rendre le graphe compréhensible ;
+
+comment construire un parcours réaliste ;
+
+comment faire coexister plusieurs projets.
+
+Il serait risqué de figer définitivement ces éléments avant de les avoir testés.
+
+Par exemple, tu peux imaginer qu’un réseau neuronal très dense est idéal, mais découvrir que l’utilisateur comprend mieux une arborescence simple. Le MVP permet de le vérifier sans devoir reconstruire toute la plateforme.
+
+Le MVP protège l’architecture finale
+Le but n’est pas de coder rapidement quelque chose qui sera jeté. Il faut construire le MVP sur la base de l’architecture finale :
+
+text
+Architecture finale
+        ↓
+Sous-ensemble fonctionnel
+        ↓
+MVP Windows
+Le MVP utilise déjà :
+
+le profil personnel ;
+
+le knowledge graph ;
+
+les compétences ;
+
+les preuves ;
+
+la confiance ;
+
+le decay ;
+
+les projets ;
+
+les métiers ;
+
+les sources ;
+
+les visualisations.
+
+Les futures fonctions pourront ensuite se brancher sur cette base :
+
+text
+MVP
+  ├── + import PDF
+  ├── + RNCP / RS
+  ├── + IA locale
+  ├── + tests cognitifs
+  ├── + synchronisation
+  ├── + collaboration
+  ├── + mobile
+  └── + variantes entreprise / territoire
+Pourquoi commencer par Windows ?
+Windows permet de limiter le nombre de problèmes techniques au départ :
+
+une seule plateforme à tester ;
+
+un seul système de packaging ;
+
+un seul environnement utilisateur ;
+
+un seul format d’installation ;
+
+une validation plus rapide.
+
+L’architecture pourra ensuite être adaptée à macOS, Linux et Android. PyInstaller permet notamment de produire des exécutables autonomes pour différentes plateformes, même si chaque système devra être correctement testé et construit séparément.
+
+Ce que je te recommande
+Ne pas penser :
+
+« Je construis une petite version puis je ferai la vraie. »
+
+Mais plutôt :
+
+« Je construis la première tranche fonctionnelle de la vraie architecture. »
+
+Pour Cognitorium, le bon périmètre est :
+
+text
+Profil réel
+   ↓
+Compétences validées
+   ↓
+Decay
+   ↓
+Métiers ROME
+   ↓
+Projets professionnels
+   ↓
+Parcours recommandés
+   ↓
+Graphes et CV
+Si cette chaîne fonctionne correctement, le projet possède déjà son identité.
+
+Quand passer à la version finale ?
+Il faudra envisager l’extension lorsque le MVP aura validé :
+
+la stabilité de la base de données ;
+
+la pertinence des compétences détectées ;
+
+la compréhension du decay ;
+
+la cohérence des recommandations ;
+
+l’utilité des graphes ;
+
+la satisfaction des premiers utilisateurs ;
+
+la robustesse des sauvegardes ;
+
+la qualité des exports PDF.
+
+À ce moment-là, chaque extension pourra être ajoutée selon une priorité réelle :
+
+text
+MVP validé
+   ↓
+Import documentaire
+   ↓
+RNCP / RS
+   ↓
+IA locale
+   ↓
+Tests cognitifs
+   ↓
+Synchronisation
+   ↓
+Mobile
+   ↓
+Collaboration
+En résumé : tu ne fais pas un MVP parce que Cognitorium serait une petite idée. Tu fais un MVP parce que Cognitorium est une très grande idée, avec plusieurs parties expérimentales qu’il faut tester séparément avant de construire tout l’écosystème.

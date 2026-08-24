@@ -1,0 +1,309 @@
+{
+  "meta": {
+    "document": "Cognitorium — Document de Paramétrage",
+    "version": "1.0",
+    "date": "2026-08-07",
+    "applicabilite": "MVP-0 à MVP-6",
+    "format": "Ce fichier est la source de vérité. Tout hardcodage interdit."
+  },
+  "scoring": {
+    "description": "Score = Niveau_estimé × Confiance",
+    "echelle_niveau": {
+      "min": 0,
+      "max": 100,
+      "type": "integer"
+    },
+    "poids_preuve": {
+      "auto": 0.3,
+      "diplome": 0.9,
+      "projet": 0.8,
+      "exp": 0.7,
+      "attest": 0.6
+    },
+    "calcul_niveau_estime": {
+      "formule": "moyenne_pondérée",
+      "expression": "SUM(niveau_i × poids_i) / SUM(poids_i)",
+      "arrondi": "1 décimale",
+      "exemple": "Diplôme(80×0.9) + Auto-éval(90×0.3) = 82.5"
+    },
+    "confiance": {
+      "sans_preuve": 0.2,
+      "avec_preuve": "calculée dynamiquement via poids max atteint",
+      "plafond_niveau_sans_preuve": 40,
+      "message_utilisateur": "Aucune preuve détectée — niveau plafonné à 40 et confiance réduite à 0.2. Ajoutez un diplôme, une expérience ou une attestation pour débloquer le scoring complet."
+    },
+    "affichage_ui": {
+      "formule_visible": true,
+      "poids_visibles": true,
+      "sources_listees": true
+    }
+  },
+  "decay_engine": {
+    "description": "Niveau_actuel = Niveau_historique × exp(-λ × Δt)",
+    "formule": "Niveau_actuel = Niveau_historique * exp(-lambda * delta_annees)",
+    "delta_t_unite": "années (float, précision jour)",
+    "lambda": {
+      "technique": 0.12,
+      "transversal": 0.06,
+      "langue": 0.08
+    },
+    "lambda_configurables_ui": true,
+    "calcul_trigger": [
+      "ouverture_application",
+      "modification_profil",
+      "consultation_competence",
+      "background_timer_objectifs_actifs"
+    ],
+    "affichage": {
+      "niveau_historique": true,
+      "niveau_actuel": true,
+      "potentiel_recuperation": true,
+      "courbe_visuelle": "mini-graphique temporel dans la sidebar compétence"
+    },
+    "rappels": {
+      "condition": "competence en declin (niveau_actuel < niveau_historique * 0.8) ET liée à un objectif actif",
+      "action": "notification UI non-bloquante + badge orange sur le projet concerné"
+    }
+  },
+  "matching_rome": {
+    "description": "TF-IDF + Similarité Cosinus entre vecteur profil et vecteurs ROME",
+    "champs_profil_vectorises": [
+      "competences.name",
+      "competences.contexte_nom",
+      "parcours_event.raw_text"
+    ],
+    "champs_rome_vectorises": [
+      "competences_savoirs",
+      "competences_savoir_faire"
+    ],
+    "seuils_categorisation": {
+      "disponible": {
+        "min": 0.75,
+        "max": 1.0,
+        "label": "Disponible maintenant",
+        "couleur_ui": "#2ECC71"
+      },
+      "formation_rapide": {
+        "min": 0.5,
+        "max": 0.75,
+        "label": "Formation rapide",
+        "couleur_ui": "#3498DB"
+      },
+      "formation_longue": {
+        "min": 0.25,
+        "max": 0.5,
+        "label": "Formation longue",
+        "couleur_ui": "#F39C12"
+      },
+      "eloigne": {
+        "min": 0.0,
+        "max": 0.25,
+        "label": "Éloigné / À explorer",
+        "couleur_ui": "#9B59B6"
+      }
+    },
+    "seuils_configurables": true,
+    "raisonnement_affiche": "pourcentage de matching + liste des compétences alignées + écarts identifiés"
+  },
+  "biais_cognitifs": {
+    "echelle": "Likert 7 points",
+    "bornes": {
+      "1": "Pas du tout d'accord",
+      "7": "Tout à fait d'accord"
+    },
+    "nb_questions": 10,
+    "questions": [
+      {
+        "id": "confirmation",
+        "libelle": "Je cherche activement des informations qui confirment mes opinions préexistantes."
+      },
+      {
+        "id": "ancrage",
+        "libelle": "Je me fie fortement à la première information reçue pour prendre une décision."
+      },
+      {
+        "id": "exces_confiance",
+        "libelle": "Je suis généralement très confiant dans la justesse de mes jugements."
+      },
+      {
+        "id": "statu_quo",
+        "libelle": "Je préfère maintenir les choses en l'état plutôt que de les changer."
+      },
+      {
+        "id": "aversion_perte",
+        "libelle": "La peur de perdre m'affecte plus que la perspective de gagner."
+      },
+      {
+        "id": "effet_halo",
+        "libelle": "Une première impression positive influence fortement mon jugement global."
+      },
+      {
+        "id": "disponibilite",
+        "libelle": "Je surestime la probabilité d'événements récents ou marquants."
+      },
+      {
+        "id": "retrospectif",
+        "libelle": "Après coup, j'ai tendance à penser que les événements étaient prévisibles."
+      },
+      {
+        "id": "autorite",
+        "libelle": "Je me fie facilement aux avis des experts ou des autorités."
+      },
+      {
+        "id": "omission",
+        "libelle": "Je considère qu'une action nuisible est pire qu'une omission nuisible."
+      }
+    ],
+    "affichage_resultat": {
+      "score_par_biais": true,
+      "niveau_global": "moyenne des 10 scores normalisée 0-100",
+      "explication": "texte adapté par biais",
+      "strategie": "conseil personnalisé par biais dominant (score > 5)"
+    }
+  },
+  "graphes": {
+    "moteur_calcul": "NetworkX",
+    "moteur_affichage": "PySide6 QGraphicsView",
+    "profondeur_defaut": 2,
+    "profondeur_max": 5,
+    "curseur_ui": true,
+    "types_noeuds": {
+      "competence": {
+        "couleur": "#2ECC71",
+        "forme": "cercle"
+      },
+      "projet": {
+        "couleur": "#3498DB",
+        "forme": "carré"
+      },
+      "metier_rome": {
+        "couleur": "#9B59B6",
+        "forme": "hexagone"
+      },
+      "formation": {
+        "couleur": "#F39C12",
+        "forme": "triangle"
+      },
+      "experience": {
+        "couleur": "#E74C3C",
+        "forme": "diamant"
+      },
+      "objectif": {
+        "couleur": "#1ABC9C",
+        "forme": "étoile"
+      }
+    },
+    "interaction": {
+      "clic_noeud": "ouvre sidebar détail (niveau, preuves, decay, formules)",
+      "glisser_deposer": true,
+      "zoom": "molette +/- boutons",
+      "reinitialisation_vue": "bouton 'Centrer'"
+    }
+  },
+  "cv": {
+    "modeles": [
+      "Classique",
+      "Moderne",
+      "ATS"
+    ],
+    "bibliotheque_pdf": "ReportLab (fallback fpdf2)",
+    "ats_specifications": {
+      "format": "texte brut, colonne unique",
+      "polices": [
+        "Arial",
+        "Calibri"
+      ],
+      "sections_obligatoires": [
+        "Contact Information",
+        "Professional Summary",
+        "Skills",
+        "Work Experience",
+        "Education",
+        "References"
+      ],
+      "references_texte": "Disponibles sur demande",
+      "dates_format": "MM/AAAA",
+      "sans_colonnes": true,
+      "sans_tableaux": true,
+      "sans_images": true
+    },
+    "export": {
+      "formats": [
+        "PDF"
+      ],
+      "nom_fichier": "CV_{prenom}_{nom}_{modele}_{date}.pdf",
+      "ciblage": "possibilité de générer un CV orienté vers un métier cible (surlignage des compétences alignées)"
+    }
+  },
+  "sauvegardes": {
+    "nb_versions_auto": 5,
+    "nb_versions_manuel": "illimité",
+    "declencheurs_auto": [
+      "fermeture_propre_application",
+      "validation_competence_importante (statut 'validee' atteint)",
+      "inactivite_30min_si_modifications_presentes"
+    ],
+    "stockage": {
+      "windows": "%APPDATA%/Cognitorium/Backups/",
+      "fallback_visibilite": "Documents/Cognitorium/Backups/"
+    },
+    "format": ".cognitorium_backup (ZIP contenant base SQLite + métadonnées JSON)",
+    "restauration": "via fichier .cognitorium_backup sélectionné dans l'interface"
+  },
+  "securite": {
+    "mvp": "pas de chiffrement",
+    "final": "SQLCipher",
+    "note": "La base reste en clair sur le poste local en MVP. Pas de cloud."
+  },
+  "logs": {
+    "format": "JSON Lines (structuré) avec fallback texte",
+    "niveau_defaut": "INFO",
+    "niveau_dev": "DEBUG",
+    "rotation": {
+      "taille_max": "10 Mo",
+      "nb_fichiers": 5
+    },
+    "champs_obligatoires": [
+      "timestamp",
+      "niveau",
+      "module",
+      "message"
+    ],
+    "champs_optionnels": [
+      "context_json",
+      "user_id",
+      "traceback"
+    ]
+  },
+  "extraction_competences": {
+    "methode_mvp": "déterministe (règles + regex / PhraseMatcher)",
+    "lexique": "mots-clés métiers, technologies, softskills",
+    "mapping_rome": "table manuelle initiale Compétence_utilisateur ↔ Compétence_ROME, extensible par l'utilisateur",
+    "precision_cible": "pas de seuil strict en MVP (explicabilité prioritaire)",
+    "v2": "Random Forest / TF-IDF"
+  },
+  "tests": {
+    "profils_synthetiques": 4,
+    "couverture_acceptation": "90% des cas métier",
+    "formats": "JSON d'import complet"
+  },
+  "distribution": {
+    "strategie": "100% gratuite",
+    "signature": "auto-signature (alerte Windows à la première installation)",
+    "installateur": "Inno Setup",
+    "executable": "PyInstaller"
+  },
+  "ui_ux": {
+    "onboarding": "QWizard 12 étapes, bloque dashboard tant que non terminé",
+    "timeline": "cliquable → sidebar d'édition (pas de popup)",
+    "graphe": "clic nœud → sidebar détail",
+    "mockups_prioritaires": [
+      "onboarding",
+      "dashboard",
+      "vue_competence",
+      "graphe",
+      "editeur_cv",
+      "timeline"
+    ]
+  }
+}
