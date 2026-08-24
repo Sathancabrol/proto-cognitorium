@@ -2,20 +2,66 @@ import React from 'react';
 import { 
   Sparkles, 
   Compass, 
-  Clock, 
-  Brain, 
-  Network, 
-  Plus, 
   RotateCcw, 
-  LayoutDashboard, 
-  ListTree, 
-  Table2, 
   AlertCircle, 
   User, 
-  ChevronDown 
+  Briefcase, 
+  Award, 
+  TrendingUp 
 } from 'lucide-react';
-import { AppActiveTab, ComplexityMode, CognitiveProfile } from '../types';
+import { AppActiveTab, ComplexityMode, CognitiveProfile, CognitoriumSection, SECTION_OF_TAB, SECTION_LABELS, SECTION_DEFAULT_TAB } from '../types';
 import { PROFILES_PRESETS } from '../data/initialData';
+
+// ============================================================================
+// MON COGNITORIUM — 5 sections orientées parcours, les vues sont des modes
+// ============================================================================
+const SECTION_META: { id: CognitoriumSection; icon: React.ReactNode; color: string }[] = [
+  { id: 'profil', icon: <User className="w-3.5 h-3.5" />, color: 'blue' },
+  { id: 'experiences', icon: <Briefcase className="w-3.5 h-3.5" />, color: 'emerald' },
+  { id: 'competences', icon: <Award className="w-3.5 h-3.5" />, color: 'cyan' },
+  { id: 'possibilites', icon: <Compass className="w-3.5 h-3.5" />, color: 'orange' },
+  { id: 'evolution', icon: <TrendingUp className="w-3.5 h-3.5" />, color: 'indigo' }
+];
+
+const SECTION_VIEWS: Record<CognitoriumSection, { tab: AppActiveTab; label: string; testId: string }[]> = {
+  profil: [
+    { tab: 'dashboard', label: 'Mon Cognitorium', testId: 'tab-btn-dashboard' },
+    { tab: 'signature', label: 'Passeport', testId: 'tab-btn-signature' }
+  ],
+  experiences: [
+    { tab: 'tree', label: 'Arbre & Tâches', testId: 'tab-btn-tree' },
+    { tab: 'network', label: 'Graphe Réseau', testId: 'tab-btn-network' }
+  ],
+  competences: [
+    { tab: 'table', label: 'Tableau', testId: 'tab-btn-table' },
+    { tab: 'network', label: 'Graphe', testId: 'tab-btn-network-competences' },
+    { tab: 'tree', label: 'Arbre', testId: 'tab-btn-tree-competences' }
+  ],
+  possibilites: [
+    { tab: 'horizons', label: 'Horizons ROME', testId: 'tab-btn-horizons' }
+  ],
+  evolution: [
+    { tab: 'decay', label: 'Vitalité & Temps', testId: 'tab-btn-decay' }
+  ]
+};
+
+const ACTIVE_COLORS: Record<string, { active: string }> = {
+  blue: { active: 'bg-white text-blue-600 shadow-xs' },
+  emerald: { active: 'bg-white text-emerald-600 shadow-xs' },
+  cyan: { active: 'bg-white text-cyan-600 shadow-xs' },
+  orange: { active: 'bg-white text-orange-600 shadow-xs' },
+  indigo: { active: 'bg-white text-indigo-600 shadow-xs' }
+};
+
+const VIEW_ACTIVE_COLORS: Record<AppActiveTab, string> = {
+  dashboard: 'bg-blue-600 text-white',
+  signature: 'bg-pink-600 text-white',
+  tree: 'bg-emerald-600 text-white',
+  network: 'bg-blue-600 text-white',
+  table: 'bg-cyan-600 text-white',
+  horizons: 'bg-orange-600 text-white',
+  decay: 'bg-indigo-600 text-white'
+};
 
 interface HeaderProps {
   activeTab: AppActiveTab;
@@ -110,99 +156,44 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Center: Tabs Navigation */}
-        <nav className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/60 overflow-x-auto max-w-full">
-          <button
-            id="tab-btn-dashboard"
-            onClick={() => onTabChange('dashboard')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-              activeTab === 'dashboard'
-                ? 'bg-white text-blue-600 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <LayoutDashboard className="w-3.5 h-3.5" />
-            <span>Mon Cognitorium</span>
-          </button>
+        {/* Center: Sections Navigation (MON COGNITORIUM en 5 sections) */}
+        <div className="flex flex-col items-center gap-1.5 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/60 overflow-x-auto max-w-full">
+          <nav className="flex items-center gap-0.5">
+            {SECTION_META.map((s) => {
+              const isActive = SECTION_OF_TAB[activeTab] === s.id;
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => onTabChange(SECTION_DEFAULT_TAB[s.id])}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                    isActive ? ACTIVE_COLORS[s.color].active : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {s.icon}
+                  <span>{SECTION_LABELS[s.id]}</span>
+                </button>
+              );
+            })}
+          </nav>
 
-          <button
-            id="tab-btn-network"
-            onClick={() => onTabChange('network')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-              activeTab === 'network'
-                ? 'bg-white text-blue-600 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Network className="w-3.5 h-3.5" />
-            <span>Graphe Réseau</span>
-          </button>
-
-          <button
-            id="tab-btn-tree"
-            onClick={() => onTabChange('tree')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-              activeTab === 'tree'
-                ? 'bg-white text-emerald-600 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <ListTree className="w-3.5 h-3.5" />
-            <span>Arbre & Tâches</span>
-          </button>
-
-          <button
-            id="tab-btn-table"
-            onClick={() => onTabChange('table')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-              activeTab === 'table'
-                ? 'bg-white text-cyan-600 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Table2 className="w-3.5 h-3.5" />
-            <span>Matrice</span>
-          </button>
-
-          <button
-            id="tab-btn-horizons"
-            onClick={() => onTabChange('horizons')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-              activeTab === 'horizons'
-                ? 'bg-white text-orange-600 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Compass className="w-3.5 h-3.5" />
-            <span>Horizons ROME</span>
-          </button>
-
-          <button
-            id="tab-btn-decay"
-            onClick={() => onTabChange('decay')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-              activeTab === 'decay'
-                ? 'bg-white text-indigo-600 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Clock className="w-3.5 h-3.5" />
-            <span>Vitalité ({simulationYear})</span>
-          </button>
-
-          <button
-            id="tab-btn-signature"
-            onClick={() => onTabChange('signature')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-              activeTab === 'signature'
-                ? 'bg-white text-pink-600 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Brain className="w-3.5 h-3.5" />
-            <span>Passeport</span>
-          </button>
-        </nav>
+          {/* Modes de représentation de la section active */}
+          {SECTION_VIEWS[SECTION_OF_TAB[activeTab]].length > 1 && (
+            <nav className="flex items-center gap-0.5">
+              {SECTION_VIEWS[SECTION_OF_TAB[activeTab]].map((v) => (
+                <button
+                  key={v.testId}
+                  id={v.testId}
+                  onClick={() => onTabChange(v.tab)}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all ${
+                    activeTab === v.tab ? VIEW_ACTIVE_COLORS[v.tab] : 'text-slate-500 hover:text-slate-800 hover:bg-white/70'
+                  }`}
+                >
+                  {v.label}
+                </button>
+              ))}
+            </nav>
+          )}
+        </div>
 
         {/* Right CTA Actions */}
         <div className="hidden lg:flex items-center gap-2">

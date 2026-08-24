@@ -8,6 +8,17 @@ dotenv.config();
 
 let aiClient: GoogleGenAI | null = null;
 
+/** Normalisation de chaîne : minuscules, sans accents, alphanumérique (pour les correspondances de noms). */
+function normalizeName(s: string): string {
+  return (s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function getAiClient(): GoogleGenAI | null {
   if (!aiClient && process.env.GEMINI_API_KEY) {
     aiClient = new GoogleGenAI({
@@ -106,6 +117,7 @@ async function startServer() {
                 matchScore: 82,
                 rationale: 'Parcours combinant sens du détail et exécution structurée.',
                 matchingSkills: ['Exécution & Pratique Opérationnelle', 'Adaptabilité & Rigueur de Contexte'],
+                matchingSkillIds: [`skill-${idBase}-1`, `skill-${idBase}-2`],
                 missingSkills: [
                   {
                     name: 'Gouvernance Stratégique',
@@ -206,7 +218,12 @@ ${experienceText}
                         "Humain & Médiation"
                       ]
                     },
-                    description: { type: Type.STRING, description: "Explication de la capacité cognitive" }
+                    description: { type: Type.STRING, description: "Explication de la capacité cognitive" },
+                    relatedSkills: {
+                      type: Type.ARRAY,
+                      items: { type: Type.STRING },
+                      description: "Noms EXACTS des compétences de la liste ci-dessus qui nourrissent cette capacité (2 à 4 max). Ne pas inventer de noms."
+                    }
                   },
                   required: ["name", "level", "cognitiveDimension", "description"]
                 }
@@ -269,18 +286,33 @@ ${experienceText}
         lastPracticedYear: s.lastPracticedYear || parsed.experience.endYear || 2026
       }));
 
-      const capacityNodes = (parsed.capacities || []).map((c: any, idx: number) => ({
-        ...c,
-        id: `cap-${idPrefix}-${idx + 1}`,
-        category: 'capacity_cognitive',
-        underlyingSkills: skillNodes.map((s: { id: string }) => s.id)
-      }));
+      const capacityNodes = (parsed.capacities || []).map((c: any, idx: number) => {
+        // Relier chaque capacité à SES compétences (par nom exact), pas à toutes les compétences.
+        const relatedNames = new Set((c.relatedSkills || []).map((s: string) => normalizeName(s)));
+        const relatedIds = skillNodes
+          .filter((s: any) => relatedNames.has(normalizeName(s.name)))
+          .map((s: { id: string }) => s.id);
+        return {
+          ...c,
+          id: `cap-${idPrefix}-${idx + 1}`,
+          category: 'capacity_cognitive',
+          underlyingSkills: relatedIds.length > 0 ? relatedIds : []
+        };
+      });
 
-      const jobNodes = (parsed.potentialJobs || []).map((j: any, idx: number) => ({
-        ...j,
-        id: `job-${idPrefix}-${idx + 1}`,
-        category: 'horizon_job'
-      }));
+      // Les métiers sont reliés par leurs compétences matching (par nom), jamais par défaut.
+      const jobNodes = (parsed.potentialJobs || []).map((j: any, idx: number) => {
+        const matchingNames = new Set((j.matchingSkills || []).map((s: string) => normalizeName(s)));
+        const matchingIds = skillNodes
+          .filter((s: any) => matchingNames.has(normalizeName(s.name)))
+          .map((s: { id: string }) => s.id);
+        return {
+          ...j,
+          id: `job-${idPrefix}-${idx + 1}`,
+          category: 'horizon_job',
+          matchingSkillIds: matchingIds
+        };
+      });
 
       return res.json({
         success: true,

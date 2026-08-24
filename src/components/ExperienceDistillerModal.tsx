@@ -9,6 +9,17 @@ interface ExperienceDistillerModalProps {
   onDistillComplete: (newNodes: AnyCognitiveNode[], newEdges: GraphEdge[]) => void;
 }
 
+/** Normalisation de chaîne pour les correspondances de noms (compétences ↔ capacités ↔ métiers). */
+function normalizeName(s: string): string {
+  return (s || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9 ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 const SAMPLE_NARRATIVES = [
   {
     title: '🏗️ Chantier & Gros Œuvre',
@@ -90,23 +101,27 @@ export const ExperienceDistillerModal: React.FC<ExperienceDistillerModalProps> =
         evidence: [{ id: `ev-${Date.now()}`, source: 'declaration', label: 'Récit saisi par l\'utilisateur', confidenceScore: 98 }]
       };
 
+      // L'IA PROPOSE, l'humain VALIDE : tout ce qui est extrait arrive en attente de validation.
       const preparedSkills: SkillNode[] = (skills || []).map((s: any, idx: number) => ({
         ...s,
-        verificationStatus: 'verified',
-        confidenceScore: 92,
-        evidence: [{ id: `ev-s-${idx}-${Date.now()}`, source: 'ai_inference', label: `Déduit de l'expérience « ${preparedExp.name} »`, confidenceScore: 92 }]
+        verificationStatus: 'pending',
+        inferenceType: 'inference_a_valider',
+        confidenceScore: 82,
+        evidence: [{ id: `ev-s-${idx}-${Date.now()}`, source: 'ai_inference', label: `Proposé par l'IA à partir de l'expérience « ${preparedExp.name} »`, confidenceScore: 82 }]
       }));
 
       const preparedCapacities: CapacityNode[] = (capacities || []).map((c: any) => ({
         ...c,
-        verificationStatus: 'verified',
-        confidenceScore: 90
+        verificationStatus: 'pending',
+        inferenceType: 'inference_a_valider',
+        confidenceScore: 78
       }));
 
       const preparedHorizons: HorizonJobNode[] = (potentialJobs || []).map((j: any) => ({
         ...j,
-        verificationStatus: 'verified',
-        confidenceScore: 88
+        verificationStatus: 'pending',
+        inferenceType: 'inference_a_valider',
+        confidenceScore: 75
       }));
 
       setExtractedData({
@@ -144,6 +159,23 @@ export const ExperienceDistillerModal: React.FC<ExperienceDistillerModalProps> =
     const finalSkills = extractedData.skills.filter((s) => selectedSkillIds[s.id]);
     const finalCapacities = extractedData.capacities.filter((c) => selectedCapacityIds[c.id]);
     const finalHorizons = extractedData.potentialJobs.filter((h) => selectedHorizonIds[h.id]);
+
+    // Correspondance par nom : une capacité ou un métier n'est relié qu'aux compétences qu'il cite.
+    const skillNameToId = new Map(finalSkills.map((s) => [normalizeName(s.name), s.id]));
+    const mapSkillRefs = (refs: string[] | undefined): string[] => {
+      if (!refs) return [];
+      const ids: string[] = [];
+      for (const ref of refs) {
+        const direct = finalSkills.find((s) => s.id === ref);
+        if (direct) {
+          ids.push(direct.id);
+        } else {
+          const byName = skillNameToId.get(normalizeName(ref));
+          if (byName) ids.push(byName);
+        }
+      }
+      return Array.from(new Set(ids));
+    };
     const taskLabels = extractedData.experience.missions?.length
       ? extractedData.experience.missions
       : ['Décrire les actions réalisées'];
@@ -200,28 +232,48 @@ export const ExperienceDistillerModal: React.FC<ExperienceDistillerModalProps> =
       });
     });
 
+    // Chaque capacité n'est reliée qu'aux compétences qui la nourrissent (pas de "tout → tout").
     finalCapacities.forEach((c) => {
-      finalSkills.forEach((s) => {
+      const feedingSkills = mapSkillRefs(c.underlyingSkills);
+      feedingSkills.forEach((skillId) => {
         newEdges.push({
-          id: `edge-${s.id}-${c.id}`,
-          source: s.id,
+          id: `edge-${skillId}-${c.id}`,
+          source: skillId,
           target: c.id,
           type: 'feeds_capacity',
-          strength: 0.85
+          strength: 0.85,
+          label: 'Cette compétence nourrit la capacité'
         });
       });
     });
 
+    // Chaque métier n'est relié qu'aux compétences matching (par nom) et aux capacités qu'elles alimentent.
     finalHorizons.forEach((j) => {
-      if (finalCapacities.length > 0) {
+      const jobSkillIds = mapSkillRefs(j.matchingSkillIds || j.matchingSkills);
+      jobSkillIds.forEach((skillId) => {
         newEdges.push({
-          id: `edge-${finalCapacities[0].id}-${j.id}`,
-          source: finalCapacities[0].id,
+          id: `edge-${skillId}-${j.id}`,
+          source: skillId,
           target: j.id,
           type: 'unlocks_horizon',
-          strength: 0.9
+          strength: 0.9,
+          label: 'Cette compétence ouvre ce métier'
         });
-      }
+      });
+      // Si une capacité est nourrie par l'une de ces compétences, elle devient un pont vers le métier.
+      finalCapacities.forEach((c) => {
+        const feeds = mapSkillRefs(c.underlyingSkills);
+        if (feeds.some((id) => jobSkillIds.includes(id))) {
+          newEdges.push({
+            id: `edge-${c.id}-${j.id}`,
+            source: c.id,
+            target: j.id,
+            type: 'unlocks_horizon',
+            strength: 0.7,
+            label: 'Cette capacité renforce le rapprochement'
+          });
+        }
+      });
     });
 
     confetti({
@@ -447,7 +499,9 @@ export const ExperienceDistillerModal: React.FC<ExperienceDistillerModalProps> =
                             )}
                           </div>
                         </div>
-                        <span className="text-xs font-bold text-orange-600">{job.matchScore}%</span>
+                        <span className="text-[10px] font-bold text-orange-600 bg-orange-50 border border-orange-200 rounded-lg px-2 py-0.5">
+                          Proposition IA · à valider
+                        </span>
                       </label>
                     ))}
                   </div>

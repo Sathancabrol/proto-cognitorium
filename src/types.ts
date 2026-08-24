@@ -16,7 +16,7 @@ export type InferenceType = 'explicite' | 'inference_forte' | 'inference_a_valid
 
 export interface EvidenceItem {
   id: string;
-  source: 'cv' | 'declaration' | 'project' | 'diploma' | 'ai_inference' | 'peer_review' | 'validation_humaine';
+  source: 'cv' | 'declaration' | 'project' | 'diploma' | 'exp' | 'attest' | 'ai_inference' | 'peer_review' | 'validation_humaine';
   label: string;
   detail?: string;
   confidenceScore: number; // 0 - 100
@@ -128,11 +128,13 @@ export interface HorizonJobNode extends BaseNode {
   domain: string;
   romeCode?: string; // e.g. 'F1208', 'K2102', 'M1508'
   romeTitle?: string;
-  matchScore: number; // 0 - 100%
-  compatibilityLevel?: 'Élevée' | 'Très Élevée' | 'Modérée' | 'En développement';
+  matchScore: number; // 0 - 100% (indice de proximité — toujours accompagné de son explication)
+  compatibilityLevel?: 'Élevée' | 'Très Élevée' | 'Modérée' | 'En développement' | 'Très forte' | 'Forte' | 'À explorer';
   isDirectlyExercised?: boolean;
   rationale: string;
   matchingSkills: string[];
+  /** IDs des compétences du profil qui ouvrent ce métier (relations précises, pas "tout → tout"). */
+  matchingSkillIds?: string[];
   missingSkills: {
     name: string;
     importance: 'critique' | 'recommandée' | 'bonus';
@@ -233,6 +235,41 @@ export type AppActiveTab =
   | 'horizons'    // Passerelles ROME & Horizons Métiers
   | 'decay'       // Vitalité & Temporalité (Decay Engine)
   | 'signature';  // Signature Cognitive & Passeport
+
+// ============================================================================
+// STRUCTURE DU PRODUIT : MON COGNITORIUM est organisé en 5 sections orientées
+// parcours. Les vues (Graphe, Arbre, Tableau, Temps) sont des MODES de
+// représentation à l'intérieur des sections, pas des destinations expertes.
+// ============================================================================
+export type CognitoriumSection = 'profil' | 'experiences' | 'competences' | 'possibilites' | 'evolution';
+
+export const SECTION_LABELS: Record<CognitoriumSection, string> = {
+  profil: 'Mon profil',
+  experiences: 'Mes expériences',
+  competences: 'Mes compétences',
+  possibilites: 'Mes possibilités',
+  evolution: 'Mon évolution'
+};
+
+/** Section principale de chaque vue (une vue appartient à une seule section). */
+export const SECTION_OF_TAB: Record<AppActiveTab, CognitoriumSection> = {
+  dashboard: 'profil',
+  signature: 'profil',
+  tree: 'experiences',
+  network: 'experiences',
+  table: 'competences',
+  horizons: 'possibilites',
+  decay: 'evolution'
+};
+
+/** Vues par défaut de chaque section. */
+export const SECTION_DEFAULT_TAB: Record<CognitoriumSection, AppActiveTab> = {
+  profil: 'dashboard',
+  experiences: 'tree',
+  competences: 'table',
+  possibilites: 'horizons',
+  evolution: 'decay'
+};
 
 export type ComplexityMode = 'essential' | 'expert';
 

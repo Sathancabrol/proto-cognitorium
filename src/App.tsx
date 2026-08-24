@@ -301,6 +301,8 @@ export default function App() {
         {activeTab === 'horizons' && (
           <HorizonsBridge
             nodes={profile.nodes}
+            profile={profile}
+            complexityMode={complexityMode}
             onSelectNode={setSelectedNode}
             onAddHorizon={handleAddHorizon}
           />
