@@ -2,6 +2,7 @@ import React from 'react';
 import { AnyCognitiveNode, GraphEdge, SkillNode, ExperienceNode, TaskNode, CapacityNode, HorizonJobNode } from '../types';
 import { calculateSkillVitality, getVitalityStatus } from '../utils/decay';
 import { getNodeVisualDescriptor } from '../utils/nodeVisualDescriptor';
+import { getEpistemicLevel, EPISTEMIC_SCALE } from '../utils/epistemics';
 import { 
   X, 
   Sparkles, 
@@ -59,6 +60,7 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
   const vitalityStatus = isSkill ? getVitalityStatus(vitality) : null;
 
   const isPending = node.verificationStatus === 'pending' || node.verificationStatus === 'inferred';
+  const epistemic = getEpistemicLevel(node);
 
   const handleReactivateClick = () => {
     if (!skillNode) return;
@@ -114,6 +116,14 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
                 {node.inferenceType === 'inference_a_valider' && '❓ Inférence à Valider'}
               </span>
             )}
+
+            {/* Échelle épistémique : ce qui est FAIT vs ce qui est INTERPRÉTÉ */}
+            <span
+              className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${epistemic.badge}`}
+              title={epistemic.description}
+            >
+              Niveau {epistemic.level}/5 · {epistemic.label}
+            </span>
 
             {/* Verification Status Badge */}
             {isPending ? (
@@ -264,7 +274,41 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
           </div>
         )}
 
-        {/* Evidence & Provenance Section */}
+        {/* Échelle épistémique : fait vs interprétation */}
+        <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+          <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+            <Layers className="w-3.5 h-3.5" /> Échelle épistémique — où se situe cet élément ?
+          </span>
+          <div className="space-y-1">
+            {EPISTEMIC_SCALE.map((lvl) => (
+              <div
+                key={lvl.level}
+                className={`flex items-start gap-2 text-[10px] rounded-lg px-2 py-1 ${
+                  lvl.level === epistemic.level
+                    ? 'bg-white border border-slate-300 font-bold text-slate-900 shadow-xs'
+                    : 'text-slate-500'
+                }`}
+              >
+                <span className={`w-4 h-4 rounded-full shrink-0 flex items-center justify-center text-[8px] font-black text-white ${
+                  lvl.level === epistemic.level ? 'bg-slate-800' : 'bg-slate-300'
+                }`}>
+                  {lvl.level}
+                </span>
+                <span>
+                  <strong>{lvl.label}</strong> — {lvl.description}
+                </span>
+              </div>
+            ))}
+          </div>
+          {epistemic.level >= 4 && (
+            <p className="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5 flex items-start gap-1.5">
+              <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
+              <span>Hypothèse : à confirmer par un échange humain. Le niveau 5 (conclusion psychologique) n'est jamais déduit automatiquement.</span>
+            </p>
+          )}
+        </div>
+
+        {/* Evidence & Provenance Section — Source / Expérience / Mission / Résultat / Contexte / Validation */}
         {node.evidence && node.evidence.length > 0 && (
           <div className="space-y-2">
             <h3 className="text-xs font-bold uppercase text-slate-400 tracking-wider flex items-center gap-1.5">
@@ -273,32 +317,66 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
             </h3>
             <div className="space-y-1.5">
               {node.evidence.map((ev, idx) => (
-                <div key={idx} className="p-3 bg-blue-50/50 border border-blue-100 rounded-xl text-xs space-y-1">
-                  <div className="flex items-center justify-between font-semibold text-blue-950">
-                    <span>{ev.label}</span>
-                    <span className="text-[10px] px-1.5 py-0.2 bg-blue-100 text-blue-800 rounded font-bold uppercase">
+                <div key={idx} className="p-3 bg-blue-50/50 border border-blue-100 rounded-xl text-xs space-y-1.5">
+                  <div className="flex items-center justify-between gap-2 font-semibold text-blue-950">
+                    <span className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-sm shrink-0">
+                        {ev.source === 'cv' && '📄'}
+                        {ev.source === 'diploma' && '🎓'}
+                        {ev.source === 'project' && '🛠️'}
+                        {ev.source === 'declaration' && '🗣️'}
+                        {ev.source === 'ai_inference' && '🤖'}
+                        {ev.source === 'peer_review' && '🤝'}
+                        {ev.source === 'validation_humaine' && '✅'}
+                      </span>
+                      <span className="truncate">{ev.label}</span>
+                    </span>
+                    <span className="text-[9px] px-1.5 py-0.2 bg-blue-100 text-blue-800 rounded font-bold uppercase shrink-0">
                       {ev.source}
                     </span>
                   </div>
-                  {ev.volumeMetric && (
-                    <span className="text-[11px] text-blue-700 font-semibold block">
-                      📈 Volume : {ev.volumeMetric}
+                  {ev.inferenceMethod && (
+                    <span className="text-[10px] text-blue-700 block">
+                      <strong>Méthode :</strong> {ev.inferenceMethod}
                     </span>
                   )}
                   {ev.detail && (
-                    <p className="text-[11px] text-blue-800 italic">« {ev.detail} »</p>
+                    <p className="text-[11px] text-blue-800 bg-white/70 rounded-lg px-2 py-1.5">
+                      <strong className="text-[9px] uppercase text-blue-500">Mission / Résultat :</strong> {ev.detail}
+                    </p>
+                  )}
+                  {ev.volumeMetric && (
+                    <span className="text-[11px] text-blue-700 font-semibold block">
+                      📈 <strong>Résultat quantitatif :</strong> {ev.volumeMetric}
+                    </span>
                   )}
                   {ev.sourceDocument && (
                     <span className="text-[10px] text-blue-700 block">
-                      Document : {ev.sourceDocument}{ev.sourcePage ? ` · p. ${ev.sourcePage}` : ''}
+                      🗂️ <strong>Document source :</strong> {ev.sourceDocument}{ev.sourcePage ? ` · p. ${ev.sourcePage}` : ''}
                     </span>
                   )}
                   {ev.date && (
-                    <span className="text-[10px] text-slate-400 block">Date / Période : {ev.date}</span>
+                    <span className="text-[10px] text-slate-400 block">🗓️ <strong>Contexte temporel :</strong> {ev.date}</span>
                   )}
                 </div>
               ))}
             </div>
+
+            {/* Validation humaine */}
+            {node.verificationStatus === 'verified' && (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs space-y-1">
+                <span className="font-bold text-emerald-800 flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  Validation humaine
+                </span>
+                {node.verifiedBy && (
+                  <span className="text-[11px] text-emerald-700 block">Validé par : {node.verifiedBy}</span>
+                )}
+                {node.verifiedAt && (
+                  <span className="text-[11px] text-emerald-700 block">Date : {node.verifiedAt}</span>
+                )}
+              </div>
+            )}
           </div>
         )}
 
