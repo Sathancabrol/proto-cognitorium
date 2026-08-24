@@ -22,7 +22,7 @@ import {
   ComplexityMode 
 } from './types';
 
-const STORAGE_KEY = 'cognitorium_active_profile_v4_cv_enriched';
+const STORAGE_KEY = 'cognitorium_active_profile_v5_graph_levels';
 
 export default function App() {
   const [profile, setProfile] = useState<CognitiveProfile>(() => {
@@ -254,7 +254,7 @@ export default function App() {
                   Cartographie Dynamique du Réseau Cognitif
                 </h1>
                 <p className="text-xs text-slate-500">
-                  Traçabilité continue : Expériences ➔ Compétences ➔ Capacités cognitives méta ➔ Horizons ROME
+                  5 niveaux traçables : Expérience ➔ Tâche ➔ Compétence ➔ Cognition ➔ Matching métier
                 </p>
               </div>
 

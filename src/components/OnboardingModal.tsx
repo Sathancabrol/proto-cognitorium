@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Sparkles, GraduationCap, Briefcase, RefreshCw, Upload, FileText, ArrowRight, CheckCircle2, User, HelpCircle, Loader2 } from 'lucide-react';
-import { CognitiveProfile, UserJourneyType, AnyCognitiveNode, GraphEdge } from '../types';
+import { CognitiveProfile, UserJourneyType, AnyCognitiveNode, GraphEdge, TaskNode } from '../types';
 import { PROFILES_PRESETS } from '../data/initialData';
 import confetti from 'canvas-confetti';
 
@@ -62,23 +62,50 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       }
 
       const { experience, skills, capacities, potentialJobs } = data.distilled;
+      const taskLabels: string[] = experience.missions?.length
+        ? experience.missions
+        : ['Décrire les actions réalisées'];
+      const tasks: TaskNode[] = taskLabels.map((label, index) => ({
+        id: `task-${experience.id}-${index + 1}`,
+        name: label,
+        category: 'task',
+        experienceId: experience.id,
+        context: experience.institutionOrContext,
+        actions: [label],
+        skillsProduced: (skills || []).map((skill: { id: string }) => skill.id),
+        description: 'Tâche extraite du CV et soumise à validation.',
+        verificationStatus: 'pending',
+        confidenceScore: 85,
+        inferenceType: 'inference_a_valider'
+      }));
 
       const newNodes: AnyCognitiveNode[] = [
         experience,
+        ...tasks,
         ...(skills || []).map((s: any) => ({ ...s, verificationStatus: 'pending' })),
         ...(capacities || []).map((c: any) => ({ ...c, verificationStatus: 'pending' })),
         ...(potentialJobs || []).map((j: any) => ({ ...j, verificationStatus: 'pending' }))
       ];
 
       const newEdges: GraphEdge[] = [];
-      (skills || []).forEach((s: any) => {
+      tasks.forEach((task) => {
         newEdges.push({
-          id: `edge-${experience.id}-${s.id}`,
+          id: `edge-${experience.id}-${task.id}`,
           source: experience.id,
-          target: s.id,
-          type: 'acquired_in',
-          strength: 0.9,
-          label: 'Acquis dans ce parcours'
+          target: task.id,
+          type: 'composed_of',
+          strength: 0.95,
+          label: 'Tâche issue de cette expérience'
+        });
+        (skills || []).forEach((skill: { id: string }) => {
+          newEdges.push({
+            id: `edge-${task.id}-${skill.id}`,
+            source: task.id,
+            target: skill.id,
+            type: 'demonstrates_skill',
+            strength: 0.85,
+            label: 'Cette tâche démontre la compétence'
+          });
         });
       });
 

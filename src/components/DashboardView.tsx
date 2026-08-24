@@ -435,7 +435,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 Graphe Réseau Dynamique
               </h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Visualisation interactive complète par couches (Expériences → Compétences → Capacités → Horizons).
+                Visualisation interactive en cinq niveaux : Expérience → Tâche → Compétence → Cognition → Matching.
               </p>
             </div>
             <div className="flex items-center gap-1.5 text-xs font-bold text-blue-600">
@@ -455,10 +455,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <ListTree className="w-5 h-5" />
               </div>
               <h3 className="font-bold text-sm text-slate-900 group-hover:text-emerald-600">
-                Vue Arbre & Missions
+                Vue Arbre & Tâches
               </h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Décomposition hiérarchique étape par étape : Expérience ➔ Missions concrètes ➔ Compétences ➔ Capacités.
+                Décomposition hiérarchique étape par étape : Expérience ➔ Tâches concrètes ➔ Compétences ➔ Capacités.
               </p>
             </div>
             <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600">

@@ -104,6 +104,32 @@ export const TRANSITION_PROFILE: CognitiveProfile = {
       y: 400
     },
     {
+      id: 'task-thomas-pilotage-operations',
+      name: 'Piloter délais, budgets et équipes chantier',
+      category: 'task',
+      experienceId: 'exp-thomas-btp-legacy',
+      context: 'Conduite de travaux gros œuvre',
+      actions: ['Ordonnancer les travaux', 'Suivre les écarts budgétaires', 'Coordonner ouvriers et sous-traitants'],
+      skillsProduced: ['skill-thomas-pilotage'],
+      description: 'Tâche récurrente documentant le pilotage opérationnel de chantier.',
+      verificationStatus: 'verified',
+      confidenceScore: 99,
+      evidence: [{ id: 'ev-task-thomas-1', source: 'cv', label: 'Portefeuille de 12 opérations livrées', confidenceScore: 99 }]
+    },
+    {
+      id: 'task-thomas-audit-energetique',
+      name: 'Réaliser un audit thermique et une analyse de cycle de vie',
+      category: 'task',
+      experienceId: 'exp-thomas-formation-eco',
+      context: 'Formation Référent Éco-Construction',
+      actions: ['Observer le bâtiment', 'Calculer les indicateurs thermiques et carbone', 'Comparer les solutions biosourcées'],
+      skillsProduced: ['skill-thomas-re2020'],
+      description: 'Mise en pratique des connaissances RE2020 sur deux chantiers témoins.',
+      verificationStatus: 'verified',
+      confidenceScore: 96,
+      evidence: [{ id: 'ev-task-thomas-2', source: 'project', label: 'Deux audits sur chantiers témoins', confidenceScore: 96 }]
+    },
+    {
       id: 'skill-thomas-pilotage',
       name: 'Pilotage Économique & Ordonnancement de Chantier',
       category: 'skill_tech',
@@ -177,8 +203,10 @@ export const TRANSITION_PROFILE: CognitiveProfile = {
     }
   ],
   edges: [
-    { id: 'et-1', source: 'exp-thomas-btp-legacy', target: 'skill-thomas-pilotage', type: 'acquired_in', strength: 0.98 },
-    { id: 'et-2', source: 'exp-thomas-formation-eco', target: 'skill-thomas-re2020', type: 'acquired_in', strength: 0.95 },
+    { id: 'et-1', source: 'exp-thomas-btp-legacy', target: 'task-thomas-pilotage-operations', type: 'composed_of', strength: 0.98 },
+    { id: 'et-1b', source: 'task-thomas-pilotage-operations', target: 'skill-thomas-pilotage', type: 'demonstrates_skill', strength: 0.98 },
+    { id: 'et-2', source: 'exp-thomas-formation-eco', target: 'task-thomas-audit-energetique', type: 'composed_of', strength: 0.95 },
+    { id: 'et-2b', source: 'task-thomas-audit-energetique', target: 'skill-thomas-re2020', type: 'demonstrates_skill', strength: 0.95 },
     { id: 'et-3', source: 'skill-thomas-pilotage', target: 'cap-thomas-conversion', type: 'feeds_capacity', strength: 0.9 },
     { id: 'et-4', source: 'skill-thomas-re2020', target: 'cap-thomas-conversion', type: 'feeds_capacity', strength: 0.95 },
     { id: 'et-5', source: 'cap-thomas-conversion', target: 'job-thomas-chef-eco', type: 'unlocks_horizon', strength: 0.95 }

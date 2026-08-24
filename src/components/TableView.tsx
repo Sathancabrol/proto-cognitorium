@@ -52,7 +52,8 @@ export const TableView: React.FC<TableViewProps> = ({
       if (selectedCategory === 'skills' && !node.category.startsWith('skill_')) return false;
       if (selectedCategory === 'capacity' && node.category !== 'capacity_cognitive') return false;
       if (selectedCategory === 'horizon' && node.category !== 'horizon_job') return false;
-      if (selectedCategory === 'experience' && !['experience', 'formation', 'research_project', 'mission'].includes(node.category)) return false;
+      if (selectedCategory === 'experience' && !['experience', 'formation', 'research_project'].includes(node.category)) return false;
+      if (selectedCategory === 'task' && node.category !== 'task') return false;
       if (selectedCategory === 'research' && node.category !== 'research_project') return false;
     }
 
@@ -104,9 +105,10 @@ export const TableView: React.FC<TableViewProps> = ({
           >
             <option value="all">Toutes les catégories</option>
             <option value="skills">Compétences</option>
-            <option value="capacity">Capacités Méta</option>
+            <option value="capacity">Cognition</option>
             <option value="horizon">Horizons ROME</option>
             <option value="experience">Expériences & Formations</option>
+            <option value="task">Tâches</option>
             <option value="research">Projets de Recherche</option>
           </select>
 
@@ -150,7 +152,7 @@ export const TableView: React.FC<TableViewProps> = ({
                   const isSkill = node.category.startsWith('skill_');
                   const isCapacity = node.category === 'capacity_cognitive';
                   const isHorizon = node.category === 'horizon_job';
-                  const isMission = node.category === 'mission';
+                  const isTask = node.category === 'task';
                   const isExp = node.category === 'experience' || node.category === 'formation' || node.category === 'research_project';
 
                   const skillNode = isSkill ? (node as SkillNode) : null;
@@ -193,7 +195,7 @@ export const TableView: React.FC<TableViewProps> = ({
                           {node.category === 'experience' && 'Expérience'}
                           {node.category === 'formation' && 'Formation'}
                           {node.category === 'research_project' && '🔬 Recherche'}
-                          {isMission && '📋 Mission'}
+                          {isTask && '📋 Tâche'}
                         </span>
                       </td>
 
@@ -234,8 +236,8 @@ export const TableView: React.FC<TableViewProps> = ({
                           </span>
                         )}
 
-                        {isMission && (
-                          <span className="text-indigo-600 font-medium">Mission documentée</span>
+                        {isTask && (
+                          <span className="text-indigo-600 font-medium">Tâche documentée</span>
                         )}
                       </td>
 

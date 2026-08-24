@@ -15,7 +15,7 @@ import {
   ArrowRight,
   Filter
 } from 'lucide-react';
-import { CognitiveProfile, AnyCognitiveNode, ExperienceNode, MissionNode, SkillNode, CapacityNode, HorizonJobNode } from '../types';
+import { CognitiveProfile, AnyCognitiveNode, ExperienceNode, TaskNode, SkillNode, CapacityNode, HorizonJobNode } from '../types';
 
 interface TreeViewProps {
   profile: CognitiveProfile;
@@ -45,24 +45,24 @@ export const TreeView: React.FC<TreeViewProps> = ({
     (n) => n.category === 'experience' || n.category === 'formation' || n.category === 'research_project'
   ) as ExperienceNode[];
 
-  const allMissions = profile.nodes.filter((n) => n.category === 'mission') as MissionNode[];
+  const allTasks = profile.nodes.filter((n) => n.category === 'task') as TaskNode[];
   const allSkills = profile.nodes.filter((n) => n.category.startsWith('skill_')) as SkillNode[];
   const allCapacities = profile.nodes.filter((n) => n.category === 'capacity_cognitive') as CapacityNode[];
   const allHorizons = profile.nodes.filter((n) => n.category === 'horizon_job') as HorizonJobNode[];
 
-  const getMissionsForExperience = (expId: string) => {
-    const missionIds = profile.edges
+  const getTasksForExperience = (expId: string) => {
+    const taskIds = profile.edges
       .filter((e) => e.source === expId && e.type === 'composed_of')
       .map((e) => e.target);
-    return allMissions.filter((mission) => mission.experienceId === expId || missionIds.includes(mission.id));
+    return allTasks.filter((task) => task.experienceId === expId || taskIds.includes(task.id));
   };
 
-  // Find both direct skills and skills traced through a mission.
+  // Find both direct skills and skills traced through a task.
   const getSkillsForExperience = (expId: string) => {
-    const missionIds = getMissionsForExperience(expId).map((mission) => mission.id);
+    const taskIds = getTasksForExperience(expId).map((task) => task.id);
     const skillIds = profile.edges
       .filter((e) =>
-        e.type === 'acquired_in' && (e.source === expId || missionIds.includes(e.source))
+        (e.type === 'acquired_in' || e.type === 'demonstrates_skill') && (e.source === expId || taskIds.includes(e.source))
       )
       .map((e) => e.target);
     return allSkills.filter((skill) => skillIds.includes(skill.id));
@@ -106,7 +106,7 @@ export const TreeView: React.FC<TreeViewProps> = ({
             <h2 className="text-xl font-bold text-slate-900">Arbre Hiérarchique de Décomposition</h2>
           </div>
           <p className="text-xs text-slate-500 max-w-2xl leading-relaxed">
-            Parcourez la généalogie complète : <strong>Expérience</strong> ➔ <strong>Missions & Tâches</strong> ➔ <strong>Compétences décomposées</strong> ➔ <strong>Capacités cognitives</strong> ➔ <strong>Horizons ROME</strong>.
+            Parcourez les cinq niveaux : <strong>Expérience</strong> ➔ <strong>Tâche</strong> ➔ <strong>Compétence</strong> ➔ <strong>Cognition</strong> ➔ <strong>Matching métier</strong>.
           </p>
         </div>
 
@@ -117,7 +117,7 @@ export const TreeView: React.FC<TreeViewProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Rechercher une mission, compétence..."
+            placeholder="Rechercher une tâche, compétence..."
             className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
           />
         </div>
@@ -127,7 +127,7 @@ export const TreeView: React.FC<TreeViewProps> = ({
       <div className="space-y-4">
         {filteredExperiences.map((exp) => {
           const isExpanded = expandedNodes[exp.id] ?? false;
-          const missions = getMissionsForExperience(exp.id);
+          const tasks = getTasksForExperience(exp.id);
           const skills = getSkillsForExperience(exp.id);
 
           return (
@@ -191,27 +191,27 @@ export const TreeView: React.FC<TreeViewProps> = ({
                   {/* LEVEL 2: MISSIONS & ACTIONS OPÉRATIONNELLES */}
                   <div className="space-y-2">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                      Étape 1 : Missions & Actions Opérationnelles
+                      Étape 1 : Tâches & Actions Opérationnelles
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {missions.length > 0 ? missions.map((mission) => (
+                      {tasks.length > 0 ? tasks.map((task) => (
                         <button
-                          key={mission.id}
-                          onClick={() => onSelectNode(mission)}
+                          key={task.id}
+                          onClick={() => onSelectNode(task)}
                           className="p-3 bg-indigo-50/60 hover:bg-indigo-50 border border-indigo-200 rounded-xl text-left space-y-2 transition-colors"
                         >
                           <div className="flex items-start justify-between gap-2">
-                            <span className="text-xs font-bold text-indigo-950">📋 {mission.name}</span>
+                            <span className="text-xs font-bold text-indigo-950">📋 {task.name}</span>
                             <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${
-                              mission.verificationStatus === 'verified'
+                              task.verificationStatus === 'verified'
                                 ? 'bg-emerald-100 text-emerald-700'
                                 : 'bg-amber-100 text-amber-700'
                             }`}>
-                              {mission.verificationStatus === 'verified' ? 'CV explicite' : 'À confirmer'}
+                              {task.verificationStatus === 'verified' ? 'CV explicite' : 'À confirmer'}
                             </span>
                           </div>
                           <ul className="space-y-1">
-                            {mission.actions.map((action) => (
+                            {task.actions.map((action) => (
                               <li key={action} className="text-[11px] text-indigo-800 flex items-start gap-1.5">
                                 <CheckCircle2 className="w-3 h-3 mt-0.5 shrink-0" />
                                 <span>{action}</span>
@@ -280,7 +280,7 @@ export const TreeView: React.FC<TreeViewProps> = ({
                             {capacities.length > 0 && (
                               <div className="pt-2 border-t border-slate-200/60 space-y-2">
                                 <span className="text-[10px] font-bold uppercase text-slate-400 block">
-                                  Alimente les Capacités Cognitives Méta :
+                                  Alimente le niveau Cognition :
                                 </span>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                   {capacities.map((cap) => {

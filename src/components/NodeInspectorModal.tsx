@@ -1,5 +1,5 @@
 import React from 'react';
-import { AnyCognitiveNode, GraphEdge, SkillNode, ExperienceNode, MissionNode, CapacityNode, HorizonJobNode } from '../types';
+import { AnyCognitiveNode, GraphEdge, SkillNode, ExperienceNode, TaskNode, CapacityNode, HorizonJobNode } from '../types';
 import { calculateSkillVitality, getVitalityStatus } from '../utils/decay';
 import { 
   X, 
@@ -89,7 +89,7 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
               {node.category === 'experience' && '🏗️ Expérience de Terrain'}
               {node.category === 'formation' && '🎓 Formation / Diplôme'}
               {node.category === 'research_project' && '🔬 Projet de Recherche Universitaire'}
-              {node.category === 'mission' && '📋 Mission & Actions'}
+              {node.category === 'task' && '📋 Tâche & Actions'}
               {node.category === 'skill_tech' && '⚙️ Compétence Technique'}
               {node.category === 'skill_transversal' && '🔄 Compétence Transversale'}
               {node.category === 'skill_relational' && '🤝 Compétence Humaine'}
@@ -297,11 +297,11 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
         )}
 
         {/* Mission-level actions keep the chain Experience → Mission → Skill inspectable. */}
-        {node.category === 'mission' && (
+        {node.category === 'task' && (
           <div className="space-y-3">
             <h3 className="text-xs font-bold uppercase text-slate-400 tracking-wider">Actions documentées</h3>
             <div className="space-y-1.5">
-              {(node as MissionNode).actions.map((action) => (
+              {(node as TaskNode).actions.map((action) => (
                 <div key={action} className="flex items-start gap-2 text-xs text-slate-700">
                   <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500 mt-0.5 shrink-0" />
                   <span>{action}</span>
@@ -309,7 +309,7 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
               ))}
             </div>
             <p className="text-[11px] text-slate-500 bg-indigo-50 border border-indigo-100 rounded-xl p-2.5">
-              <strong>Contexte :</strong> {(node as MissionNode).context}
+              <strong>Contexte :</strong> {(node as TaskNode).context}
             </p>
           </div>
         )}
@@ -320,7 +320,7 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
             {(node as ExperienceNode).missions && (node as ExperienceNode).missions.length > 0 && (
               <div>
                 <h3 className="text-xs font-bold uppercase text-slate-400 tracking-wider mb-2">
-                  {node.category === 'research_project' ? 'Actions & Protocoles Conduits' : 'Missions Opérationnelles'}
+                  {node.category === 'research_project' ? 'Actions & Protocoles Conduits' : 'Tâches Opérationnelles'}
                 </h3>
                 <ul className="space-y-1.5">
                   {(node as ExperienceNode).missions.map((m, idx) => (
