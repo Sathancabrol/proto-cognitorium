@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cognitarium Scolaire — Jumeau de Léa</title>
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #f7f9fc; --bg-2: #eef1f6; --bg-card: #ffffff;
+  --border: rgba(0,0,0,0.08); --border-soft: rgba(0,0,0,0.05); --border-accent: rgba(59,130,246,0.3);
+  --text: #1e293b; --text-dim: rgba(30,41,59,0.6); --text-muted: rgba(30,41,59,0.35);
+  --accent: #3b82f6; --accent-dim: rgba(59,130,246,0.12); --accent-glow: rgba(59,130,246,0.25);
+  --mastered: #22c55e; --mastered-dim: rgba(34,197,94,0.13); --warning: #f59e0b;
+  --danger: #ef4444; --violet: #8b5cf6; --pink: #ec4899;
+  --radius-sm: 10px; --radius-md: 14px; --radius-lg: 20px;
+  --topbar-h: 56px; --bottom-nav-h: 64px; --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html, body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; height: 100vh; width: 100vw; -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+.display { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.01em; }
+
+body::before { content: ""; position: fixed; inset: 0; background-image: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(59,130,246,0.06) 0%, transparent 60%), linear-gradient(rgba(59,130,246,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.015) 1px, transparent 1px); background-size: 100% 100%, 48px 48px, 48px 48px; pointer-events: none; z-index: 0; }
+
+#app { position: relative; display: grid; grid-template-columns: 1fr; grid-template-rows: var(--topbar-h) 1fr var(--bottom-nav-h); width: 100vw; height: 100vh; z-index: 1; opacity: 0; transition: opacity 0.6s var(--ease); }
+#app.visible { opacity: 1; }
+
+#topbar { grid-row: 1; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; background: rgba(247,249,252,0.97); border-bottom: 1px solid var(--border-soft); backdrop-filter: blur(20px); z-index: 200; }
+#logo { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; color: var(--text); }
+#logo-mark { width: 32px; height: 32px; border-radius: 10px; background: linear-gradient(135deg, var(--accent), #60a5fa); display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; }
+#topbar-right { display: flex; align-items: center; gap: 10px; }
+#user-pill { display: flex; align-items: center; gap: 8px; padding: 4px 10px 4px 4px; background: rgba(59,130,246,0.08); border: 1px solid var(--border-accent); border-radius: 20px; cursor: pointer; }
+#user-avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--pink), #f472b6); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: white; }
+#user-name { font-size: 12px; font-weight: 600; }
+#user-role { font-size: 10px; color: var(--text-dim); }
+
+#main { grid-row: 2; position: relative; overflow: hidden; }
+.view-layer { position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: opacity 0.4s var(--ease), transform 0.4s var(--ease); transform: translateY(10px); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.view-layer.active { opacity: 1; pointer-events: auto; transform: translateY(0); }
+
+#bottom-nav { grid-row: 3; display: flex; align-items: center; justify-content: space-around; background: rgba(255,255,255,0.98); border-top: 1px solid var(--border-soft); backdrop-filter: blur(20px); z-index: 200; padding: 0 8px; }
+.nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 12px; border-radius: 12px; color: var(--text-muted); font-size: 10px; font-weight: 500; cursor: pointer; transition: all 0.15s; border: none; background: none; font-family: 'Inter', sans-serif; }
+.nav-item.active { color: var(--accent); background: var(--accent-dim); }
+.nav-icon { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
+
+/* ONBOARDING */
+#onboarding { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; align-items: center; justify-content: center; transition: opacity 0.6s var(--ease); }
+#onboarding.hidden { opacity: 0; pointer-events: none; }
+#onboarding::before { content: ""; position: fixed; inset: 0; background-image: radial-gradient(ellipse 60% 50% at 50% 40%, rgba(59,130,246,0.08) 0%, transparent 65%); pointer-events: none; }
+
+.ob-stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 20px; opacity: 0; pointer-events: none; transition: opacity 0.5s var(--ease), transform 0.5s var(--ease); transform: scale(0.96); padding: 20px; }
+.ob-stage.active { opacity: 1; pointer-events: auto; transform: scale(1); }
+.ob-step-track { position: absolute; top: 24px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 5; }
+.ob-step-dot { width: 24px; height: 3px; border-radius: 2px; background: rgba(0,0,0,0.1); transition: all 0.3s; }
+.ob-step-dot.done { background: var(--mastered); }
+.ob-step-dot.active { background: var(--accent); }
+
+#ob-logo { display: flex; align-items: center; gap: 10px; }
+#ob-logo .mark { width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, var(--accent), #60a5fa); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; }
+#ob-logo h1 { font-size: 26px; font-weight: 700; font-family: 'Space Grotesk', sans-serif; color: var(--text); }
+.ob-sub { font-size: 14px; color: var(--text-dim); max-width: 340px; text-align: center; line-height: 1.6; }
+
+.ob-card { width: 100%; max-width: 380px; padding: 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+.ob-card-title { font-size: 18px; font-weight: 700; font-family: 'Space Grotesk', sans-serif; margin-bottom: 4px; color: var(--text); }
+.ob-card-sub { font-size: 13px; color: var(--text-dim); margin-bottom: 20px; }
+.ob-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 28px; border-radius: 14px; background: var(--accent); border: none; color: white; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; width: 100%; }
+.ob-btn:hover { background: #2563eb; transform: translateY(-1px); }
+.ob-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.quiz-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.quiz-card { padding: 20px 12px; background: var(--bg-card); border: 2px solid var(--border-soft); border-radius: var(--radius-md); text-align: center; cursor: pointer; transition: all 0.2s; }
+.quiz-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59,130,246,0.1); }
+.quiz-card.selected { border-color: var(--accent); background: var(--accent-dim); }
+.quiz-card .emoji { font-size: 32px; margin-bottom: 8px; }
+.quiz-card .label { font-size: 12px; font-weight: 600; color: var(--text); }
+
+.grade-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border-soft); }
+.grade-row:last-child { border-bottom: none; }
+.grade-label { font-size: 13px; font-weight: 500; flex: 1; }
+.grade-input { width: 60px; padding: 8px; border: 1px solid var(--border); border-radius: 10px; text-align: center; font-size: 15px; font-weight: 700; color: var(--text); background: var(--bg-card); outline: none; transition: border 0.2s; }
+.grade-input:focus { border-color: var(--accent); }
+
+.ob-build-visual { width: 180px; height: 180px; position: relative; }
+#ob-build-svg { width: 100%; height: 100%; }
+.ob-birth-ring { width: 160px; height: 160px; }
+#ob-birth-svg { width: 100%; height: 100%; }
+
+.extract-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 13px; color: var(--text-dim); opacity: 0; animation: fadeUp 0.4s forwards; border-bottom: 1px solid var(--border-soft); }
+.extract-row:last-child { border-bottom: none; }
+.extract-row .ic { width: 20px; flex-shrink: 0; display: flex; color: var(--text-muted); }
+.extract-row.done { color: var(--text); }
+.extract-row.done .ic { color: var(--mastered); }
+.extract-row .count { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent); font-weight: 600; opacity: 0; }
+.extract-row.done .count { opacity: 1; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+/* VUE MÉTÉO */
+#twin-home { padding: 16px; max-width: 480px; margin: 0 auto; }
+.meteo-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 14px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+.meteo-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.meteo-avatar { width: 52px; height: 52px; border-radius: 16px; background: linear-gradient(135deg, var(--pink), #f472b6); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; color: white; font-family: 'Space Grotesk', sans-serif; }
+.meteo-id h1 { font-size: 18px; font-weight: 700; font-family: 'Space Grotesk', sans-serif; }
+.meteo-id .role { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+.meteo-score { text-align: center; padding: 16px 0; }
+.meteo-score .weather { font-size: 48px; margin-bottom: 4px; }
+.meteo-score .num { font-size: 36px; font-weight: 700; font-family: 'Space Grotesk', sans-serif; color: var(--accent); }
+.meteo-score .den { font-size: 16px; color: var(--text-muted); }
+.meteo-score .sub { font-size: 12px; color: var(--mastered); margin-top: 6px; font-weight: 500; }
+.strengths-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.strength-pill { flex: 1; padding: 10px; background: var(--bg-2); border-radius: var(--radius-sm); text-align: center; font-size: 11px; font-weight: 600; }
+.strength-pill .stars { font-size: 14px; color: var(--warning); margin-bottom: 4px; }
+.strength-pill .name { color: var(--text); }
+.work-row { margin-bottom: 10px; }
+.work-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; }
+.work-label span:first-child { color: var(--text); font-weight: 500; }
+.work-label span:last-child { color: var(--text-dim); font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+.work-track { height: 8px; background: var(--bg-2); border-radius: 4px; overflow: hidden; }
+.work-fill { height: 100%; border-radius: 4px; transition: width 1s var(--ease); }
+.work-fill.mastered { background: linear-gradient(90deg, #16a34e, var(--mastered)); }
+.work-fill.accent { background: linear-gradient(90deg, #2563eb, var(--accent)); }
+.work-fill.warning { background: linear-gradient(90deg, #d97706, var(--warning)); }
+.challenge-card { background: linear-gradient(135deg, var(--accent-dim), rgba(139,92,246,0.06)); border: 1px solid var(--border-accent); border-radius: var(--radius-md); padding: 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; }
+.challenge-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59,130,246,0.15); }
+.challenge-emoji { font-size: 28px; }
+.challenge-text { flex: 1; }
+.challenge-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.challenge-meta { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.challenge-arrow { color: var(--accent); font-size: 18px; }
+.streak-row { display: flex; align-items: center; gap: 8px; justify-content: center; margin-top: 8px; }
+.streak-badge { display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--warning-dim); border-radius: 20px; font-size: 12px; font-weight: 600; color: var(--warning); }
+
+/* VUE CARTE — GRAPHE */
+#view-atlas { display: flex; flex-direction: column; }
+#graph-area { flex: 1; position: relative; min-height: 0; background: var(--bg); }
+#graph { width: 100%; height: 100%; display: block; }
+#graph svg { display: block; }
+
+#breadcrumb { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 4px; align-items: center; z-index: 90; opacity: 0; pointer-events: none; transition: opacity 0.3s; background: rgba(255,255,255,0.9); padding: 4px 10px; border-radius: 16px; border: 1px solid var(--border-soft); backdrop-filter: blur(10px); font-size: 10px; }
+#breadcrumb.visible { opacity: 1; pointer-events: auto; }
+.bc-item { padding: 3px 8px; background: var(--accent-dim); border: 1px solid var(--border-accent); border-radius: 12px; font-size: 10px; cursor: pointer; font-weight: 500; transition: all 0.15s; color: var(--text); }
+.bc-item:hover { background: rgba(59,130,246,0.2); }
+.bc-sep { color: var(--text-muted); font-size: 10px; }
+#graph-hint { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; padding: 6px 12px; background: rgba(255,255,255,0.9); border: 1px solid var(--border-soft); border-radius: 14px; font-size: 10px; color: var(--text-muted); backdrop-filter: blur(10px); z-index: 90; }
+
+#info-panel { position: absolute; bottom: 0; left: 0; right: 0; max-height: 55vh; background: var(--bg-card); backdrop-filter: blur(30px); border-top: 1px solid var(--border); border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 16px; z-index: 150; overflow-y: auto; transform: translateY(100%); transition: transform 0.35s var(--ease); }
+#info-panel.open { transform: translateY(0); }
+#info-panel .drag-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 12px; }
+.panel-eyebrow { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+.panel-header h2 { font-size: 16px; font-weight: 700; font-family: 'Space Grotesk', sans-serif; }
+.panel-header .sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+.panel-section { border-top: 1px solid var(--border-soft); padding-top: 12px; margin-top: 12px; }
+.panel-section-title { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.9px; margin-bottom: 8px; }
+.progress-row { display: flex; align-items: center; gap: 8px; }
+.progress-track { flex: 1; height: 6px; background: var(--bg-2); border-radius: 3px; overflow: hidden; }
+.progress-fill-el { height: 100%; border-radius: 3px; transition: width 0.6s var(--ease); }
+.progress-pct { font-size: 12px; font-weight: 700; min-width: 34px; text-align: right; font-family: 'JetBrains Mono', monospace; }
+.likert-row { display: flex; gap: 6px; justify-content: center; }
+.likert-dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; border: 2px solid transparent; font-family: 'JetBrains Mono', monospace; }
+.likert-dot.selected { border-color: white; box-shadow: 0 0 12px currentColor; transform: scale(1.08); }
+.lk-1{background:#fee2e2;color:#991b1b}.lk-2{background:#fed7aa;color:#9a3412}.lk-3{background:#fef3c7;color:#92400e}
+.lk-4{background:#ecfccb;color:#3f6212}.lk-5{background:#d1fae5;color:#065f46}
+.ai-auto-box { padding: 12px; background: linear-gradient(135deg, var(--accent-dim), rgba(139,92,246,0.06)); border-radius: var(--radius-md); border: 1px solid var(--border-accent); }
+.ai-auto-header { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--accent); font-weight: 600; margin-bottom: 8px; }
+.ai-row { display: flex; gap: 8px; padding: 6px 0; font-size: 12px; line-height: 1.55; border-top: 1px solid rgba(0,0,0,0.05); }
+.ai-row:first-of-type { border-top: none; padding-top: 0; }
+.ai-row .ai-icon { flex-shrink: 0; margin-top: 1px; font-size: 14px; }
+.ai-row.positive .ai-icon { color: var(--mastered); }
+.ai-row.negative .ai-icon { color: var(--danger); }
+.conn-list { list-style: none; }
+.conn-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg-2); border-radius: 8px; margin-bottom: 4px; font-size: 12px; cursor: pointer; transition: all 0.15s; border: 1px solid transparent; }
+.conn-item:hover { background: var(--bg-hover); border-color: var(--border-soft); }
+.conn-type { font-size: 9px; padding: 2px 6px; border-radius: 4px; background: var(--bg-2); color: var(--text-dim); margin-left: auto; }
+.panel-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-2); color: var(--text); cursor: pointer; font-size: 12px; font-weight: 500; margin-top: 8px; font-family: 'Inter', sans-serif; transition: all 0.18s; }
+.panel-btn:hover { background: var(--bg-hover); }
+.panel-btn.primary { background: var(--accent-dim); border-color: var(--border-accent); color: var(--accent); }
+.panel-btn.primary:hover { background: rgba(59,130,246,0.2); }
+
+/* VUE EXERCICES */
+#view-exercises { padding: 16px; max-width: 480px; margin: 0 auto; }
+.exercise-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+.exercise-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+.ex-emoji { font-size: 32px; }
+.ex-content { flex: 1; }
+.ex-title { font-size: 14px; font-weight: 600; color: var(--text); }
+.ex-meta { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+.ex-tag { font-size: 10px; padding: 3px 8px; border-radius: 8px; font-weight: 600; }
+.ex-tag.math { background: rgba(59,130,246,0.1); color: var(--accent); }
+.ex-tag.french { background: rgba(236,72,153,0.1); color: var(--pink); }
+.ex-tag.science { background: rgba(34,197,94,0.1); color: var(--mastered); }
+.ex-diff { display: flex; gap: 2px; }
+.diff-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); }
+.diff-dot.active { background: var(--warning); }
+
+/* VUE PROJECTION */
+#view-projection { padding: 16px; max-width: 480px; margin: 0 auto; }
+.path-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+.path-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.path-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.path-title { font-size: 15px; font-weight: 700; font-family: 'Space Grotesk', sans-serif; }
+.path-compat { margin-left: auto; font-size: 18px; font-weight: 700; font-family: 'Space Grotesk', sans-serif; }
+.path-compat.high { color: var(--mastered); }
+.path-compat.med { color: var(--warning); }
+.path-desc { font-size: 12px; color: var(--text-dim); line-height: 1.6; margin-bottom: 10px; }
+.path-skills { display: flex; flex-wrap: wrap; gap: 5px; }
+.path-skill { font-size: 10px; padding: 3px 8px; background: var(--bg-2); border-radius: 8px; color: var(--text-dim); }
+
+/* VUE ÉVOLUTION */
+#view-evolution { padding: 16px; max-width: 480px; margin: 0 auto; }
+.timeline { position: relative; padding-left: 26px; }
+.timeline::before { content: ''; position: absolute; left: 9px; top: 8px; bottom: 8px; width: 2px; background: linear-gradient(180deg, var(--accent), var(--violet), rgba(0,0,0,0.05)); border-radius: 1px; }
+.tl-item { position: relative; margin-bottom: 18px; }
+.tl-dot { position: absolute; left: -26px; top: 2px; width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--bg); display: flex; align-items: center; justify-content: center; font-size: 10px; }
+.tl-dot.done { background: var(--mastered); color: white; } 
+.tl-dot.active { background: var(--accent); color: white; box-shadow: 0 0 8px var(--accent-glow); } 
+.tl-dot.todo { background: var(--bg-2); color: var(--text-muted); }
+.tl-title { font-size: 13px; font-weight: 600; }
+.tl-meta { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.tl-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; padding: 3px 8px; border-radius: 10px; font-weight: 600; margin-top: 5px; }
+.tl-badge.green { background: var(--mastered-dim); color: var(--mastered); }
+.tl-badge.amber { background: var(--accent-dim); color: var(--accent); }
+.tl-badge.gray { background: var(--bg-2); color: var(--text-dim); }
+
+#tooltip { position: absolute; background: rgba(255,255,255,0.98); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 12px; font-size: 12px; pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 500; backdrop-filter: blur(15px); max-width: 200px; line-height: 1.55; color: var(--text); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 2px; }
+
+/* GRAPH SVG STYLES */
+.node-group { cursor: pointer; }
+.node-circle { stroke: rgba(0,0,0,0.08); stroke-width: 1.5px; transition: all 0.22s; }
+.node-group:hover .node-circle { stroke: var(--accent); stroke-width: 2.5px; filter: drop-shadow(0 0 8px rgba(59,130,246,0.3)); }
+.node-label-icon { pointer-events: none; }
+.node-sublabel { font-size: 9px; fill: var(--text-dim); pointer-events: none; text-anchor: middle; font-family: 'Inter', sans-serif; }
+.link-path { fill: none; stroke: rgba(0,0,0,0.06); stroke-width: 1.4px; transition: all 0.3s; }
+.link-path.hl { stroke: var(--accent); stroke-width: 2.4px; }
+.orbit-ring { fill: none; stroke: rgba(0,0,0,0.04); stroke-dasharray: 3,8; pointer-events: none; }
+.level-label { font-size: 9px; fill: rgba(0,0,0,0.15); text-anchor: middle; pointer-events: none; font-weight: 500; text-transform: uppercase; letter-spacing: 1.5px; font-family: 'Inter', sans-serif; }
+.score-ring-bg { fill: none; stroke: rgba(0,0,0,0.05); stroke-width: 4px; }
+.score-ring-fill { fill: none; stroke: url(#scoreGradient); stroke-width: 4px; stroke-linecap: round; transition: stroke-dasharray 1s ease; }
+@keyframes synFlow { 0%{stroke-dashoffset:100;opacity:0} 20%{opacity:1} 80%{opacity:1} 100%{stroke-dashoffset:0;opacity:0} }
+.synapse { fill:none; stroke:var(--accent); stroke-width:2px; stroke-dasharray:8,12; pointer-events:none; opacity:0; }
+.synapse.active { animation: synFlow 1.5s ease-out forwards; }
+
+/* RESPONSIVE */
+@media (min-width: 768px) {
+  :root { --bottom-nav-h: 0px; }
+  #bottom-nav { display: none; }
+  #app { grid-template-rows: var(--topbar-h) 1fr; }
+  #info-panel { position: absolute; top: 12px; right: 12px; bottom: 12px; width: 340px; max-height: none; border-radius: var(--radius-lg); border-top: none; transform: translateX(360px); }
+  #info-panel.open { transform: translateX(0); }
+  #info-panel .drag-handle { display: none; }
+}
+@media (max-width: 767px) {
+  #topbar { padding: 0 12px; }
+  #user-name { display: none; }
+  #user-role { display: none; }
+  .meteo-score .weather { font-size: 40px; }
+  .meteo-score .num { font-size: 28px; }
+}
+</style>
+</head>
+<body>
+
+<div id="onboarding">
+  <div class="ob-step-track" id="ob-steps"></div>
+  <div class="ob-stage active" data-stage="0">
+    <div id="ob-logo"><div class="mark">🌳</div><h1>Cognitarium</h1></div>
+    <p class="ob-sub">Ton jumeau cognitif scolaire.<br>En quelques minutes, on construit l'arbre de tes connaissances et on découvre tes portes ouvertes.</p>
+    <button class="ob-btn" onclick="goStage(1)">🚀 Commencer</button>
+  </div>
+  <div class="ob-stage" data-stage="1">
+    <div class="ob-card" style="text-align:center">
+      <div class="ob-card-title">Qu'est-ce que tu préfères ?</div>
+      <div class="ob-card-sub">Clique sur tes préférés</div>
+      <div class="quiz-grid" id="quiz-grid">
+        <div class="quiz-card" data-pref="enigmes" onclick="selectQuiz(this)"><div class="emoji">🧩</div><div class="label">Résoudre des énigmes</div></div>
+        <div class="quiz-card" data-pref="histoires" onclick="selectQuiz(this)"><div class="emoji">📖</div><div class="label">Écrire des histoires</div></div>
+        <div class="quiz-card" data-pref="construire" onclick="selectQuiz(this)"><div class="emoji">🔧</div><div class="label">Construire des choses</div></div>
+        <div class="quiz-card" data-pref="aider" onclick="selectQuiz(this)"><div class="emoji">🤝</div><div class="label">Aider les autres</div></div>
+      </div>
+      <button class="ob-btn" style="margin-top:16px" onclick="goStage(2)" id="btn-quiz-next" disabled>Continuer</button>
+    </div>
+  </div>
+  <div class="ob-stage" data-stage="2">
+    <div class="ob-card">
+      <div class="ob-card-title">Tes notes du dernier bulletin</div>
+      <div class="ob-card-sub">On va construire ton jumeau à partir de ça</div>
+      <div id="grades-list">
+        <div class="grade-row"><span class="grade-label">Mathématiques</span><input class="grade-input" type="number" min="0" max="20" value="14" data-subject="maths"></div>
+        <div class="grade-row"><span class="grade-label">Français</span><input class="grade-input" type="number" min="0" max="20" value="11" data-subject="francais"></div>
+        <div class="grade-row"><span class="grade-label">Physique-Chimie</span><input class="grade-input" type="number" min="0" max="20" value="13" data-subject="physique"></div>
+        <div class="grade-row"><span class="grade-label">SVT</span><input class="grade-input" type="number" min="0" max="20" value="12" data-subject="svt"></div>
+        <div class="grade-row"><span class="grade-label">Anglais</span><input class="grade-input" type="number" min="0" max="20" value="10" data-subject="anglais"></div>
+        <div class="grade-row"><span class="grade-label">Histoire-Géo</span><input class="grade-input" type="number" min="0" max="20" value="9" data-subject="histoire"></div>
+      </div>
+      <button class="ob-btn" style="margin-top:16px" onclick="goStage(3)">Continuer</button>
+    </div>
+  </div>
+  <div class="ob-stage" data-stage="3">
+    <div class="ob-card" style="text-align:center">
+      <div class="ob-card-title">Comment t'évalues-tu ?</div>
+      <div class="ob-card-sub">1 étoile = débutant · 5 étoiles = expert</div>
+      <div style="margin-top:16px">
+        <div style="margin-bottom:16px"><div style="font-size:13px;font-weight:600;margin-bottom:6px">🧠 Raisonnement logique</div><div class="likert-row" id="likert-logic"></div></div>
+        <div style="margin-bottom:16px"><div style="font-size:13px;font-weight:600;margin-bottom:6px">✍️ Expression écrite</div><div class="likert-row" id="likert-writing"></div></div>
+        <div style="margin-bottom:16px"><div style="font-size:13px;font-weight:600;margin-bottom:6px">🎨 Créativité</div><div class="likert-row" id="likert-creative"></div></div>
+        <div><div style="font-size:13px;font-weight:600;margin-bottom:6px">🗣️ Expression orale</div><div class="likert-row" id="likert-oral"></div></div>
+      </div>
+      <button class="ob-btn" style="margin-top:20px" onclick="goStage(4)">Continuer</button>
+    </div>
+  </div>
+  <div class="ob-stage" data-stage="4">
+    <div class="ob-build-visual"><svg id="ob-build-svg" viewBox="0 0 200 200"></svg></div>
+    <div style="text-align:center"><div style="font-size:15px;font-weight:600;margin-bottom:4px;color:var(--text)">Construction de ton jumeau</div><div style="font-size:12px;color:var(--text-dim)" id="build-status">Assemblage des branches…</div></div>
+  </div>
+  <div class="ob-stage" data-stage="5">
+    <div class="ob-birth-ring"><svg id="ob-birth-svg" viewBox="0 0 180 180"></svg></div>
+    <div style="text-align:center">
+      <div class="display" style="font-size:20px;font-weight:700;margin-bottom:6px;color:var(--text)">Ton jumeau cognitif est né !</div>
+      <div style="font-size:13px;color:var(--text-dim)">28 compétences · 6 matières · 8 portes ouvertes</div>
+    </div>
+    <button class="ob-btn" onclick="enterApp()">🌟 Découvrir mon jumeau</button>
+  </div>
+</div>
+
+<div id="app">
+  <div id="topbar">
+    <div id="logo"><div id="logo-mark">🌳</div><span>Cognitarium</span></div>
+    <div id="topbar-right">
+      <div id="user-pill" onclick="goView('twin')">
+        <div id="user-avatar">L</div>
+        <div><div id="user-name">Léa</div><div id="user-role">5ème · Collège Mistral</div></div>
+      </div>
+    </div>
+  </div>
+  <div id="main">
+    <div class="view-layer active" id="view-twin"><div id="twin-home"></div></div>
+    <div class="view-layer" id="view-atlas">
+      <div id="graph-area">
+        <svg id="graph"></svg>
+        <div id="breadcrumb"></div>
+        <div id="graph-hint">📍 Taper — sélectionner · 🔍 Double-taper — zoomer · 🤏 Pincer — zoom</div>
+      </div>
+      <div id="info-panel">
+        <div class="drag-handle"></div>
+        <div class="panel-eyebrow" id="panel-eyebrow">Sélection</div>
+        <div class="panel-header"><h2 id="panel-title">Sélectionner un nœud</h2><div class="sub" id="panel-subtitle">Tape sur un élément de l'arbre</div></div>
+        <div class="panel-section">
+          <div class="panel-section-title">Progression</div>
+          <div class="progress-row"><div class="progress-track"><div class="progress-fill-el" id="p-fill" style="width:0%"></div></div><div class="progress-pct mono" id="p-text">--</div></div>
+        </div>
+        <div class="panel-section" id="likert-sec" style="display:none">
+          <div class="panel-section-title">Auto-évaluation 1→5</div>
+          <div class="likert-row" id="likert-row"></div>
+        </div>
+        <div class="panel-section">
+          <div class="panel-section-title" id="ai-section-title">Analyse automatique</div>
+          <div class="ai-auto-box" id="ai-auto-box"></div>
+        </div>
+        <div class="panel-section">
+          <div class="panel-section-title">Portes ouvertes</div>
+          <ul class="conn-list" id="conn-list"></ul>
+        </div>
+        <button class="panel-btn primary" onclick="startExercise()" id="btn-exercise">🎯 Faire un exercice</button>
+      </div>
+    </div>
+    <div class="view-layer" id="view-exercises"><div id="exercises-list"></div></div>
+    <div class="view-layer" id="view-projection"><div id="projection-list"></div></div>
+    <div class="view-layer" id="view-evolution"><div id="evolution-content"></div></div>
+  </div>
+  <div id="bottom-nav">
+    <button class="nav-item active" id="nav-twin" onclick="goView('twin')"><span class="nav-icon">🌤️</span><span>Météo</span></button>
+    <button class="nav-item" id="nav-atlas" onclick="goView('atlas')"><span class="nav-icon">🗺️</span><span>Carte</span></button>
+    <button class="nav-item" id="nav-exercises" onclick="goView('exercises')"><span class="nav-icon">🎯</span><span>Exercices</span></button>
+    <button class="nav-item" id="nav-projection" onclick="goView('projection')"><span class="nav-icon">🚪</span><span>Portes</span></button>
+    <button class="nav-item" id="nav-evolution" onclick="goView('evolution')"><span class="nav-icon">📈</span><span>Évolution</span></button>
+  </div>
+</div>
+<div id="tooltip"></div>
+
+<script>
+
+/* ============================================================
+   DATA — LÉA, 5ÈME (dataset scolaire)
+   ============================================================ */
+const schoolGraph = {
+  name:"Mon parcours scolaire", emoji:"🌳", type:"world", score:74,
+  children:[
+    { name:"Sciences", emoji:"🔬", type:"domain", score:78,
+      children:[
+        { name:"Mathématiques", emoji:"🔢", type:"subject", score:82,
+          children:[
+            { name:"Résoudre des équations", emoji:"📐", type:"skill_disc", score:85,
+              children:[
+                { name:"Raisonnement logique", emoji:"🧠", type:"skill_trans", score:82,
+                  children:[{ name:"Flexibilité mentale", emoji:"🔄", type:"cognitive", score:78,
+                    children:[{ name:"78/100", type:"score", value:78 }] }] },
+                { name:"Raisonnement abstrait", emoji:"💭", type:"skill_trans", score:80,
+                  children:[{ name:"Pensée abstraite", emoji:"🧩", type:"cognitive", score:80,
+                    children:[{ name:"80/100", type:"score", value:80 }] }] }
+              ]},
+            { name:"Géométrie plane", emoji:"📏", type:"skill_disc", score:68,
+              children:[
+                { name:"Raisonnement spatial", emoji:"🎯", type:"skill_trans", score:65,
+                  children:[{ name:"Visualisation spatiale", emoji:"👁️", type:"cognitive", score:65,
+                    children:[{ name:"65/100", type:"score", value:65 }] }] }
+              ]}
+          ]},
+        { name:"Physique-Chimie", emoji:"⚗️", type:"subject", score:72,
+          children:[
+            { name:"Comprendre les forces", emoji:"🌊", type:"skill_disc", score:75,
+              children:[
+                { name:"Analyse de données", emoji:"📊", type:"skill_trans", score:70,
+                  children:[{ name:"Mémoire de travail", emoji:"💾", type:"cognitive", score:72,
+                    children:[{ name:"72/100", type:"score", value:72 }] }] }
+              ]}
+          ]},
+        { name:"SVT", emoji:"🌿", type:"subject", score:68,
+          children:[
+            { name:"Comprendre les écosystèmes", emoji:"🌍", type:"skill_disc", score:70,
+              children:[
+                { name:"Observation", emoji:"🔍", type:"skill_trans", score:75,
+                  children:[{ name:"Attention soutenue", emoji:"👀", type:"cognitive", score:75,
+                    children:[{ name:"75/100", type:"score", value:75 }] }] }
+              ]}
+          ]}
+      ]},
+    { name:"Langues", emoji:"🗣️", type:"domain", score:62,
+      children:[
+        { name:"Français", emoji:"📖", type:"subject", score:65,
+          children:[
+            { name:"Analyser un texte", emoji:"📝", type:"skill_disc", score:68,
+              children:[
+                { name:"Esprit critique", emoji:"🤔", type:"skill_trans", score:70,
+                  children:[{ name:"Inhibition", emoji:"🛑", type:"cognitive", score:68,
+                    children:[{ name:"68/100", type:"score", value:68 }] }] }
+              ]},
+            { name:"Expression écrite", emoji:"✍️", type:"skill_disc", score:58,
+              children:[
+                { name:"Expression écrite", emoji:"📜", type:"skill_trans", score:55,
+                  children:[{ name:"Planification", emoji:"📋", type:"cognitive", score:52,
+                    children:[{ name:"52/100", type:"score", value:52 }] }] }
+              ]}
+          ]},
+        { name:"Anglais", emoji:"🇬🇧", type:"subject", score:55,
+          children:[
+            { name:"Vocabulaire", emoji:"🗂️", type:"skill_disc", score:58,
+              children:[
+                { name:"Mémorisation", emoji:"🧠", type:"skill_trans", score:60,
+                  children:[{ name:"Mémoire à long terme", emoji:"💾", type:"cognitive", score:60,
+                    children:[{ name:"60/100", type:"score", value:60 }] }] }
+              ]}
+          ]}
+      ]},
+    { name:"Humanités", emoji:"🏛️", type:"domain", score:60,
+      children:[
+        { name:"Histoire-Géo", emoji:"🗺️", type:"subject", score:58,
+          children:[
+            { name:"Chronologie", emoji:"⏳", type:"skill_disc", score:55,
+              children:[
+                { name:"Mémorisation", emoji:"🧠", type:"skill_trans", score:58,
+                  children:[{ name:"Mémoire à long terme", emoji:"💾", type:"cognitive", score:58,
+                    children:[{ name:"58/100", type:"score", value:58 }] }] }
+              ]}
+          ]}
+      ]}
+  ]
+};
+
+/* ============================================================
+   TYPE CONFIG
+   ============================================================ */
+const TC={
+  world:     {color:"#3b82f6", radius:28, label:"Parcours"},
+  domain:    {color:"#8b5cf6", radius:22, label:"Domaine"},
+  subject:   {color:"#3b82f6", radius:19, label:"Matière"},
+  skill_disc:{color:"#22c55e", radius:15, label:"Compétence"},
+  skill_trans:{color:"#f59e0b", radius:13, label:"Transversale"},
+  cognitive: {color:"#ec4899", radius:13, label:"Cognition"},
+  score:     {color:"#22c55e", radius:17, label:"Score"},
+};
+
+const domainColors={
+  "Sciences": "#3b82f6", "Langues": "#ec4899", "Humanités": "#f59e0b",
+  "Arts": "#8b5cf6", "Sport": "#22c55e",
+};
+
+function getNodeColor(d){
+  if(d.data.type==="domain" && domainColors[d.data.name]) return domainColors[d.data.name];
+  if(d.data.type==="subject" && d.parent && d.parent.data.name){
+    if(domainColors[d.parent.data.name]) return domainColors[d.parent.data.name];
+  }
+  return TC[d.data.type]?.color||"#3b82f6";
+}
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let selectedNode=null;
+let activeView="twin";
+let quizSelections=[];
+let likertValues={logic:3, writing:2, creative:4, oral:2};
+let graphInitialized=false;
+
+/* ============================================================
+   D3 GRAPH SETUP — using d3.hierarchy + d3.tree for radial layout
+   ============================================================ */
+const svgEl = document.getElementById("graph");
+let svg, g, zoom;
+let root, treeLayout;
+
+function initGraph(){
+  if(graphInitialized) return;
+  const container = document.getElementById("graph-area");
+  const w = container.clientWidth;
+  const h = container.clientHeight;
+
+  svg = d3.select("#graph")
+    .attr("width", w)
+    .attr("height", h)
+    .attr("viewBox", [-w/2, -h/2, w, h]);
+
+  g = svg.append("g");
+
+  zoom = d3.zoom()
+    .scaleExtent([0.3, 4])
+    .on("zoom", (event) => {
+      g.attr("transform", event.transform);
+    });
+
+  svg.call(zoom);
+
+  // Create hierarchy
+  root = d3.hierarchy(schoolGraph);
+
+  // Tree layout with radial coordinates
+  const radius = Math.min(w, h) / 2 - 60;
+  treeLayout = d3.tree()
+    .size([2 * Math.PI, radius])
+    .separation((a, b) => (a.parent == b.parent ? 1 : 2) / a.depth);
+
+  treeLayout(root);
+
+  // Set initial positions for animation
+  root.descendants().forEach(d => {
+    d.x0 = d.x;
+    d.y0 = 0;
+  });
+
+  graphInitialized = true;
+  updateGraph();
+
+  // Center the view
+  svg.transition().duration(750).call(
+    zoom.transform,
+    d3.zoomIdentity.translate(w/2, h/2).scale(0.8)
+  );
+}
+
+function updateGraph(){
+  if(!root) return;
+
+  // Links
+  const links = g.selectAll(".link-path")
+    .data(root.links(), d => d.target.data.name + "-" + d.target.depth);
+
+  links.exit().transition().duration(300).style("opacity", 0).remove();
+
+  const linksEnter = links.enter().append("path")
+    .attr("class", "link-path")
+    .attr("fill", "none")
+    .attr("stroke", "rgba(0,0,0,0.08)")
+    .attr("stroke-width", 1.5)
+    .attr("d", d => {
+      return d3.linkRadial()
+        .angle(d => d.x)
+        .radius(d => d.y)(d);
+    })
+    .style("opacity", 0);
+
+  linksEnter.transition().duration(500).style("opacity", 1);
+
+  links.transition().duration(500)
+    .attr("d", d => {
+      return d3.linkRadial()
+        .angle(d => d.x)
+        .radius(d => d.y)(d);
+    });
+
+  // Nodes
+  const nodes = g.selectAll(".node-group")
+    .data(root.descendants(), d => d.data.name + "-" + d.depth);
+
+  nodes.exit().transition().duration(300).style("opacity", 0).remove();
+
+  const nodesEnter = nodes.enter().append("g")
+    .attr("class", "node-group")
+    .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0)`)
+    .style("opacity", 0)
+    .on("click", (event, d) => handleNodeClick(event, d))
+    .on("mouseover", (event, d) => showTip(event, d))
+    .on("mouseout", hideTip);
+
+  // Circle
+  nodesEnter.append("circle")
+    .attr("class", "node-circle")
+    .attr("r", d => TC[d.data.type]?.radius || 12)
+    .attr("fill", d => getNodeColor(d))
+    .attr("stroke", "rgba(0,0,0,0.08)")
+    .attr("stroke-width", 1.5);
+
+  // Emoji
+  nodesEnter.append("text")
+    .attr("class", "node-label-icon")
+    .attr("dy", d => (TC[d.data.type]?.radius || 12) * 0.3)
+    .attr("text-anchor", "middle")
+    .style("font-size", d => `${(TC[d.data.type]?.radius || 12) * 1.1}px`)
+    .style("pointer-events", "none")
+    .text(d => d.data.emoji || "");
+
+  // Label
+  nodesEnter.append("text")
+    .attr("class", "node-sublabel")
+    .attr("dy", d => (TC[d.data.type]?.radius || 12) + 14)
+    .attr("text-anchor", "middle")
+    .style("font-size", "9px")
+    .style("fill", "var(--text-dim)")
+    .text(d => d.data.name);
+
+  // Expand/collapse indicator
+  nodesEnter.each(function(d){
+    if(d.children){
+      const r = TC[d.data.type]?.radius || 12;
+      d3.select(this).append("circle")
+        .attr("r", 5)
+        .attr("cx", r + 5)
+        .attr("cy", -r - 5)
+        .attr("fill", d.children ? "#ef4444" : "#22c55e")
+        .style("opacity", 0.8);
+      d3.select(this).append("text")
+        .attr("x", r + 5)
+        .attr("y", -r - 3)
+        .attr("text-anchor", "middle")
+        .style("font-size", "8px")
+        .style("fill", "white")
+        .style("font-weight", "700")
+        .text(d.children ? "−" : "+");
+    }
+  });
+
+  // Transition all nodes
+  nodesEnter.transition().duration(500).style("opacity", 1);
+
+  nodes.transition().duration(500)
+    .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0)`);
+}
+
+function handleNodeClick(event, d){
+  event.stopPropagation();
+  selectedNode = d;
+
+  // Toggle children
+  if(d.children){
+    d._children = d.children;
+    d.children = null;
+  } else if(d._children){
+    d.children = d._children;
+    d._children = null;
+  }
+
+  // Recompute layout
+  treeLayout(root);
+  updateGraph();
+  updateBreadcrumb();
+  updatePanel(d);
+  openPanel();
+}
+
+function updateBreadcrumb(){
+  const bc = document.getElementById("breadcrumb");
+  bc.innerHTML = "";
+  if(!selectedNode || selectedNode.depth === 0){
+    bc.classList.remove("visible");
+    return;
+  }
+  bc.classList.add("visible");
+
+  const path = [];
+  let node = selectedNode;
+  while(node){
+    path.unshift(node);
+    node = node.parent;
+  }
+
+  path.forEach((n, i) => {
+    if(i > 0){
+      const sep = document.createElement("span");
+      sep.className = "bc-sep";
+      sep.innerText = "/";
+      bc.appendChild(sep);
+    }
+    const item = document.createElement("span");
+    item.className = "bc-item";
+    item.innerText = n.data.name;
+    item.onclick = () => {
+      // Expand path to this node
+      let curr = n;
+      while(curr){
+        if(curr._children){
+          curr.children = curr._children;
+          curr._children = null;
+        }
+        curr = curr.parent;
+      }
+      treeLayout(root);
+      updateGraph();
+      selectedNode = n;
+      updateBreadcrumb();
+      updatePanel(n);
+    };
+    bc.appendChild(item);
+  });
+}
+
+function updatePanel(d){
+  const cfg = TC[d.data.type];
+  document.getElementById("panel-eyebrow").innerText = cfg?.label || d.data.type;
+  document.getElementById("panel-title").innerText = d.data.name;
+  document.getElementById("panel-subtitle").innerText = d.data.score ? `Score : ${d.data.score}/100` : (d.data.value ? `Score : ${d.data.value}/100` : "");
+
+  const score = d.data.score || d.data.value || 0;
+  const pf = document.getElementById("p-fill");
+  pf.style.width = `${score}%`;
+  pf.style.background = score > 80 ? "linear-gradient(90deg,#16a34e,#22c55e)" : score > 60 ? "linear-gradient(90deg,#d97706,#f59e0b)" : "linear-gradient(90deg,#dc2626,#ef4444)";
+  document.getElementById("p-text").innerText = `${score}%`;
+
+  const ls = document.getElementById("likert-sec");
+  if(d.data.type === "skill_disc" || d.data.type === "skill_trans"){
+    ls.style.display = "block";
+    const lr = document.getElementById("likert-row");
+    lr.innerHTML = "";
+    for(let i = 1; i <= 5; i++){
+      const dot = document.createElement("div");
+      dot.className = `likert-dot lk-${i}${d.data.likert === i ? " selected" : ""}`;
+      dot.innerText = i;
+      dot.onclick = () => { d.data.likert = i; updatePanel(d); };
+      lr.appendChild(dot);
+    }
+  } else ls.style.display = "none";
+
+  document.getElementById("ai-auto-box").innerHTML = buildAutoInsight(d);
+
+  const cl = document.getElementById("conn-list");
+  cl.innerHTML = "";
+
+  // Parent
+  if(d.parent){
+    const li = document.createElement("li");
+    li.className = "conn-item";
+    li.innerHTML = `<span>⬆️ ${d.parent.data.name}</span><span class="conn-type">Parent</span>`;
+    li.onclick = () => { selectedNode = d.parent; updatePanel(d.parent); updateBreadcrumb(); };
+    cl.appendChild(li);
+  }
+
+  // Children
+  const children = d.children || d._children;
+  if(children){
+    children.forEach(child => {
+      const li = document.createElement("li");
+      li.className = "conn-item";
+      li.innerHTML = `<span>${child.data.emoji || ""} ${child.data.name}</span><span class="conn-type">${TC[child.data.type]?.label || child.data.type}</span>`;
+      li.onclick = () => { selectedNode = child; updatePanel(child); updateBreadcrumb(); };
+      cl.appendChild(li);
+    });
+  }
+
+  document.getElementById("btn-exercise").innerText = `🎯 Exercice sur ${d.data.name}`;
+}
+
+function buildAutoInsight(d){
+  if(d.data.type === "subject"){
+    const rows = [];
+    if(d.data.score >= 75) rows.push(`<div class="ai-row positive"><span class="ai-icon">✅</span><span>Tu maîtrises bien cette matière. Continue comme ça !</span></div>`);
+    else if(d.data.score >= 60) rows.push(`<div class="ai-row"><span class="ai-icon">💡</span><span>Tu progresses. Quelques exercices supplémentaires et tu seras au top.</span></div>`);
+    else rows.push(`<div class="ai-row negative"><span class="ai-icon">🎯</span><span>C'est une matière à travailler. Des exercices adaptés t'attendent !</span></div>`);
+    const reco = d.data.score >= 75 ? "Tu peux explorer des concepts plus avancés." : d.data.score >= 60 ? "Concentre-toi sur les bases, elles te serviront partout." : "Commence par les fondamentaux. On y va étape par étape !";
+    return `<div class="ai-auto-header">🤖 IA Cognitarium</div>${rows.join("")}<div class="ai-row" style="border-top:1px solid rgba(0,0,0,0.08);margin-top:4px;padding-top:8px"><span class="ai-icon">⭐</span><span><strong style="color:var(--accent)">Conseil —</strong> ${reco}</span></div>`;
+  }
+  const generic = {
+    world: "Ton parcours scolaire complet. Toutes tes matières et compétences sont reliées ici.",
+    domain: "Ce domaine regroupe plusieurs matières. Chacune développe des compétences différentes.",
+    skill_disc: "Cette compétence est au cœur de ton apprentissage. Elle se construit avec de la pratique.",
+    skill_trans: "Cette compétence se développe dans plusieurs matières. C'est un super atout !",
+    cognitive: "Ce processus cognitif est comme un muscle. Plus tu l'entraînes, plus il devient fort.",
+    score: "Score calculé à partir de tes exercices et évaluations.",
+  };
+  return `<div class="ai-auto-header">🤖 IA Cognitarium</div><div class="ai-row"><span class="ai-icon">⭐</span><span>${generic[d.data.type] || "Analyse en cours."}</span></div>`;
+}
+
+function openPanel(){ document.getElementById("info-panel").classList.add("open"); }
+function closePanel(){ document.getElementById("info-panel").classList.remove("open"); }
+
+function showTip(event, d){
+  const tip = document.getElementById("tooltip");
+  const cfg = TC[d.data.type];
+  tip.innerHTML = `<strong>${d.data.emoji || ""} ${d.data.name}</strong><br><span style="opacity:0.5">${cfg?.label || d.data.type}</span>${d.data.score ? `<br>Score: ${d.data.score}/100` : ""}${d.data.value ? `<br>Score: ${d.data.value}/100` : ""}`;
+  tip.style.left = (event.pageX + 12) + "px";
+  tip.style.top = (event.pageY - 12) + "px";
+  tip.style.opacity = 1;
+}
+function hideTip(){ document.getElementById("tooltip").style.opacity = 0; }
+
+function goView(view){
+  activeView = view;
+  document.querySelectorAll(".view-layer").forEach(el => el.classList.remove("active"));
+  document.getElementById(`view-${view}`).classList.add("active");
+  document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
+  const navMap = {twin: "nav-twin", atlas: "nav-atlas", exercises: "nav-exercises", projection: "nav-projection", evolution: "nav-evolution"};
+  if(navMap[view]) document.getElementById(navMap[view])?.classList.add("active");
+
+  if(view === "atlas"){
+    setTimeout(() => {
+      if(!graphInitialized) initGraph();
+      else {
+        const container = document.getElementById("graph-area");
+        svg.attr("width", container.clientWidth).attr("height", container.clientHeight);
+      }
+    }, 60);
+  }
+  if(view === "exercises") renderExercises();
+  if(view === "projection") renderProjection();
+  if(view === "evolution") renderEvolution();
+}
+
+svgEl.addEventListener("click", () => { selectedNode = null; closePanel(); });
+window.addEventListener("resize", () => {
+  if(activeView === "atlas" && graphInitialized){
+    const container = document.getElementById("graph-area");
+    svg.attr("width", container.clientWidth).attr("height", container.clientHeight);
+  }
+});
+
+/* ============================================================
+   VUE MÉTÉO (Home)
+   ============================================================ */
+function renderTwinHome(){
+  document.getElementById("twin-home").innerHTML = `
+    <div class="meteo-card">
+      <div class="meteo-header">
+        <div class="meteo-avatar">L</div>
+        <div class="meteo-id">
+          <h1>Léa</h1>
+          <div class="role">5ème · Collège Mistral</div>
+        </div>
+      </div>
+      <div class="meteo-score">
+        <div class="weather">🌤️</div>
+        <div><span class="num" style="font-family:'Space Grotesk',sans-serif;font-size:36px;font-weight:700;color:var(--accent)">74</span><span style="font-size:16px;color:var(--text-muted)">/100</span></div>
+        <div class="sub">🌱 Bon niveau · +3 points ce mois</div>
+      </div>
+      <div class="streak-row">
+        <div class="streak-badge">🔥 5 jours de suite</div>
+      </div>
+    </div>
+
+    <div class="meteo-card">
+      <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px">⭐ Mes forces</div>
+      <div class="strengths-row">
+        <div class="strength-pill"><div class="stars">★★★★☆</div><div class="name">Maths</div></div>
+        <div class="strength-pill"><div class="stars">★★★★☆</div><div class="name">Sciences</div></div>
+        <div class="strength-pill"><div class="stars">★★★★☆</div><div class="name">Créativité</div></div>
+      </div>
+      <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;margin-top:16px">🎯 Axes de travail</div>
+      <div class="work-row">
+        <div class="work-label"><span>Expression écrite</span><span>58%</span></div>
+        <div class="work-track"><div class="work-fill warning" style="width:58%"></div></div>
+      </div>
+      <div class="work-row">
+        <div class="work-label"><span>Expression orale</span><span>52%</span></div>
+        <div class="work-track"><div class="work-fill warning" style="width:52%"></div></div>
+      </div>
+      <div class="work-row">
+        <div class="work-label"><span>Histoire-Géo</span><span>55%</span></div>
+        <div class="work-track"><div class="work-fill warning" style="width:55%"></div></div>
+      </div>
+    </div>
+
+    <div class="challenge-card" onclick="goView('exercises')">
+      <div class="challenge-emoji">🎯</div>
+      <div class="challenge-text">
+        <div class="challenge-title">Défi du jour</div>
+        <div class="challenge-meta">3 exercices de géométrie pour débloquer "Architecte junior"</div>
+      </div>
+      <div class="challenge-arrow">›</div>
+    </div>
+
+    <div class="meteo-card">
+      <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px">🚪 Portes ouvertes</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span style="padding:6px 12px;background:var(--accent-dim);border-radius:10px;font-size:11px;font-weight:600;color:var(--accent)">🔢 Algorithmique</span>
+        <span style="padding:6px 12px;background:var(--mastered-dim);border-radius:10px;font-size:11px;font-weight:600;color:var(--mastered)">⚗️ Sciences de l'ingénieur</span>
+        <span style="padding:6px 12px;background:var(--violet-dim);border-radius:10px;font-size:11px;font-weight:600;color:var(--violet)">🎨 Arts numériques</span>
+      </div>
+    </div>
+  `;
+}
+
+/* ============================================================
+   VUE EXERCICES
+   ============================================================ */
+function renderExercises(){
+  const exercises=[
+    {emoji:"📐",title:"Angles et droites",meta:"Maths · 5 min · Niveau 2",tag:"math",tagLabel:"Maths",diff:2},
+    {emoji:"📝",title:"Analyser un poème",meta:"Français · 10 min · Niveau 3",tag:"french",tagLabel:"Français",diff:3},
+    {emoji:"🌍",title:"Les écosystèmes",meta:"SVT · 8 min · Niveau 2",tag:"science",tagLabel:"Sciences",diff:2},
+    {emoji:"🔢",title:"Équations simples",meta:"Maths · 5 min · Niveau 2",tag:"math",tagLabel:"Maths",diff:2},
+    {emoji:"📖",title:"Vocabulaire anglais",meta:"Anglais · 5 min · Niveau 1",tag:"french",tagLabel:"Langues",diff:1},
+    {emoji:"🧩",title:"Logique : séquences",meta:"Maths · 7 min · Niveau 3",tag:"math",tagLabel:"Maths",diff:3},
+  ];
+  document.getElementById("exercises-list").innerHTML = `
+    <div style="font-size:18px;font-weight:700;font-family:'Space Grotesk',sans-serif;margin-bottom:16px">🎯 Exercices adaptés</div>
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:16px">Ces exercices sont choisis pour toi, selon ton profil et tes axes de travail.</div>
+    ${exercises.map(ex=>`
+      <div class="exercise-card" onclick="alert('Exercice : ${ex.title}')">
+        <div class="ex-emoji">${ex.emoji}</div>
+        <div class="ex-content">
+          <div class="ex-title">${ex.title}</div>
+          <div class="ex-meta">${ex.meta}</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+            <span class="ex-tag ${ex.tag}">${ex.tagLabel}</span>
+            <div class="ex-diff">${[1,2,3,4,5].map(i=>`<div class="diff-dot ${i<=ex.diff?'active':''}"></div>`).join('')}</div>
+          </div>
+        </div>
+      </div>
+    `).join("")}
+  `;
+}
+
+/* ============================================================
+   VUE PROJECTION (Portes ouvertes)
+   ============================================================ */
+function renderProjection(){
+  const paths=[
+    {emoji:"🔢",title:"Algorithmique",desc:"Avec ton raisonnement logique (82/100), tu peux découvrir la programmation. C'est comme résoudre des énigmes, mais avec un ordinateur.",compat:85,skills:["Raisonnement logique","Flexibilité mentale","Patience"],color:"#3b82f6"},
+    {emoji:"⚗️",title:"Sciences de l'ingénieur",desc:"Tu aimes comprendre comment les choses fonctionnent. Cette spécialité te fera concevoir des objets et des systèmes.",compat:72,skills:["Analyse de données","Observation","Créativité"],color:"#22c55e"},
+    {emoji:"🎨",title:"Arts numériques",desc:"Ta créativité est un atout rare. Combine-la avec la technologie pour créer des images, des jeux, des animations.",compat:65,skills:["Créativité","Raisonnement spatial","Expression"],color:"#ec4899"},
+    {emoji:"📰",title:"Journalisme",desc:"Ton esprit critique (70/100) et ta curiosité sont des bases solides. Le journalisme, c'est raconter le monde avec rigueur.",compat:58,skills:["Esprit critique","Expression écrite","Curiosité"],color:"#f59e0b"},
+  ];
+  document.getElementById("projection-list").innerHTML = `
+    <div style="font-size:18px;font-weight:700;font-family:'Space Grotesk',sans-serif;margin-bottom:16px">🚪 Portes ouvertes</div>
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:16px">Ces mondes sont accessibles depuis tes compétences actuelles. Plus tu progresses, plus les portes s'ouvrent.</div>
+    ${paths.map(p=>`
+      <div class="path-card">
+        <div class="path-header">
+          <div class="path-icon" style="background:${p.color}15;color:${p.color}">${p.emoji}</div>
+          <div class="path-title">${p.title}</div>
+          <div class="path-compat ${p.compat>=70?'high':'med'}">${p.compat}%</div>
+        </div>
+        <div class="path-desc">${p.desc}</div>
+        <div class="path-skills">
+          ${p.skills.map(s=>`<span class="path-skill">${s}</span>`).join('')}
+        </div>
+      </div>
+    `).join("")}
+  `;
+}
+
+/* ============================================================
+   VUE ÉVOLUTION (Timeline)
+   ============================================================ */
+function renderEvolution(){
+  document.getElementById("evolution-content").innerHTML = `
+    <div style="font-size:18px;font-weight:700;font-family:'Space Grotesk',sans-serif;margin-bottom:16px">📈 Mon évolution</div>
+    <div class="meteo-card" style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px">Score global — 6 mois</div>
+      <svg id="evo-chart" width="100%" height="140"></svg>
+    </div>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot done">✓</div>
+        <div class="tl-title">Septembre — Début de l'année</div>
+        <div class="tl-meta">Score initial : 68/100</div>
+        <div class="tl-badge gray">Départ</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot done">✓</div>
+        <div class="tl-title">Octobre — Premier progrès</div>
+        <div class="tl-meta">+4 points en maths · Score : 72/100</div>
+        <div class="tl-badge green">+4 pts</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot done">✓</div>
+        <div class="tl-title">Novembre — Déblocage</div>
+        <div class="tl-meta">Porte "Algorithmique" ouverte · Score : 74/100</div>
+        <div class="tl-badge green">+2 pts</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot active"></div>
+        <div class="tl-title">Décembre — En cours</div>
+        <div class="tl-meta">Objectif : 78/100 · Focus : expression écrite</div>
+        <div class="tl-badge amber">En cours</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot todo"></div>
+        <div class="tl-title">Janvier — Objectif</div>
+        <div class="tl-meta">Score visé : 80/100 · Nouvelle porte à débloquer</div>
+        <div class="tl-badge gray">À venir</div>
+      </div>
+    </div>
+  `;
+  setTimeout(drawEvoChart, 50);
+}
+
+function drawEvoChart(){
+  const el = document.getElementById("evo-chart");
+  if(!el) return;
+  const Wd = el.clientWidth || 320, Hd = 140, pad = {t:10,r:14,b:24,l:28};
+  const svg2 = d3.select("#evo-chart").attr("viewBox", `0 0 ${Wd} ${Hd}`);
+  svg2.selectAll("*").remove();
+  const mois = ["Sep","Oct","Nov","Déc","Jan"];
+  const scores = [68,72,74,74,78];
+  const x = d3.scaleLinear().domain([0,4]).range([pad.l, Wd-pad.r]);
+  const y = d3.scaleLinear().domain([60,85]).range([Hd-pad.b, pad.t]);
+  const area = d3.area().x((_,i)=>x(i)).y0(Hd-pad.b).y1(d=>y(d)).curve(d3.curveCatmullRom);
+  const line = d3.line().x((_,i)=>x(i)).y(d=>y(d)).curve(d3.curveCatmullRom);
+  const aGrad = svg2.append("defs").append("linearGradient").attr("id","aGrad3").attr("x1","0").attr("y1","0").attr("x2","0").attr("y2","1");
+  aGrad.append("stop").attr("offset","0%").attr("stop-color","#3b82f6").attr("stop-opacity",0.18);
+  aGrad.append("stop").attr("offset","100%").attr("stop-color","#3b82f6").attr("stop-opacity",0);
+  mois.forEach((m,i)=>{ svg2.append("text").attr("x",x(i)).attr("y",Hd-pad.b+11).attr("text-anchor","middle").attr("font-size","8px").attr("fill","rgba(0,0,0,0.3)").text(m); });
+  svg2.append("path").datum(scores).attr("fill","url(#aGrad3)").attr("d",area);
+  svg2.append("path").datum(scores).attr("fill","none").attr("stroke","#3b82f6").attr("stroke-width",2.5).attr("d",line);
+  scores.forEach((v,i)=>{ svg2.append("circle").attr("cx",x(i)).attr("cy",y(v)).attr("r",i===4?5:3).attr("fill",i===4?"#3b82f6":"rgba(59,130,246,0.5)"); });
+  svg2.append("text").attr("x",x(4)+8).attr("y",y(78)+3).attr("font-size","11px").attr("fill","#3b82f6").attr("font-weight","700").text("78");
+}
+
+function startExercise(){
+  if(selectedNode){
+    alert(`Exercice lancé pour : ${selectedNode.data.name}`);
+    goView('exercises');
+  }
+}
+
+/* ============================================================
+   ONBOARDING SEQUENCER
+   ============================================================ */
+const OB_STAGES = 6;
+let currentStage = 0;
+
+function buildStepTrack(){
+  const track = document.getElementById("ob-steps");
+  track.innerHTML = "";
+  for(let i = 0; i < OB_STAGES; i++){
+    const d = document.createElement("div");
+    d.className = "ob-step-dot" + (i < currentStage ? " done" : i === currentStage ? " active" : "");
+    track.appendChild(d);
+  }
+}
+
+function goStage(n){
+  currentStage = n;
+  document.querySelectorAll(".ob-stage").forEach(s => s.classList.toggle("active", parseInt(s.dataset.stage) === n));
+  buildStepTrack();
+  if(n === 4){ runBuildAnimation(); }
+  if(n === 5){ runBirthAnimation(); }
+}
+
+function selectQuiz(el){
+  el.classList.toggle("selected");
+  const selected = document.querySelectorAll(".quiz-card.selected").length;
+  document.getElementById("btn-quiz-next").disabled = selected === 0;
+}
+
+function runBuildAnimation(){
+  const svg2 = d3.select("#ob-build-svg");
+  svg2.selectAll("*").remove();
+  const cx = 100, cy = 100;
+  const nodes = [{r:0,a:0},{r:55,a:0.3},{r:55,a:2.1},{r:55,a:3.9},{r:55,a:5.5},{r:85,a:1},{r:85,a:3},{r:85,a:5}];
+  nodes.slice(1).forEach((n,i)=>{
+    const x = cx + n.r * Math.cos(n.a), y = cy + n.r * Math.sin(n.a);
+    svg2.append("line").attr("x1",cx).attr("y1",cy).attr("x2",cx).attr("y2",cy)
+      .attr("stroke","#3b82f6").attr("stroke-width",1.2).attr("opacity",0)
+      .transition().delay(200+i*180).duration(500).attr("x2",x).attr("y2",y).attr("opacity",0.4);
+  });
+  svg2.append("circle").attr("cx",cx).attr("cy",cy).attr("r",14).attr("fill","#3b82f6").attr("opacity",0)
+    .transition().duration(400).attr("opacity",1);
+  nodes.slice(1).forEach((n,i)=>{
+    const x = cx + n.r * Math.cos(n.a), y = cy + n.r * Math.sin(n.a);
+    svg2.append("circle").attr("cx",x).attr("cy",y).attr("r",0).attr("fill",i<4?"#8b5cf6":"#22c55e")
+      .transition().delay(300+i*180).duration(400).attr("r",n.r>60?5:7);
+  });
+  const statuses = ["Cartographie des matières…","Connexion des compétences…","Calibrage des scores…","Analyse des portes ouvertes…","Finalisation du jumeau…"];
+  let si = 0;
+  const interval = setInterval(()=>{
+    document.getElementById("build-status").innerText = statuses[si];
+    si++;
+    if(si >= statuses.length){ clearInterval(interval); setTimeout(()=>goStage(5), 900); }
+  }, 700);
+}
+
+function runBirthAnimation(){
+  const svg2 = d3.select("#ob-birth-svg");
+  svg2.selectAll("*").remove();
+  const cx = 90, cy = 90;
+  for(let i = 0; i < 3; i++){
+    svg2.append("circle").attr("cx",cx).attr("cy",cy).attr("r",10).attr("fill","none")
+      .attr("stroke","#3b82f6").attr("stroke-width",2).attr("opacity",0.8)
+      .transition().delay(i*300).duration(1800).ease(d3.easeCubicOut).attr("r",85).attr("opacity",0);
+  }
+  svg2.append("circle").attr("cx",cx).attr("cy",cy).attr("r",0).attr("fill","#3b82f6")
+    .transition().duration(600).ease(d3.easeBackOut).attr("r",22);
+  function loop(){
+    svg2.selectAll(".pulse-ring").remove();
+    svg2.insert("circle",":first-child").attr("class","pulse-ring").attr("cx",cx).attr("cy",cy).attr("r",22).attr("fill","none").attr("stroke","#3b82f6").attr("stroke-width",1.5).attr("opacity",0.6)
+      .transition().duration(1600).attr("r",70).attr("opacity",0);
+  }
+  loop(); setInterval(loop, 1600);
+}
+
+function enterApp(){
+  document.getElementById("onboarding").classList.add("hidden");
+  setTimeout(()=>{
+    document.getElementById("onboarding").style.display = "none";
+    renderTwinHome();
+    document.getElementById("app").classList.add("visible");
+    goView("twin");
+  }, 550);
+}
+
+/* ============================================================
+   LIKERT INIT
+   ============================================================ */
+function initLikert(id, key){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.innerHTML = "";
+  for(let i = 1; i <= 5; i++){
+    const dot = document.createElement("div");
+    dot.className = `likert-dot lk-${i}${likertValues[key] === i ? " selected" : ""}`;
+    dot.innerText = i;
+    dot.onclick = () => {
+      likertValues[key] = i;
+      initLikert(id, key);
+    };
+    el.appendChild(dot);
+  }
+}
+
+/* ============================================================
+   GLOBAL INIT
+   ============================================================ */
+buildStepTrack();
+initLikert("likert-logic", "logic");
+initLikert("likert-writing", "writing");
+initLikert("likert-creative", "creative");
+initLikert("likert-oral", "oral");
+</script>
+</body>
+</html>
