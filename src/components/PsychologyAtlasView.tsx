@@ -1,22 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { BookOpen, ChevronRight, ListTree, Network, Quote, Search } from 'lucide-react';
 import { KEY_CITATIONS, PSYCHOLOGY_BRANCHES, PsyNode } from '../data/psychologyAtlas';
-import { CoverFlowCarousel, CarouselItem } from './ui/CoverFlowCarousel';
 import { AppActiveTab } from '../types';
 import { DisciplineGraph, findNode } from './atlas/DisciplineGraph';
+import { ConstellationAtlas } from './atlas/ConstellationAtlas';
 
 type AtlasMode = 'titres' | 'graphe' | 'coverflow';
-
-const TONE: Record<string, string> = {
-  blue: 'linear-gradient(160deg,#1d4ed8,#0f172a)',
-  rose: 'linear-gradient(160deg,#be123c,#0f172a)',
-  emerald: 'linear-gradient(160deg,#047857,#0f172a)',
-  amber: 'linear-gradient(160deg,#b45309,#0f172a)',
-  violet: 'linear-gradient(160deg,#6d28d9,#0f172a)',
-  teal: 'linear-gradient(160deg,#0f766e,#0f172a)',
-  indigo: 'linear-gradient(160deg,#4338ca,#0f172a)',
-  slate: 'linear-gradient(160deg,#334155,#0c0a09)'
-};
 
 const COLOR: Record<string, { chip: string; bar: string; ring: string }> = {
   blue: { chip: 'bg-blue-50 text-blue-700 border-blue-200', bar: 'bg-blue-600', ring: 'hover:border-blue-400' },
@@ -28,38 +17,6 @@ const COLOR: Record<string, { chip: string; bar: string; ring: string }> = {
   indigo: { chip: 'bg-indigo-50 text-indigo-700 border-indigo-200', bar: 'bg-indigo-600', ring: 'hover:border-indigo-400' },
   slate: { chip: 'bg-slate-100 text-slate-700 border-slate-300', bar: 'bg-slate-800', ring: 'hover:border-slate-500' }
 };
-
-interface Level {
-  id: string;
-  label: string;
-  object?: string;
-  children: PsyNode[];
-  tone: string;
-}
-
-function rootLevel(): Level {
-  return {
-    id: 'root',
-    label: 'Psychologie',
-    object: 'Huit branches — carte de navigation, pas un diagnostic.',
-    tone: TONE.slate,
-    children: PSYCHOLOGY_BRANCHES.map((b) => ({
-      id: b.id,
-      label: b.title,
-      children: b.trees.map((t) => ({
-        id: `${b.id}::${t.title}`,
-        label: t.title,
-        children: t.children
-      }))
-    }))
-  };
-}
-
-function splitLabel(label: string): { a: string; b?: string } {
-  const i = label.indexOf('—');
-  if (i < 0) return { a: label };
-  return { a: label.slice(0, i).trim(), b: label.slice(i).trim() };
-}
 
 const TitleOutline: React.FC<{
   selectedId: string | null;
@@ -182,52 +139,11 @@ const CitationsPanel: React.FC = () => {
 
 export const PsychologyAtlasView: React.FC<{ onNavigate?: (tab: AppActiveTab) => void }> = () => {
   const [mode, setMode] = useState<AtlasMode>('coverflow');
-  const [stack, setStack] = useState<Level[]>([rootLevel()]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const current = stack[stack.length - 1];
 
   const hit = selectedId ? findNode(PSYCHOLOGY_BRANCHES, selectedId) : null;
   const selectedBranch = hit?.branch ?? PSYCHOLOGY_BRANCHES.find((b) => b.id === selectedId);
   const colors = COLOR[selectedBranch?.color || 'slate'];
-
-  const enter = (node: PsyNode) => {
-    setSelectedId(node.id);
-    const found = findNode(PSYCHOLOGY_BRANCHES, node.id);
-    const tone = TONE[found?.branch.color || 'slate'];
-    const kids = node.children;
-    if (kids && kids.length) {
-      setStack((s) => [
-        ...s,
-        {
-          id: node.id,
-          label: node.label,
-          object: found?.branch && node.id === found.branch.id ? found.branch.object : undefined,
-          children: kids,
-          tone
-        }
-      ]);
-    }
-  };
-
-  const items: CarouselItem[] = current.children.map((n) => {
-    const parts = splitLabel(n.label);
-    const found = findNode(PSYCHOLOGY_BRANCHES, n.id);
-    const nKids = n.children?.length ?? 0;
-    return {
-      id: n.id,
-      tag: current.label,
-      titleLine1: parts.a,
-      titleLine2: parts.b,
-      desc:
-        found?.branch && n.id === found.branch.id
-          ? found.branch.object
-          : nKids
-            ? `${nKids} sous-niveaux — cliquer pour descendre`
-            : n.label,
-      tone: TONE[found?.branch.color || 'slate'],
-      ctaText: nKids ? 'Descendre' : 'Fiche'
-    };
-  });
 
   return (
     <div className="space-y-5 pb-12">
@@ -237,13 +153,13 @@ export const PsychologyAtlasView: React.FC<{ onNavigate?: (tab: AppActiveTab) =>
         </span>
         <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight mt-3">Arborescence de la psychologie</h1>
         <p className="text-sm text-slate-600 max-w-3xl mt-2 leading-relaxed">
-          Même contenu, trois affichages : affiche titrée, graphe d’ontologie (pas le graphe de compétences), coverflow à
-          descente. Clique une branche, puis un processus, puis une fiche.
+          Même contenu, trois affichages. La constellation est un plan unique (style arbre de compétences) :
+          clic = la caméra vole vers la carte ; retour = domaine précédent.
         </p>
         <div className="flex flex-wrap gap-1.5 mt-4">
           {(
             [
-              { id: 'coverflow' as const, label: 'Coverflow', icon: <ChevronRight className="w-3.5 h-3.5" /> },
+              { id: 'coverflow' as const, label: 'Constellation', icon: <ChevronRight className="w-3.5 h-3.5" /> },
               { id: 'titres' as const, label: 'Titres / affiche', icon: <ListTree className="w-3.5 h-3.5" /> },
               { id: 'graphe' as const, label: 'Graphe disciplinaire', icon: <Network className="w-3.5 h-3.5" /> }
             ]
@@ -263,51 +179,10 @@ export const PsychologyAtlasView: React.FC<{ onNavigate?: (tab: AppActiveTab) =>
         </div>
       </div>
 
-      {mode === 'coverflow' && (
-        <div className="space-y-3">
-          <nav className="flex flex-wrap items-center gap-1 text-xs">
-            {stack.map((lvl, i) => (
-              <React.Fragment key={lvl.id}>
-                {i > 0 && <ChevronRight className="w-3 h-3 text-slate-400" />}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStack((s) => s.slice(0, i + 1));
-                    setSelectedId(lvl.id === 'root' ? null : lvl.id);
-                  }}
-                  className={`px-2 py-1 rounded-lg font-bold ${i === stack.length - 1 ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'}`}
-                >
-                  {lvl.label}
-                </button>
-              </React.Fragment>
-            ))}
-          </nav>
-          {items.length > 0 ? (
-            <CoverFlowCarousel
-              items={items}
-              sectionLabel={current.label}
-              autoplay={false}
-              onCtaClick={(item) => {
-                const node = current.children.find((c) => c.id === item.id);
-                if (node) enter(node);
-              }}
-            />
-          ) : (
-            <div className="rounded-3xl border border-slate-200 bg-white p-8">
-              <p className="text-sm text-slate-500">Feuille atteinte — voir la fiche à droite.</p>
-            </div>
-          )}
-        </div>
-      )}
-
+      {mode === 'coverflow' && <ConstellationAtlas selectedId={selectedId} onSelect={setSelectedId} />}
       {mode === 'titres' && <TitleOutline selectedId={selectedId} onSelect={setSelectedId} />}
-
       {mode === 'graphe' && (
-        <DisciplineGraph
-          branches={PSYCHOLOGY_BRANCHES}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-        />
+        <DisciplineGraph branches={PSYCHOLOGY_BRANCHES} selectedId={selectedId} onSelect={setSelectedId} />
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
@@ -317,9 +192,7 @@ export const PsychologyAtlasView: React.FC<{ onNavigate?: (tab: AppActiveTab) =>
           </span>
           {hit || selectedBranch ? (
             <>
-              <h2 className="text-lg font-bold text-slate-900">
-                {hit?.node?.label || selectedBranch?.title}
-              </h2>
+              <h2 className="text-lg font-bold text-slate-900">{hit?.node?.label || selectedBranch?.title}</h2>
               {hit?.group && <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{hit.group}</p>}
               <p className="text-sm text-slate-600 leading-relaxed">
                 {selectedBranch?.object}
@@ -354,7 +227,7 @@ export const PsychologyAtlasView: React.FC<{ onNavigate?: (tab: AppActiveTab) =>
               )}
             </>
           ) : (
-            <p className="text-sm text-slate-500">Choisis un nœud dans le coverflow, l’affiche ou le graphe.</p>
+            <p className="text-sm text-slate-500">Choisis un nœud dans la constellation, l’affiche ou le graphe.</p>
           )}
         </div>
         <div className="lg:col-span-2">
