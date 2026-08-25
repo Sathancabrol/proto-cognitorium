@@ -1,0 +1,1460 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .sb-root {
+    background: #050508;
+    color: #C8D0E0;
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  .sb-header {
+    background: #050508;
+    border-bottom: 1px solid rgba(123,97,255,0.2);
+    padding: 20px 32px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sb-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .sb-logo-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .sb-logo-text {
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: 0.04em;
+  }
+
+  .sb-meta {
+    font-size: 11px;
+    color: #4A5568;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.06em;
+  }
+
+  .sb-nav {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .sb-nav-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #1A1A2E;
+    border: 1px solid #2D2D45;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .sb-nav-dot.active {
+    background: #7B61FF;
+    border-color: #7B61FF;
+  }
+
+  .sb-scroll {
+    overflow-x: auto;
+    overflow-y: visible;
+    padding: 32px 32px 48px;
+    scrollbar-width: thin;
+    scrollbar-color: #1A1A2E #050508;
+  }
+
+  .sb-scroll::-webkit-scrollbar { height: 4px; }
+  .sb-scroll::-webkit-scrollbar-track { background: #050508; }
+  .sb-scroll::-webkit-scrollbar-thumb { background: #1A1A2E; border-radius: 2px; }
+
+  .sb-track {
+    display: flex;
+    gap: 0;
+    align-items: flex-start;
+    min-width: max-content;
+    position: relative;
+  }
+
+  .sb-connector {
+    width: 32px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 260px;
+    margin-top: 56px;
+  }
+
+  .sb-connector-line {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(123,97,255,0.3) 0%, rgba(0,255,136,0.3) 100%);
+    position: relative;
+  }
+
+  .sb-connector-arrow {
+    position: absolute;
+    right: -4px;
+    top: -4px;
+    width: 8px;
+    height: 8px;
+    border-top: 1px solid rgba(123,97,255,0.5);
+    border-right: 1px solid rgba(123,97,255,0.5);
+    transform: rotate(45deg);
+  }
+
+  .sb-card {
+    width: 220px;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .sb-card:hover {
+    transform: translateY(-4px);
+  }
+
+  .sb-card:hover .sb-screen {
+    border-color: rgba(123,97,255,0.5);
+    box-shadow: 0 0 24px rgba(123,97,255,0.12), 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  .sb-card-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #7B61FF;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .sb-card-num::before {
+    content: '';
+    display: block;
+    width: 16px;
+    height: 1px;
+    background: #7B61FF;
+    opacity: 0.5;
+  }
+
+  .sb-screen {
+    background: #0A0A12;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    height: 260px;
+    overflow: hidden;
+    position: relative;
+    transition: border-color 0.25s, box-shadow 0.25s;
+  }
+
+  .sb-card-info {
+    padding: 12px 0 0;
+  }
+
+  .sb-card-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #E2E8F0;
+    margin-bottom: 5px;
+    letter-spacing: 0.01em;
+  }
+
+  .sb-card-desc {
+    font-size: 10.5px;
+    color: #4A5568;
+    line-height: 1.55;
+    margin-bottom: 8px;
+  }
+
+  .sb-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .sb-tag {
+    font-size: 9.5px;
+    padding: 2px 7px;
+    border-radius: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.04em;
+  }
+
+  .sb-tag-anim { background: rgba(123,97,255,0.12); color: #9B8BFF; border: 1px solid rgba(123,97,255,0.2); }
+  .sb-tag-interact { background: rgba(0,255,136,0.08); color: #00C870; border: 1px solid rgba(0,255,136,0.15); }
+  .sb-tag-trans { background: rgba(255,200,80,0.08); color: #CCA84A; border: 1px solid rgba(255,200,80,0.15); }
+
+  /* Screen inners */
+  .sc { width: 100%; height: 100%; position: relative; overflow: hidden; }
+
+  /* Pulse animation */
+  @keyframes pulse-ring {
+    0% { transform: scale(0.8); opacity: 1; }
+    100% { transform: scale(2.2); opacity: 0; }
+  }
+  @keyframes float-up {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  @keyframes shimmer {
+    0% { opacity: 0.3; }
+    50% { opacity: 1; }
+    100% { opacity: 0.3; }
+  }
+  @keyframes draw-line {
+    from { stroke-dashoffset: 100; }
+    to { stroke-dashoffset: 0; }
+  }
+  @keyframes blink-cursor {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+  @keyframes node-appear {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  @keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(123,97,255,0.3); }
+    50% { box-shadow: 0 0 20px rgba(123,97,255,0.7); }
+  }
+  @keyframes scan-line {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(400%); }
+  }
+</style>
+
+<div class="sb-root">
+  <div class="sb-header">
+    <div class="sb-logo">
+      <svg class="sb-logo-icon" viewBox="0 0 28 28" fill="none">
+        <circle cx="14" cy="14" r="13" stroke="#7B61FF" stroke-width="1"/>
+        <circle cx="14" cy="14" r="3" fill="#7B61FF"/>
+        <line x1="14" y1="1" x2="14" y2="7" stroke="#7B61FF" stroke-width="1.5" opacity="0.6"/>
+        <line x1="14" y1="21" x2="14" y2="27" stroke="#7B61FF" stroke-width="1.5" opacity="0.6"/>
+        <line x1="1" y1="14" x2="7" y2="14" stroke="#7B61FF" stroke-width="1.5" opacity="0.6"/>
+        <line x1="21" y1="14" x2="27" y2="14" stroke="#7B61FF" stroke-width="1.5" opacity="0.6"/>
+        <line x1="4.9" y1="4.9" x2="9.2" y2="9.2" stroke="#00FF88" stroke-width="1" opacity="0.5"/>
+        <line x1="18.8" y1="18.8" x2="23.1" y2="23.1" stroke="#00FF88" stroke-width="1" opacity="0.5"/>
+        <line x1="23.1" y1="4.9" x2="18.8" y2="9.2" stroke="#00FF88" stroke-width="1" opacity="0.5"/>
+        <line x1="9.2" y1="18.8" x2="4.9" y2="23.1" stroke="#00FF88" stroke-width="1" opacity="0.5"/>
+      </svg>
+      <span class="sb-logo-text">COGNITARIUM</span>
+    </div>
+    <div class="sb-nav" id="navDots"></div>
+    <div class="sb-meta">STORYBOARD · ONBOARDING FLOW · 14 SCREENS · v1.0</div>
+  </div>
+
+  <div class="sb-scroll" id="sbScroll">
+    <div class="sb-track" id="sbTrack"></div>
+  </div>
+</div>
+
+<script>
+const screens = [
+  {
+    num: "01",
+    title: "Splash — Arbre Cognitif",
+    desc: "Fond noir absolu. Un arbre numérique apparaît progressivement, impulsion lumineuse des racines vers les feuilles.",
+    tags: [["anim","Impulsion lumineuse"],["trans","Morphing → logo"],["anim","Pulse racines→feuilles"]],
+    render: (el) => {
+      el.innerHTML = `
+        <svg width="100%" height="100%" viewBox="0 0 220 260">
+          <defs>
+            <radialGradient id="rg1" cx="50%" cy="70%" r="50%">
+              <stop offset="0%" stop-color="#7B61FF" stop-opacity="0.15"/>
+              <stop offset="100%" stop-color="#050508" stop-opacity="0"/>
+            </radialGradient>
+            <filter id="glow1">
+              <feGaussianBlur stdDeviation="2" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <rect width="220" height="260" fill="#050508"/>
+          <rect width="220" height="260" fill="url(#rg1)"/>
+          <!-- Roots -->
+          <path d="M110 200 Q90 220 70 240" stroke="#7B61FF" stroke-width="1" fill="none" opacity="0.4" stroke-dasharray="60" stroke-dashoffset="60">
+            <animate attributeName="stroke-dashoffset" values="60;0" dur="0.8s" fill="freeze" begin="0.2s"/>
+          </path>
+          <path d="M110 200 Q130 225 155 240" stroke="#7B61FF" stroke-width="1" fill="none" opacity="0.4" stroke-dasharray="60" stroke-dashoffset="60">
+            <animate attributeName="stroke-dashoffset" values="60;0" dur="0.8s" fill="freeze" begin="0.4s"/>
+          </path>
+          <path d="M110 200 Q100 230 95 248" stroke="#7B61FF" stroke-width="0.7" fill="none" opacity="0.3" stroke-dasharray="50" stroke-dashoffset="50">
+            <animate attributeName="stroke-dashoffset" values="50;0" dur="0.6s" fill="freeze" begin="0.5s"/>
+          </path>
+          <!-- Trunk -->
+          <path d="M110 200 L110 130" stroke="#7B61FF" stroke-width="2" fill="none" stroke-dasharray="70" stroke-dashoffset="70">
+            <animate attributeName="stroke-dashoffset" values="70;0" dur="0.5s" fill="freeze" begin="0.8s"/>
+          </path>
+          <!-- Branches -->
+          <path d="M110 155 Q70 135 45 115" stroke="#7B61FF" stroke-width="1.2" fill="none" opacity="0.6" stroke-dasharray="80" stroke-dashoffset="80">
+            <animate attributeName="stroke-dashoffset" values="80;0" dur="0.5s" fill="freeze" begin="1.2s"/>
+          </path>
+          <path d="M110 148 Q150 128 175 108" stroke="#7B61FF" stroke-width="1.2" fill="none" opacity="0.6" stroke-dasharray="80" stroke-dashoffset="80">
+            <animate attributeName="stroke-dashoffset" values="80;0" dur="0.5s" fill="freeze" begin="1.3s"/>
+          </path>
+          <path d="M110 140 Q100 118 92 100" stroke="#7B61FF" stroke-width="0.8" fill="none" opacity="0.5" stroke-dasharray="60" stroke-dashoffset="60">
+            <animate attributeName="stroke-dashoffset" values="60;0" dur="0.4s" fill="freeze" begin="1.4s"/>
+          </path>
+          <!-- Sub-branches left -->
+          <path d="M45 115 Q28 102 18 92" stroke="#7B61FF" stroke-width="0.7" fill="none" opacity="0.5" stroke-dasharray="40" stroke-dashoffset="40">
+            <animate attributeName="stroke-dashoffset" values="40;0" dur="0.3s" fill="freeze" begin="1.6s"/>
+          </path>
+          <path d="M45 115 Q32 108 25 118" stroke="#7B61FF" stroke-width="0.6" fill="none" opacity="0.4" stroke-dasharray="35" stroke-dashoffset="35">
+            <animate attributeName="stroke-dashoffset" values="35;0" dur="0.3s" fill="freeze" begin="1.65s"/>
+          </path>
+          <!-- Sub-branches right -->
+          <path d="M175 108 Q190 95 200 85" stroke="#7B61FF" stroke-width="0.7" fill="none" opacity="0.5" stroke-dasharray="40" stroke-dashoffset="40">
+            <animate attributeName="stroke-dashoffset" values="40;0" dur="0.3s" fill="freeze" begin="1.7s"/>
+          </path>
+          <path d="M175 108 Q188 112 196 118" stroke="#7B61FF" stroke-width="0.6" fill="none" opacity="0.4" stroke-dasharray="35" stroke-dashoffset="35">
+            <animate attributeName="stroke-dashoffset" values="35;0" dur="0.3s" fill="freeze" begin="1.75s"/>
+          </path>
+          <!-- Leaves / nodes (appear last) -->
+          <circle cx="18" cy="90" r="3" fill="#7B61FF" opacity="0">
+            <animate attributeName="opacity" values="0;0.8" dur="0.3s" fill="freeze" begin="1.9s"/>
+            <animate attributeName="r" values="1;3" dur="0.3s" fill="freeze" begin="1.9s"/>
+          </circle>
+          <circle cx="25" cy="118" r="2.5" fill="#7B61FF" opacity="0">
+            <animate attributeName="opacity" values="0;0.7" dur="0.3s" fill="freeze" begin="1.95s"/>
+          </circle>
+          <circle cx="92" cy="100" r="2.5" fill="#00FF88" opacity="0">
+            <animate attributeName="opacity" values="0;0.9" dur="0.3s" fill="freeze" begin="2s"/>
+          </circle>
+          <circle cx="200" cy="84" r="3" fill="#7B61FF" opacity="0">
+            <animate attributeName="opacity" values="0;0.8" dur="0.3s" fill="freeze" begin="2.05s"/>
+          </circle>
+          <circle cx="196" cy="118" r="2.5" fill="#7B61FF" opacity="0">
+            <animate attributeName="opacity" values="0;0.7" dur="0.3s" fill="freeze" begin="2.1s"/>
+          </circle>
+          <!-- Pulse light traveling up trunk -->
+          <circle cx="110" cy="200" r="3" fill="#00FF88" opacity="0.9">
+            <animate attributeName="cy" values="200;130" dur="0.6s" begin="0.8s" fill="freeze"/>
+            <animate attributeName="opacity" values="0.9;0.6;0" dur="1s" begin="1.3s" fill="freeze"/>
+          </circle>
+          <!-- Logo text (appears after morphing) -->
+          <text x="110" y="82" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="600" fill="white" opacity="0">
+            Cognitarium
+            <animate attributeName="opacity" values="0;1" dur="0.5s" begin="2.2s" fill="freeze"/>
+          </text>
+          <text x="110" y="96" text-anchor="middle" font-family="Inter,sans-serif" font-size="7" fill="#7B61FF" opacity="0" letter-spacing="0.5">
+            Cartographiez votre univers cognitif
+            <animate attributeName="opacity" values="0;0.8" dur="0.5s" begin="2.5s" fill="freeze"/>
+          </text>
+          <!-- Annotation arrows -->
+          <g opacity="0.5">
+            <line x1="155" y1="220" x2="120" y2="205" stroke="#CCA84A" stroke-width="0.5" stroke-dasharray="3 2"/>
+            <text x="158" y="222" font-family="Inter" font-size="7" fill="#CCA84A">Racines</text>
+            <line x1="170" y1="155" x2="132" y2="150" stroke="#CCA84A" stroke-width="0.5" stroke-dasharray="3 2"/>
+            <text x="172" y="157" font-family="Inter" font-size="7" fill="#CCA84A">Branches</text>
+          </g>
+          <!-- Timeline bar -->
+          <rect x="20" y="248" width="180" height="2" fill="#1A1A2E" rx="1"/>
+          <rect x="20" y="248" width="45" height="2" fill="#7B61FF" rx="1">
+            <animate attributeName="width" values="0;180" dur="3s" begin="0.2s" fill="freeze"/>
+          </rect>
+          <text x="20" y="258" font-family="JetBrains Mono" font-size="6.5" fill="#4A5568">0.0s</text>
+          <text x="195" y="258" font-family="JetBrains Mono" font-size="6.5" fill="#4A5568" text-anchor="end">2.8s</text>
+        </svg>
+      `;
+    }
+  },
+  {
+    num: "02",
+    title: "Logo Interactif — CTA",
+    desc: "Le logo pulse. Un clic transforme les branches en synapses. Deux CTA principaux apparaissent avec état actif vert.",
+    tags: [["interact","Click sur logo"],["anim","Synapse morph"],["interact","CTA → vert actif"]],
+    render: (el) => {
+      el.innerHTML = `
+        <svg width="100%" height="100%" viewBox="0 0 220 260">
+          <defs>
+            <radialGradient id="rg2" cx="50%" cy="35%" r="40%">
+              <stop offset="0%" stop-color="#7B61FF" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#050508" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <rect width="220" height="260" fill="#050508"/>
+          <rect width="220" height="260" fill="url(#rg2)"/>
+          <!-- Pulse rings -->
+          <circle cx="110" cy="80" r="28" fill="none" stroke="#7B61FF" stroke-width="0.5" opacity="0.6">
+            <animate attributeName="r" values="28;48" dur="2s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.6;0" dur="2s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="110" cy="80" r="28" fill="none" stroke="#7B61FF" stroke-width="0.5" opacity="0.6">
+            <animate attributeName="r" values="28;48" dur="2s" begin="0.7s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.6;0" dur="2s" begin="0.7s" repeatCount="indefinite"/>
+          </circle>
+          <!-- Logo circle -->
+          <circle cx="110" cy="80" r="22" fill="#0D0D1A" stroke="#7B61FF" stroke-width="1"/>
+          <circle cx="110" cy="80" r="4" fill="#7B61FF"/>
+          <!-- Neural connections from logo -->
+          <line x1="110" y1="58" x2="110" y2="45" stroke="#7B61FF" stroke-width="0.8" opacity="0.5" stroke-dasharray="4 2">
+            <animate attributeName="opacity" values="0.5;1;0.5" dur="1.5s" repeatCount="indefinite"/>
+          </line>
+          <line x1="128" y1="69" x2="145" y2="60" stroke="#7B61FF" stroke-width="0.8" opacity="0.5" stroke-dasharray="4 2">
+            <animate attributeName="opacity" values="0.5;1;0.5" dur="1.8s" repeatCount="indefinite"/>
+          </line>
+          <line x1="92" y1="69" x2="75" y2="60" stroke="#7B61FF" stroke-width="0.8" opacity="0.5" stroke-dasharray="4 2">
+            <animate attributeName="opacity" values="0.5;1;0.5" dur="2.1s" repeatCount="indefinite"/>
+          </line>
+          <line x1="128" y1="91" x2="148" y2="100" stroke="#7B61FF" stroke-width="0.8" opacity="0.5" stroke-dasharray="4 2">
+            <animate attributeName="opacity" values="0.5;1;0.5" dur="1.6s" repeatCount="indefinite"/>
+          </line>
+          <line x1="92" y1="91" x2="72" y2="100" stroke="#7B61FF" stroke-width="0.8" opacity="0.5" stroke-dasharray="4 2">
+            <animate attributeName="opacity" values="0.5;1;0.5" dur="1.9s" repeatCount="indefinite"/>
+          </line>
+          <!-- Node dots -->
+          <circle cx="110" cy="43" r="2" fill="#7B61FF" opacity="0.7"/>
+          <circle cx="147" cy="59" r="2" fill="#7B61FF" opacity="0.7"/>
+          <circle cx="73" cy="59" r="2" fill="#7B61FF" opacity="0.7"/>
+          <circle cx="150" cy="101" r="2" fill="#7B61FF" opacity="0.7"/>
+          <circle cx="70" cy="101" r="2" fill="#7B61FF" opacity="0.7"/>
+          <!-- Logo text -->
+          <text x="110" y="118" text-anchor="middle" font-family="Inter" font-size="13" font-weight="600" fill="white">Cognitarium</text>
+          <text x="110" y="130" text-anchor="middle" font-family="Inter" font-size="7" fill="#7B61FF" letter-spacing="0.5">Cartographiez votre univers cognitif</text>
+          <!-- CTA Buttons -->
+          <!-- Commencer (active/green) -->
+          <rect x="35" y="152" width="150" height="32" rx="16" fill="#00FF88" opacity="0.95"/>
+          <text x="110" y="172" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="#050508">Commencer</text>
+          <!-- Arrow indicator -->
+          <path d="M167 168 L173 168 M170 165 L173 168 L170 171" stroke="#050508" stroke-width="1.2" fill="none"/>
+          <!-- Se connecter -->
+          <rect x="35" y="194" width="150" height="32" rx="16" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+          <text x="110" y="214" text-anchor="middle" font-family="Inter" font-size="11" font-weight="400" fill="rgba(255,255,255,0.7)">Se connecter</text>
+          <!-- Interaction annotation -->
+          <g opacity="0.6">
+            <text x="110" y="140" text-anchor="middle" font-family="Inter" font-size="7.5" fill="#4A5568">↑ Appuyer pour initialiser</text>
+          </g>
+          <!-- Status dot -->
+          <circle cx="195" cy="168" r="3" fill="#00FF88">
+            <animate attributeName="opacity" values="1;0.3;1" dur="1s" repeatCount="indefinite"/>
+          </circle>
+          <text x="195" y="185" text-anchor="middle" font-family="Inter" font-size="6" fill="#00FF88">ACTIF</text>
+          <!-- Timeline -->
+          <rect x="20" y="248" width="180" height="2" fill="#1A1A2E" rx="1"/>
+          <rect x="20" y="248" width="135" height="2" fill="#7B61FF" rx="1"/>
+        </svg>
+      `;
+    }
+  },
+  {
+    num: "03",
+    title: "Choix du Parcours",
+    desc: "Trois grandes cartes illustrées. Le choix adapte dynamiquement les étapes suivantes. Frise de progression contextuelle.",
+    tags: [["interact","Sélection parcours"],["anim","Card hover expand"],["trans","Branching conditionnel"]],
+    render: (el) => {
+      el.innerHTML = `
+        <svg width="100%" height="100%" viewBox="0 0 220 260">
+          <rect width="220" height="260" fill="#050508"/>
+          <text x="110" y="22" text-anchor="middle" font-family="Inter" font-size="9" font-weight="500" fill="rgba(255,255,255,0.4)" letter-spacing="1">QUEL EST VOTRE PARCOURS ?</text>
+          <!-- Card Étudiant -->
+          <rect x="12" y="30" width="62" height="110" rx="8" fill="#0D0D1A" stroke="rgba(123,97,255,0.4)" stroke-width="1"/>
+          <circle cx="43" cy="58" r="14" fill="rgba(123,97,255,0.15)" stroke="rgba(123,97,255,0.3)" stroke-width="0.5"/>
+          <text x="43" y="62" text-anchor="middle" font-size="16" fill="#7B61FF">🎓</text>
+          <text x="43" y="82" text-anchor="middle" font-family="Inter" font-size="9" font-weight="600" fill="white">Étudiant</text>
+          <text x="43" y="93" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#4A5568">Université</text>
+          <text x="43" y="102" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#4A5568">ECTS · Stage</text>
+          <text x="43" y="111" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#4A5568">Carte étu.</text>
+          <rect x="22" y="120" width="42" height="12" rx="6" fill="rgba(123,97,255,0.15)" stroke="rgba(123,97,255,0.3)" stroke-width="0.5"/>
+          <text x="43" y="129" text-anchor="middle" font-family="Inter" font-size="7" fill="#9B8BFF">Choisir</text>
+          <!-- Card Professionnel (highlighted/active) -->
+          <rect x="82" y="26" width="62" height="118" rx="8" fill="#0F0F1E" stroke="#7B61FF" stroke-width="1.5"/>
+          <!-- Glow effect for selected -->
+          <rect x="82" y="26" width="62" height="118" rx="8" fill="rgba(123,97,255,0.06)"/>
+          <circle cx="113" cy="54" r="14" fill="rgba(123,97,255,0.2)" stroke="rgba(123,97,255,0.4)" stroke-width="0.5"/>
+          <text x="113" y="58" text-anchor="middle" font-size="16" fill="#7B61FF">💼</text>
+          <text x="113" y="78" text-anchor="middle" font-family="Inter" font-size="9" font-weight="600" fill="white">Professionnel</text>
+          <text x="113" y="90" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#7B8BA0">Privé · Public</text>
+          <text x="113" y="99" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#7B8BA0">Freelance</text>
+          <text x="113" y="108" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#7B8BA0">Association</text>
+          <rect x="92" y="120" width="42" height="14" rx="7" fill="#7B61FF"/>
+          <text x="113" y="130" text-anchor="middle" font-family="Inter" font-size="7.5" font-weight="600" fill="white">Sélectionné</text>
+          <!-- Selection indicator -->
+          <circle cx="113" cy="22" r="3" fill="#7B61FF">
+            <animate attributeName="opacity" values="1;0.4;1" dur="1.5s" repeatCount="indefinite"/>
+          </circle>
+          <!-- Card Libre -->
+          <rect x="152" y="30" width="58" height="110" rx="8" fill="#0D0D1A" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+          <circle cx="181" cy="58" r="14" fill="rgba(0,255,136,0.08)" stroke="rgba(0,255,136,0.2)" stroke-width="0.5"/>
+          <text x="181" y="62" text-anchor="middle" font-size="16" fill="#00C870">🌱</text>
+          <text x="181" y="82" text-anchor="middle" font-family="Inter" font-size="9" font-weight="600" fill="white">Parcours libre</text>
+          <text x="181" y="93" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#4A5568">Reconversion</text>
+          <text x="181" y="102" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#4A5568">Autoformation</text>
+          <text x="181" y="111" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#4A5568">Projet perso.</text>
+          <rect x="161" y="120" width="40" height="12" rx="6" fill="rgba(0,255,136,0.08)" stroke="rgba(0,255,136,0.2)" stroke-width="0.5"/>
+          <text x="181" y="129" text-anchor="middle" font-family="Inter" font-size="7" fill="#00C870">Choisir</text>
+          <!-- Progress frise -->
+          <rect x="12" y="155" width="196" height="24" rx="6" fill="#0A0A12" stroke="rgba(255,255,255,0.04)"/>
+          <text x="20" y="165" font-family="Inter" font-size="6.5" fill="#4A5568">PARCOURS ADAPTATIF</text>
+          <text x="20" y="174" font-family="Inter" font-size="6" fill="#2D2D45">Ce choix modifie les étapes suivantes</text>
+          <!-- Step indicators -->
+          <circle cx="100" cy="195" r="5" fill="#7B61FF"/>
+          <circle cx="120" cy="195" r="3" fill="#1A1A2E" stroke="#3D3D55"/>
+          <circle cx="136" cy="195" r="3" fill="#1A1A2E" stroke="#3D3D55"/>
+          <circle cx="152" cy="195" r="3" fill="#1A1A2E" stroke="#3D3D55"/>
+          <line x1="105" y1="195" x2="117" y2="195" stroke="#3D3D55" stroke-width="1"/>
+          <line x1="123" y1="195" x2="133" y2="195" stroke="#3D3D55" stroke-width="1"/>
+          <line x1="139" y1="195" x2="149" y2="195" stroke="#3D3D55" stroke-width="1"/>
+          <!-- Branching arrows showing adaptivity -->
+          <path d="M110 205 L70 225" stroke="#7B61FF" stroke-width="0.7" stroke-dasharray="3 2" fill="none" opacity="0.5"/>
+          <path d="M110 205 L110 225" stroke="#7B61FF" stroke-width="0.7" stroke-dasharray="3 2" fill="none" opacity="0.5"/>
+          <path d="M110 205 L150 225" stroke="#7B61FF" stroke-width="0.7" stroke-dasharray="3 2" fill="none" opacity="0.5"/>
+          <text x="68" y="234" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#4A5568">Étu.</text>
+          <text x="110" y="234" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#7B61FF">Pro ✓</text>
+          <text x="152" y="234" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#4A5568">Libre</text>
+          <!-- Timeline -->
+          <rect x="20" y="248" width="180" height="2" fill="#1A1A2E" rx="1"/>
+          <rect x="20" y="248" width="60" height="2" fill="#7B61FF" rx="1"/>
+        </svg>
+      `;
+    }
+  },
+  {
+    num: "04",
+    title: "Vérification d'Identité",
+    desc: "Écran adaptatif selon le parcours. Trois variantes affichées côte à côte : Étudiant (ID étudiant), Pro (type entreprise), Libre (skip).",
+    tags: [["trans","Écran conditionnel"],["interact","Vérification ID"],["anim","Variantes parallèles"]],
+    render: (el) => {
+      el.innerHTML = `
+        <svg width="100%" height="100%" viewBox="0 0 220 260">
+          <rect width="220" height="260" fill="#050508"/>
+          <text x="110" y="16" text-anchor="middle" font-family="Inter" font-size="8" font-weight="500" fill="#4A5568" letter-spacing="1">3 VARIANTES CONTEXTUELLES</text>
+          <!-- Variante 1: Étudiant -->
+          <rect x="6" y="24" width="62" height="140" rx="6" fill="#0A0A12" stroke="rgba(123,97,255,0.25)"/>
+          <text x="37" y="38" text-anchor="middle" font-family="Inter" font-size="7.5" font-weight="600" fill="#9B8BFF">Étudiant</text>
+          <rect x="14" y="44" width="46" height="24" rx="5" fill="#0D0D1A" stroke="rgba(123,97,255,0.2)"/>
+          <text x="37" y="53" text-anchor="middle" font-family="Inter" font-size="6" fill="#4A5568">Identifiant étudiant</text>
+          <rect x="14" y="44" width="18" height="2" rx="1" fill="#7B61FF">
+            <animate attributeName="width" values="0;30" dur="1s" repeatCount="indefinite" begin="0.5s"/>
+          </rect>
+          <text x="23" y="63" font-family="JetBrains Mono" font-size="7" fill="#7B61FF">ETU-2024-</text>
+          <text x="37" y="80" text-anchor="middle" font-family="Inter" font-size="6" fill="#4A5568">Établissement</text>
+          <rect x="14" y="85" width="46" height="16" rx="4" fill="#0D0D1A" stroke="rgba(255,255,255,0.05)"/>
+          <text x="37" y="97" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#7B8BA0">Université Paris X</text>
+          <text x="37" y="116" text-anchor="middle" font-family="Inter" font-size="6" fill="#4A5568">Programme</text>
+          <rect x="14" y="120" width="46" height="16" rx="4" fill="#0D0D1A" stroke="rgba(255,255,255,0.05)"/>
+          <text x="37" y="132" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#7B8BA0">Master IA</text>
+          <rect x="20" y="146" width="34" height="12" rx="6" fill="rgba(123,97,255,0.2)"/>
+          <text x="37" y="155" text-anchor="middle" font-family="Inter" font-size="7" fill="#9B8BFF">Continuer</text>
+          <!-- Variante 2: Professionnel (highlighted) -->
+          <rect x="77" y="20" width="66" height="152" rx="6" fill="#0F0F1E" stroke="#7B61FF" stroke-width="1.2"/>
+          <rect x="77" y="20" width="66" height="18" rx="6" fill="rgba(123,97,255,0.15)"/>
+          <rect x="77" y="31" width="66" height="7" fill="rgba(123,97,255,0.15)"/>
+          <text x="110" y="32" text-anchor="middle" font-family="Inter" font-size="7.5" font-weight="600" fill="#7B61FF">Professionnel</text>
+          <text x="110" y="50" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#4A5568">Type d'entreprise</text>
+          <!-- Type cards -->
+          <rect x="84" y="55" width="52" height="20" rx="4" fill="#0D0D1A" stroke="rgba(123,97,255,0.4)"/>
+          <text x="110" y="68" text-anchor="middle" font-family="Inter" font-size="7" fill="#9B8BFF">Privée ✓</text>
+          <rect x="84" y="79" width="52" height="18" rx="4" fill="#0A0A12" stroke="rgba(255,255,255,0.04)"/>
+          <text x="110" y="92" text-anchor="middle" font-family="Inter" font-size="7" fill="#4A5568">Publique</text>
+          <rect x="84" y="101" width="52" height="18" rx="4" fill="#0A0A12" stroke="rgba(255,255,255,0.04)"/>
+          <text x="110" y="114" text-anchor="middle" font-family="Inter" font-size="7" fill="#4A5568">Freelance</text>
+          <rect x="84" y="123" width="52" height="18" rx="4" fill="#0A0A12" stroke="rgba(255,255,255,0.04)"/>
+          <text x="110" y="136" text-anchor="middle" font-family="Inter" font-size="7" fill="#4A5568">Association</text>
+          <rect x="90" y="148" width="40" height="14" rx="7" fill="#7B61FF"/>
+          <text x="110" y="158" text-anchor="middle" font-family="Inter" font-size="7.5" font-weight="600" fill="white">Valider</text>
+          <!-- Variante 3: Libre -->
+          <rect x="152" y="24" width="62" height="140" rx="6" fill="#0A0A12" stroke="rgba(0,255,136,0.15)"/>
+          <text x="183" y="38" text-anchor="middle" font-family="Inter" font-size="7.5" font-weight="600" fill="#00C870">Parcours libre</text>
+          <!-- Skip message -->
+          <circle cx="183" cy="75" r="20" fill="rgba(0,255,136,0.06)" stroke="rgba(0,255,136,0.2)" stroke-width="0.5"/>
+          <text x="183" y="79" text-anchor="middle" font-size="20">✨</text>
+          <text x="183" y="108" text-anchor="middle" font-family="Inter" font-size="7" fill="#4A5568">Aucune vérif.</text>
+          <text x="183" y="118" text-anchor="middle" font-family="Inter" font-size="7" fill="#4A5568">requise</text>
+          <text x="183" y="130" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#2D2D45">Continuez</text>
+          <text x="183" y="139" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#2D2D45">directement ↓</text>
+          <rect x="160" y="146" width="46" height="12" rx="6" fill="rgba(0,255,136,0.12)"/>
+          <text x="183" y="155" text-anchor="middle" font-family="Inter" font-size="7" fill="#00C870">Continuer →</text>
+          <!-- Labels under variants -->
+          <text x="37" y="174" text-anchor="middle" font-family="JetBrains Mono" font-size="6.5" fill="#4A5568">IF: student</text>
+          <text x="110" y="178" text-anchor="middle" font-family="JetBrains Mono" font-size="6.5" fill="#7B61FF">IF: pro ✓</text>
+          <text x="183" y="174" text-anchor="middle" font-family="JetBrains Mono" font-size="6.5" fill="#4A5568">IF: free</text>
+          <!-- Convergence arrows -->
+          <path d="M37 178 Q110 200 110 210" stroke="#3D3D55" stroke-width="0.5" stroke-dasharray="3 2" fill="none"/>
+          <path d="M110 182 L110 210" stroke="#7B61FF" stroke-width="0.8" stroke-dasharray="3 2" fill="none"/>
+          <path d="M183 178 Q110 200 110 210" stroke="#3D3D55" stroke-width="0.5" stroke-dasharray="3 2" fill="none"/>
+          <circle cx="110" cy="212" r="4" fill="#1A1A2E" stroke="#7B61FF"/>
+          <text x="110" y="225" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#7B8BA0">→ Profil</text>
+          <!-- Timeline -->
+          <rect x="20" y="248" width="180" height="2" fill="#1A1A2E" rx="1"/>
+          <rect x="20" y="248" width="80" height="2" fill="#7B61FF" rx="1"/>
+        </svg>
+      `;
+    }
+  },
+  {
+    num: "05",
+    title: "Profil Progressif",
+    desc: "Une seule question par écran. Le cerveau se construit en arrière-plan. Bouton activé en vert quand le champ est rempli.",
+    tags: [["anim","Brain bg building"],["interact","Validation champ"],["trans","Séquence linéaire"]],
+    render: (el) => {
+      el.innerHTML = `
+        <svg width="100%" height="100%" viewBox="0 0 220 260">
+          <defs>
+            <radialGradient id="brainBg" cx="50%" cy="60%" r="55%">
+              <stop offset="0%" stop-color="#7B61FF" stop-opacity="0.06"/>
+              <stop offset="100%" stop-color="#050508" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <rect width="220" height="260" fill="#050508"/>
+          <rect width="220" height="260" fill="url(#brainBg)"/>
+          <!-- Background brain forming (ghost nodes) -->
+          <circle cx="60" cy="160" r="18" fill="none" stroke="rgba(123,97,255,0.08)" stroke-dasharray="5 3"/>
+          <circle cx="110" cy="150" r="25" fill="none" stroke="rgba(123,97,255,0.06)" stroke-dasharray="5 3"/>
+          <circle cx="160" cy="165" r="18" fill="none" stroke="rgba(123,97,255,0.08)" stroke-dasharray="5 3"/>
+          <line x1="78" y1="165" x2="85" y2="162" stroke="rgba(123,97,255,0.1)" stroke-width="0.5"/>
+          <line x1="135" y1="158" x2="142" y2="162" stroke="rgba(123,97,255,0.1)" stroke-width="0.5"/>
+          <!-- Question step indicator -->
+          <text x="110" y="22" text-anchor="middle" font-family="Inter" font-size="8" fill="#4A5568" letter-spacing="0.5">Étape 2 sur 7</text>
+          <!-- Step dots -->
+          <circle cx="78" cy="30" r="3" fill="#00FF88"/>
+          <circle cx="90" cy="30" r="3" fill="#7B61FF"/>
+          <circle cx="102" cy="30" r="2.5" fill="#1A1A2E" stroke="#3D3D55"/>
+          <circle cx="114" cy="30" r="2.5" fill="#1A1A2E" stroke="#3D3D55"/>
+          <circle cx="126" cy="30" r="2.5" fill="#1A1A2E" stroke="#3D3D55"/>
+          <circle cx="138" cy="30" r="2.5" fill="#1A1A2E" stroke="#3D3D55"/>
+          <circle cx="150" cy="30" r="2.5" fill="#1A1A2E" stroke="#3D3D55"/>
+          <!-- Prev question (completed, faded) -->
+          <text x="110" y="55" text-anchor="middle" font-family="Inter" font-size="8" fill="#2D2D45">Comment vous appelez-vous ?</text>
+          <rect x="45" y="62" width="130" height="24" rx="6" fill="#0A0A12" stroke="rgba(0,255,136,0.2)"/>
+          <text x="70" y="78" font-family="Inter" font-size="10" fill="#00C870">Marie</text>
+          <text x="172" y="78" text-anchor="end" font-size="10">✓</text>
+          <!-- Current question (active) -->
+          <text x="110" y="108" text-anchor="middle" font-family="Inter" font-size="14" font-weight="600" fill="white">Quel est votre nom ?</text>
+          <text x="110" y="122" text-anchor="middle" font-family="Inter" font-size="8" fill="#4A5568">Votre nom de famille</text>
+          <!-- Input field active -->
+          <rect x="32" y="132" width="156" height="36" rx="10" fill="#0D0D1A" stroke="#7B61FF" stroke-width="1.2"/>
+          <!-- Cursor blink -->
+          <text x="50" y="154" font-family="Inter" font-size="13" fill="white">Dupont</text>
+          <rect x="108" y="143" width="1.5" height="16" rx="0.5" fill="#7B61FF">
+            <animate attributeName="opacity" values="1;0;1" dur="1s" repeatCount="indefinite"/>
+          </rect>
+          <!-- CTA Button (green - active because field filled) -->
+          <rect x="32" y="180" width="156" height="36" rx="18" fill="#00FF88"/>
+          <text x="110" y="202" text-anchor="middle" font-family="Inter" font-size="12" font-weight="600" fill="#050508">Suivant →</text>
+          <!-- Annotation -->
+          <g opacity="0.7">
+            <line x1="188" y1="198" x2="205" y2="198" stroke="#CCA84A" stroke-width="0.5" stroke-dasharray="2 2"/>
+            <text x="206" y="183" font-family="Inter" font-size="6.5" fill="#CCA84A">Vert</text>
+            <text x="206" y="193" font-family="Inter" font-size="6.5" fill="#CCA84A">quand</text>
+            <text x="206" y="203" font-family="Inter" font-size="6.5" fill="#CCA84A">rempli</text>
+          </g>
+          <!-- Background synapse growing -->
+          <line x1="90" y1="230" x2="130" y2="225" stroke="#7B61FF" stroke-width="0.5" opacity="0.2">
+            <animate attributeName="opacity" values="0;0.2;0" dur="3s" repeatCount="indefinite"/>
+          </line>
+          <circle cx="90" cy="230" r="2" fill="rgba(123,97,255,0.3)">
+            <animate attributeName="opacity" values="0.3;0.7;0.3" dur="2s" repeatCount="indefinite"/>
+          </circle>
+          <!-- Timeline -->
+          <rect x="20" y="248" width="180" height="2" fill="#1A1A2E" rx="1"/>
+          <rect x="20" y="248" width="100" height="2" fill="#7B61FF" rx="1"/>
+        </svg>
+      `;
+    }
+  },
+  {
+    num: "06",
+    title: "Import CV → Analyse IA",
+    desc: "Import ou création manuelle du profil. Animation d'absorption du CV dans le graphe cognitif. Extraction en temps réel.",
+    tags: [["anim","CV absorbé dans cerveau"],["anim","Extraction items"],["trans","Loading neural"]],
+    render: (el) => {
+      el.innerHTML = `
+        <svg width="100%" height="100%" viewBox="0 0 220 260">
+          <rect width="220" height="260" fill="#050508"/>
+          <text x="110" y="20" text-anchor="middle" font-family="Inter" font-size="11" font-weight="500" fill="white">Importez votre CV</text>
+          <text x="110" y="32" text-anchor="middle" font-family="Inter" font-size="7.5" fill="#4A5568">Accélérez la construction de votre jumeau</text>
+          <!-- Import button (primary) -->
+          <rect x="25" y="42" width="170" height="52" rx="10" fill="#0D0D1A" stroke="rgba(123,97,255,0.4)" stroke-width="1" stroke-dasharray="5 3"/>
+          <text x="110" y="64" text-anchor="middle" font-size="18">📄</text>
+          <text x="110" y="80" text-anchor="middle" font-family="Inter" font-size="10" font-weight="500" fill="white">Importer un CV</text>
+          <text x="110" y="90" text-anchor="middle" font-family="Inter" font-size="7" fill="#4A5568">PDF, Word, LinkedIn</text>
+          <!-- Manual button -->
+          <rect x="50" y="100" width="120" height="26" rx="13" fill="none" stroke="rgba(255,255,255,0.1)"/>
+          <text x="110" y="116" text-anchor="middle" font-family="Inter" font-size="9" fill="rgba(255,255,255,0.5)">Créer manuellement</text>
+          <!-- Animation sequence - CV being processed -->
+          <text x="110" y="143" text-anchor="middle" font-family="Inter" font-size="7.5" font-weight="500" fill="#7B61FF">↓ Animation d'import ↓</text>
+          <!-- CV icon transforming to brain -->
+          <rect x="65" y="150" width="28" height="34" rx="3" fill="#0D0D1A" stroke="rgba(123,97,255,0.5)" stroke-width="0.8">
+            <animate attributeName="opacity" values="1;0.3;0" dur="2s" repeatCount="indefinite"/>
+            <animate attributeName="x" values="65;90;110" dur="2s" repeatCount="indefinite"/>
+          </rect>
+          <text x="79" y="162" text-anchor="middle" font-family="Inter" font-size="5.5" fill="#4A5568">─────</text>
+          <text x="79" y="170" text-anchor="middle" font-family="Inter" font-size="5.5" fill="#4A5568">─────</text>
+          <text x="79" y="178" text-anchor="middle" font-family="Inter" font-size="5.5" fill="#4A5568">────</text>
+          <!-- Neural target -->
+          <circle cx="150" cy="168" r="20" fill="rgba(123,97,255,0.1)" stroke="rgba(123,97,255,0.3)" stroke-width="0.8">
+            <animate attributeName="r" values="18;22;18" dur="1.5s" repeatCount="indefinite"/>
+            <animate attributeName="stroke-opacity" values="0.3;0.8;0.3" dur="1.5s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="150" cy="168" r="8" fill="rgba(123,97,255,0.3)" stroke="#7B61FF" stroke-width="0.8"/>
+          <!-- Particle trail -->
+          <circle cx="100" cy="163" r="2" fill="#7B61FF" opacity="0.7">
+            <animate attributeName="cx" values="79;150" dur="2s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0;0.7;0" dur="2s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="110" cy="168" r="1.5" fill="#00FF88" opacity="0.6">
+            <animate attributeName="cx" values="79;150" dur="2s" begin="0.3s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0;0.6;0" dur="2s" begin="0.3s" repeatCount="indefinite"/>
+          </circle>
+          <!-- Extraction list -->
+          <rect x="10" y="200" width="200" height="50" rx="6" fill="#0A0A12" stroke="rgba(255,255,255,0.04)"/>
+          <text x="20" y="213" font-family="Inter" font-size="7" fill="#4A5568">Analyse en cours...</text>
+          <rect x="15" y="200" width="60" height="3" rx="1" fill="#7B61FF">
+            <animate attributeName="width" values="0;160;0" dur="3s" repeatCount="indefinite"/>
+          </rect>
+          <text x="20" y="226" font-family="Inter" font-size="7.5" fill="#00C870">✓ Métiers détectés</text>
+          <text x="20" y="237" font-family="Inter" font-size="7.5" fill="#7B61FF">◌ Compétences...</text>
+          <!-- Result -->
+          <rect x="25" y="215" width="170" height="0" rx="6" fill="rgba(0,255,136,0.08)">
+            <animate attributeName="height" values="0;30" dur="0.5s" begin="2.5s" fill="freeze"/>
+          </rect>
+          <text x="110" y="244" text-anchor="middle" font-family="JetBrains Mono" font-size="9" font-weight="500" fill="#00FF88">147 informations détectées</text>
+          <!-- Timeline -->
+          <rect x="20" y="253" width="180" height="2" fill="#1A1A2E" rx="1"/>
+          <rect x="20" y="253" width="120" height="2" fill="#7B61FF" rx="1"/>
+        </svg>
+      `;
+    }
+  },
+  {
+    num: "07",
+    title: "Vérification des Données",
+    desc: "Toutes les données sont éditables. Code couleur : vert confirmé, orange à vérifier, gris non détecté.",
+    tags: [["interact","Edition inline"],["anim","Color-coded states"],["trans","Confirm/Skip"]],
+    render: (el) => {
+      el.innerHTML = `
+        <svg width="100%" height="100%" viewBox="0 0 220 260">
+          <rect width="220" height="260" fill="#050508"/>
+          <text x="110" y="18" text-anchor="middle" font-family="Inter" font-size="10" font-weight="500" fill="white">Vérifiez vos données</text>
+          <text x="110" y="29" text-anchor="middle" font-family="Inter" font-size="7" fill="#4A5568">147 éléments détectés — revue rapide</text>
+          <!-- Legend -->
+          <circle cx="22" cy="40" r="4" fill="rgba(0,200,112,0.2)" stroke="#00C870" stroke-width="0.8"/>
+          <text x="30" y="43" font-family="Inter" font-size="7" fill="#00C870">Confirmé</text>
+          <circle cx="80" cy="40" r="4" fill="rgba(255,165,0,0.2)" stroke="#FFA500" stroke-width="0.8"/>
+          <text x="88" y="43" font-family="Inter" font-size="7" fill="#FFA500">À vérifier</text>
+          <circle cx="145" cy="40" r="4" fill="#1A1A2E" stroke="#3D3D55" stroke-width="0.8"/>
+          <text x="153" y="43" font-family="Inter" font-size="7" fill="#4A5568">Non détecté</text>
+          <!-- Data rows -->
+          <!-- Confirmed -->
+          <rect x="10" y="52" width="200" height="22" rx="5" fill="#0A0A12" stroke="rgba(0,200,112,0.2)"/>
+          <circle cx="22" cy="63" r="3.5" fill="rgba(0,200,112,0.2)" stroke="#00C870" stroke-width="0.8"/>
+          <text x="32" y="67" font-family="Inter" font-size="8" fill="rgba(255,255,255,0.9)">Ingénieur Logiciel</text>
+          <text x="192" y="67" text-anchor="end" font-family="JetBrains Mono" font-size="6.5" fill="#00C870">✓</text>
+          <!-- Confirmed -->
+          <rect x="10" y="78" width="200" height="22" rx="5" fill="#0A0A12" stroke="rgba(0,200,112,0.2)"/>
+          <circle cx="22" cy="89" r="3.5" fill="rgba(0,200,112,0.2)" stroke="#00C870" stroke-width="0.8"/>
+          <text x="32" y="93" font-family="Inter" font-size="8" fill="rgba(255,255,255,0.9)">Python · React · AWS</text>
+          <text x="192" y="93" text-anchor="end" font-family="JetBrains Mono" font-size="6.5" fill="#00C870">✓</text>
+          <!-- To verify (orange) -->
+          <rect x="10" y="104" width="200" height="22" rx="5" fill="#0A0A12" stroke="rgba(255,165,0,0.3)"/>
+          <circle cx="22" cy="115" r="3.5" fill="rgba(255,165,0,0.15)" stroke="#FFA500" stroke-width="0.8"/>
+          <text x="32" y="119" font-family="Inter" font-size="8" fill="rgba(255,255,255,0.9)">Tech Lead @ Startup XY</text>
+          <text x="192" y="119" text-anchor="end" font-family="JetBrains Mono" font-size="6.5" fill="#FFA500">?</text>
+          <!-- To verify (orange) -->
+          <rect x="10" y="130" width="200" height="22" rx="5" fill="#0A0A12" stroke="rgba(255,165,0,0.3)"/>
+          <circle cx="22" cy="141" r="3.5" fill="rgba(255,165,0,0.15)" stroke="#FFA500" stroke-width="0.8"/>
+          <text x="32" y="145" font-family="Inter" font-size="8" fill="rgba(255,255,255,0.9)">Master Informatique 2019</text>
+          <text x="192" y="145" text-anchor="end" font-family="JetBrains Mono" font-size="6.5" fill="#FFA500">?</text>
+          <!-- Not detected (gray) -->
+          <rect x="10" y="156" width="200" height="22" rx="5" fill="#0A0A12" stroke="rgba(255,255,255,0.04)"/>
+          <circle cx="22" cy="167" r="3.5" fill="#1A1A2E" stroke="#3D3D55" stroke-width="0.8"/>
+          <text x="32" y="171" font-family="Inter" font-size="8" fill="#4A5568">Certifications</text>
+          <text x="192" y="171" text-anchor="end" font-family="JetBrains Mono" font-size="6.5" fill="#3D3D55">+ Ajouter</text>
+          <!-- Not detected (gray) -->
+          <rect x="10" y="182" width="200" height="22" rx="5" fill="#0A0A12" stroke="rgba(255,255,255,0.04)"/>
+          <circle cx="22" cy="193" r="3.5" fill="#1A1A2E" stroke="#3D3D55" stroke-width="0.8"/>
+          <text x="32" y="197" font-family="Inter" font-size="8" fill="#4A5568">Langues</text>
+          <text x="192" y="197" text-anchor="end" font-family="JetBrains Mono" font-size="6.5" fill="#3D3D55">+ Ajouter</text>
+          <!-- Editing state annotation -->
+          <rect x="10" y="208" width="200" height="22" rx="5" fill="#0D0D1A" stroke="#7B61FF" stroke-width="1"/>
+          <text x="32" y="222" font-family="Inter" font-size="8" fill="white">Tech Lead @ Startup XY</text>
+          <rect x="32" y="224" width="1.5" height="0">
+            <animate attributeName="height" values="0;10" dur="0.1s" begin="1s" fill="freeze"/>
+          </rect>
+          <text x="192" y="222" text-anchor="end" font-family="JetBrains Mono" font-size="6.5" fill="#7B61FF">éditer</text>
+          <!-- Bottom CTA -->
+          <rect x="25" y="236" width="170" height="16" rx="8" fill="#00FF88"/>
+          <text x="110" y="248" text-anchor="middle" font-family="Inter" font-size="8.5" font-weight="600" fill="#050508">Confirmer et continuer →</text>
+          <!-- Timeline -->
+          <rect x="20" y="255" width="180" height="2" fill="#1A1A2E" rx="1"/>
+          <rect x="20" y="255" width="140" height="2" fill="#7B61FF" rx="1"/>
+        </svg>
+      `;
+    }
+  },
+  {
+    num: "08",
+    title: "Graphe des Métiers",
+    desc: "Pas une liste — un graphe. Sélection d'un métier déclenche une impulsion lumineuse sur toute la branche.",
+    tags: [["anim","Impulsion branche"],["interact","Click → illumination"],["anim","Graphe expand"]],
+    render: (el) => {
+      el.innerHTML = `
+        <svg width="100%" height="100%" viewBox="0 0 220 260">
+          <defs>
+            <radialGradient id="nodeGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#7B61FF" stop-opacity="0.4"/>
+              <stop offset="100%" stop-color="#7B61FF" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <rect width="220" height="260" fill="#050508"/>
+          <text x="110" y="16" text-anchor="middle" font-family="Inter" font-size="9" font-weight="500" fill="rgba(255,255,255,0.4)" letter-spacing="1">CARTOGRAPHIE DES MÉTIERS</text>
+          <!-- Root node -->
+          <circle cx="110" cy="45" r="12" fill="#1A1A2E" stroke="#7B61FF" stroke-width="1.2"/>
+          <text x="110" y="49" text-anchor="middle" font-family="Inter" font-size="7" font-weight="500" fill="#9B8BFF">Secteurs</text>
+          <!-- Level 1 branches -->
+          <line x1="110" y1="57" x2="55" y2="88" stroke="rgba(123,97,255,0.4)" stroke-width="0.8"/>
+          <line x1="110" y1="57" x2="110" y2="85" stroke="rgba(123,97,255,0.4)" stroke-width="0.8"/>
+          <line x1="110" y1="57" x2="165" y2="88" stroke="rgba(123,97,255,0.4)" stroke-width="0.8"/>
+          <!-- Level 1 nodes -->
+          <circle cx="55" cy="96" r="14" fill="#0D0D1A" stroke="rgba(123,97,255,0.3)" stroke-width="0.8"/>
+          <text x="55" y="100" text-anchor="middle" font-family="Inter" font-size="7" fill="#7B8BA0">Tech.</text>
+          <circle cx="110" cy="96" r="16" fill="#0D0D1A" stroke="#7B61FF" stroke-width="1.5"/>
+          <circle cx="110" cy="96" r="20" fill="url(#nodeGlow)"/>
+          <text x="110" y="100" text-anchor="middle" font-family="Inter" font-size="7.5" font-weight="600" fill="#9B8BFF">BTP</text>
+          <circle cx="165" cy="96" r="14" fill="#0D0D1A" stroke="rgba(123,97,255,0.3)" stroke-width="0.8"/>
+          <text x="165" y="100" text-anchor="middle" font-family="Inter" font-size="7" fill="#7B8BA0">Santé</text>
+          <!-- Active branch (BTP) - illuminated -->
+          <line x1="110" y1="112" x2="75" y2="138" stroke="#7B61FF" stroke-width="1.2">
+            <animate attributeName="stroke-opacity" values="0.4;1;0.4" dur="2s" repeatCount="indefinite"/>
+          </line>
+          <line x1="110" y1="112" x2="110" y2="138" stroke="#7B61FF" stroke-width="1.5">
+            <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="1.5s" repeatCount="indefinite"/>
+          </line>
+          <line x1="110" y1="112" x2="145" y2="138" stroke="#7B61FF" stroke-width="1.2">
+            <animate attributeName="stroke-opacity" values="0.4;1;0.4" dur="2s" begin="0.3s" repeatCount="indefinite"/>
+          </line>
+          <!-- Level 2 nodes (BTP children) -->
+          <circle cx="75" cy="148" r="12" fill="#0F0F1E" stroke="rgba(123,97,255,0.5)" stroke-width="0.8"/>
+          <text x="75" y="152" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#7B8BA0">Gros Œuvre</text>
+          <circle cx="110" cy="148" r="14" fill="#12122A" stroke="#7B61FF" stroke-width="1.2"/>
+          <text x="110" y="152" text-anchor="middle" font-family="Inter" font-size="7" font-weight="600" fill="white">Conducteur</text>
+          <text x="110" y="161" text-anchor="middle" font-family="Inter" font-size="6" fill="#7B61FF">de Travaux</text>
+          <circle cx="145" cy="148" r="12" fill="#0F0F1E" stroke="rgba(123,97,255,0.5)" stroke-width="0.8"/>
+          <text x="145" y="152" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#7B8BA0">Second Œuvre</text>
+          <!-- Pulse traveling up branch -->
+          <circle cx="110" cy="148" r="3" fill="#00FF88">
+            <animate attributeName="cy" values="148;110;45" dur="1.5s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0;1;0" dur="1.5s" repeatCount="indefinite"/>
+          </circle>
+          <!-- Skill nodes emerging -->
+          <circle cx="110" cy="185" r="8" fill="#0D0D1A" stroke="rgba(0,255,136,0.3)" stroke-width="0.8">
+            <animate attributeName="r" values="0;8" dur="0.5s" begin="0.8s" fill="freeze"/>
+          </circle>
+          <text x="110" y="189" text-anchor="middle" font-family="Inter" font-size="6" fill="#00C870">Planif.</text>
+          <circle cx="85" cy="192" r="7" fill="#0D0D1A" stroke="rgba(0,255,136,0.3)" stroke-width="0.8">
+            <animate attributeName="r" values="0;7" dur="0.5s" begin="1.1s" fill="freeze"/>
+          </circle>
+          <text x="85" y="196" text-anchor="middle" font-family="Inter" font-size="6" fill="#00C870">Budget</text>
+          <circle cx="135" cy="192" r="7" fill="#0D0D1A" stroke="rgba(0,255,136,0.3)" stroke-width="0.8">
+            <animate attributeName="r" values="0;7" dur="0.5s" begin="1.4s" fill="freeze"/>
+          </circle>
+          <text x="135" y="196" text-anchor="middle" font-family="Inter" font-size="6" fill="#00C870">Sécu.</text>
+          <!-- Add button -->
+          <rect x="55" y="213" width="110" height="18" rx="9" fill="rgba(123,97,255,0.12)" stroke="rgba(123,97,255,0.3)" stroke-width="0.8"/>
+          <text x="110" y="225" text-anchor="middle" font-family="Inter" font-size="8" fill="#9B8BFF">+ Ajouter un métier</text>
+          <!-- Annotation -->
+          <text x="200" y="148" text-anchor="end" font-family="Inter" font-size="6.5" fill="#CCA84A">← actif</text>
+          <!-- Timeline -->
+          <rect x="20" y="248" width="180" height="2" fill="#1A1A2E" rx="1"/>
+          <rect x="20" y="248" width="155" height="2" fill="#7B61FF" rx="1"/>
+        </svg>
+      `;
+    }
+  },
+  {
+    num: "09",
+    title: "Évaluation des Compétences",
+    desc: "Bulles de compétences orbitant le métier. Likert 1-7 avec code couleur rouge→vert. Validation propage une impulsion vers l'avatar.",
+    tags: [["interact","Likert 1-7"],["anim","Propagation synaptique"],["anim","Bubble evaluation"]],
+    render: (el) => {
+      el.innerHTML = `
+        <svg width="100%" height="100%" viewBox="0 0 220 260">
+          <rect width="220" height="260" fill="#050508"/>
+          <!-- Central métier node -->
+          <circle cx="110" cy="98" r="24" fill="#0F0F1E" stroke="#7B61FF" stroke-width="1.5"/>
+          <text x="110" y="95" text-anchor="middle" font-family="Inter" font-size="8" font-weight="600" fill="white">Conducteur</text>
+          <text x="110" y="107" text-anchor="middle" font-family="Inter" font-size="7" fill="#7B61FF">de Travaux</text>
+          <!-- Orbit ring -->
+          <circle cx="110" cy="98" r="52" fill="none" stroke="rgba(123,97,255,0.08)" stroke-dasharray="4 3"/>
+          <!-- Skill bubbles orbiting -->
+          <circle cx="110" cy="40" r="18" fill="#0D0D1A" stroke="rgba(123,97,255,0.35)" stroke-width="0.8"/>
+          <text x="110" y="38" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#9B8BFF">Lecture</text>
+          <text x="110" y="48" text-anchor="middle" font-family="Inter" font-size="6" fill="#4A5568">de plans</text>
+          <circle cx="162" cy="68" r="16" fill="#12122A" stroke="#7B61FF" stroke-width="1.2"/>
+          <text x="162" y="66" text-anchor="middle" font-family="Inter" font-size="6.5" font-weight="600" fill="white">Gestion</text>
+          <text x="162" y="76" text-anchor="middle" font-family="Inter" font-size="6" fill="#7B61FF">chantier</text>
+          <circle cx="162" cy="128" r="15" fill="#0D0D1A" stroke="rgba(123,97,255,0.35)" stroke-width="0.8"/>
+          <text x="162" y="125" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#9B8BFF">Budget</text>
+          <text x="162" y="135" text-anchor="middle" font-family="Inter" font-size="6" fill="#4A5568">L:5</text>
+          <circle cx="110" cy="152" r="16" fill="#0D0D1A" stroke="rgba(0,200,112,0.3)" stroke-width="0.8"/>
+          <text x="110" y="150" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#00C870">Planning</text>
+          <text x="110" y="160" text-anchor="middle" font-family="Inter" font-size="6" fill="#4A5568">L:6</text>
+          <circle cx="58" cy="128" r="15" fill="#0D0D1A" stroke="rgba(123,97,255,0.35)" stroke-width="0.8"/>
+          <text x="58" y="132" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#9B8BFF">Sécu.</text>
+          <circle cx="58" cy="68" r="14" fill="#0D0D1A" stroke="rgba(123,97,255,0.35)" stroke-width="0.8"/>
+          <text x="58" y="72" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#9B8BFF">Coord.</text>
+          <!-- Connection lines from center to bubbles -->
+          <line x1="110" y1="74" x2="110" y2="58" stroke="rgba(123,97,255,0.3)" stroke-width="0.5"/>
+          <line x1="131" y1="82" x2="147" y2="74" stroke="#7B61FF" stroke-width="0.8"/>
+          <line x1="134" y1="107" x2="147" y2="118" stroke="rgba(123,97,255,0.3)" stroke-width="0.5"/>
+          <line x1="123" y1="118" x2="124" y2="136" stroke="rgba(0,200,112,0.3)" stroke-width="0.5"/>
+          <line x1="89" y1="118" x2="73" y2="128" stroke="rgba(123,97,255,0.3)" stroke-width="0.5"/>
+          <line x1="86" y1="82" x2="72" y2="74" stroke="rgba(123,97,255,0.3)" stroke-width="0.5"/>
+          <!-- Pulse on active connection -->
+          <circle cx="140" cy="78" r="2.5" fill="#00FF88">
+            <animate attributeName="cx" values="110;147" dur="1s" repeatCount="indefinite"/>
+            <animate attributeName="cy" values="98;68" dur="1s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0;1;0" dur="1s" repeatCount="indefinite"/>
+          </circle>
+          <!-- Likert scale popup -->
+          <rect x="8" y="170" width="204" height="56" rx="8" fill="#0D0D1A" stroke="rgba(123,97,255,0.4)" stroke-width="1"/>
+          <text x="110" y="183" text-anchor="middle" font-family="Inter" font-size="7.5" font-weight="500" fill="white">Gestion de chantier</text>
+          <text x="110" y="193" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#4A5568">Évaluez votre niveau (1-7)</text>
+          <!-- Likert bubbles -->
+          <circle cx="28" cy="207" r="8" fill="#7B0000" stroke="rgba(255,0,0,0.3)"/>
+          <text x="28" y="210" text-anchor="middle" font-family="Inter" font-size="7.5" fill="white">1</text>
+          <circle cx="46" cy="207" r="8" fill="#CC0000" stroke="rgba(255,0,0,0.3)"/>
+          <text x="46" y="210" text-anchor="middle" font-family="Inter" font-size="7.5" fill="white">2</text>
+          <circle cx="64" cy="207" r="8" fill="#E05500" stroke="rgba(255,120,0,0.3)"/>
+          <text x="64" y="210" text-anchor="middle" font-family="Inter" font-size="7.5" fill="white">3</text>
+          <circle cx="82" cy="207" r="8" fill="#C8A000" stroke="rgba(255,220,0,0.3)"/>
+          <text x="82" y="210" text-anchor="middle" font-family="Inter" font-size="7.5" fill="white">4</text>
+          <circle cx="100" cy="207" r="8" fill="#3A9E40" stroke="rgba(0,200,0,0.3)"/>
+          <text x="100" y="210" text-anchor="middle" font-family="Inter" font-size="7.5" fill="white">5</text>
+          <!-- Selected: 6 -->
+          <circle cx="118" cy="207" r="10" fill="#00A060" stroke="#00FF88" stroke-width="1.5"/>
+          <text x="118" y="211" text-anchor="middle" font-family="Inter" font-size="9" font-weight="700" fill="white">6</text>
+          <circle cx="136" cy="207" r="8" fill="#00CC70" stroke="rgba(0,200,100,0.3)"/>
+          <text x="136" y="210" text-anchor="middle" font-family="Inter" font-size="7.5" fill="white">7</text>
+          <text x="163" y="204" font-family="Inter" font-size="6.5" fill="#4A5568">Expert</text>
+          <text x="163" y="213" font-family="Inter" font-size="6.5" fill="#00C870">confirmé</text>
+          <!-- Timeline -->
+          <rect x="20" y="250" width="180" height="2" fill="#1A1A2E" rx="1"/>
+          <rect x="20" y="250" width="165" height="2" fill="#7B61FF" rx="1"/>
+        </svg>
+      `;
+    }
+  },
+  {
+    num: "10",
+    title: "Construction du Jumeau",
+    desc: "L'avatar se forme au centre. Toutes les dimensions cognitives apparaissent progressivement comme des satellites en orbite.",
+    tags: [["anim","Avatar emergence"],["anim","Satellites orbitaux"],["anim","Brain live build"]],
+    render: (el) => {
+      el.innerHTML = `
+        <svg width="100%" height="100%" viewBox="0 0 220 260">
+          <defs>
+            <radialGradient id="avatarGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#7B61FF" stop-opacity="0.25"/>
+              <stop offset="100%" stop-color="#050508" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <rect width="220" height="260" fill="#050508"/>
+          <rect width="220" height="260" fill="url(#avatarGlow)"/>
+          <text x="110" y="14" text-anchor="middle" font-family="Inter" font-size="8" font-weight="500" fill="rgba(255,255,255,0.3)" letter-spacing="1">CONSTRUCTION DU JUMEAU</text>
+          <!-- Orbit rings -->
+          <circle cx="110" cy="118" r="42" fill="none" stroke="rgba(123,97,255,0.07)" stroke-dasharray="3 4"/>
+          <circle cx="110" cy="118" r="62" fill="none" stroke="rgba(123,97,255,0.05)" stroke-dasharray="3 5"/>
+          <circle cx="110" cy="118" r="80" fill="none" stroke="rgba(0,255,136,0.04)" stroke-dasharray="3 6"/>
+          <!-- Avatar node center -->
+          <circle cx="110" cy="118" r="26" fill="#0A0A18" stroke="#7B61FF" stroke-width="1.5"/>
+          <circle cx="110" cy="118" r="22" fill="#0F0F22"/>
+          <!-- Avatar face (simplified) -->
+          <circle cx="110" cy="112" r="8" fill="#1A1A35" stroke="rgba(123,97,255,0.5)" stroke-width="0.8"/>
+          <path d="M103 124 Q110 130 117 124" stroke="rgba(123,97,255,0.6)" stroke-width="0.8" fill="none"/>
+          <text x="110" y="140" text-anchor="middle" font-family="Inter" font-size="5.5" fill="#7B61FF">MOI</text>
+          <!-- Pulse ring -->
+          <circle cx="110" cy="118" r="28" fill="none" stroke="#7B61FF" stroke-width="0.5" opacity="0.8">
+            <animate attributeName="r" values="28;50;28" dur="3s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.8;0;0.8" dur="3s" repeatCount="indefinite"/>
+          </circle>
+          <!-- Satellite nodes appearing one by one -->
+          <!-- Métiers -->
+          <g>
+            <line x1="110" y1="76" x2="110" y2="58" stroke="rgba(123,97,255,0.4)" stroke-width="0.6"/>
+            <circle cx="110" cy="50" r="10" fill="#0D0D1A" stroke="#7B61FF" stroke-width="1"/>
+            <text x="110" y="53" text-anchor="middle" font-family="Inter" font-size="6" fill="#9B8BFF">Métiers</text>
+          </g>
+          <!-- Compétences -->
+          <g>
+            <line x1="147" y1="90" x2="158" y2="76" stroke="rgba(123,97,255,0.35)" stroke-width="0.6"/>
+            <circle cx="165" cy="68" r="11" fill="#0D0D1A" stroke="rgba(123,97,255,0.6)" stroke-width="0.8"/>
+            <text x="165" y="71" text-anchor="middle" font-family="Inter" font-size="5.5" fill="#9B8BFF">Compét.</text>
+          </g>
+          <!-- Capacités cognitives -->
+          <g>
+            <line x1="150" y1="122" x2="167" y2="130" stroke="rgba(0,255,136,0.3)" stroke-width="0.6"/>
+            <circle cx="175" cy="138" r="12" fill="#0D0D1A" stroke="rgba(0,255,136,0.4)" stroke-width="0.8"/>
+            <text x="175" y="136" text-anchor="middle" font-family="Inter" font-size="5.5" fill="#00C870">Capacités</text>
+            <text x="175" y="145" text-anchor="middle" font-family="Inter" font-size="5" fill="#4A5568">cognitives</text>
+          </g>
+          <!-- Soft skills -->
+          <g>
+            <line x1="130" y1="145" x2="138" y2="164" stroke="rgba(123,97,255,0.3)" stroke-width="0.6"/>
+            <circle cx="143" cy="175" r="11" fill="#0D0D1A" stroke="rgba(123,97,255,0.4)" stroke-width="0.8"/>
+            <text x="143" y="178" text-anchor="middle" font-family="Inter" font-size="5.5" fill="#9B8BFF">Soft skills</text>
+          </g>
+          <!-- Valeurs -->
+          <g>
+            <line x1="90" y1="143" x2="82" y2="164" stroke="rgba(255,200,80,0.3)" stroke-width="0.6"/>
+            <circle cx="78" cy="175" r="11" fill="#0D0D1A" stroke="rgba(255,200,80,0.35)" stroke-width="0.8"/>
+            <text x="78" y="178" text-anchor="middle" font-family="Inter" font-size="5.5" fill="#CCA84A">Valeurs</text>
+          </g>
+          <!-- Motivations -->
+          <g>
+            <line x1="72" y1="122" x2="52" y2="130" stroke="rgba(255,100,100,0.25)" stroke-width="0.6"/>
+            <circle cx="44" cy="140" r="11" fill="#0D0D1A" stroke="rgba(255,100,100,0.3)" stroke-width="0.8"/>
+            <text x="44" y="143" text-anchor="middle" font-family="Inter" font-size="5.5" fill="#FF8080">Motiv.</text>
+          </g>
+          <!-- Objectifs -->
+          <g>
+            <line x1="73" y1="90" x2="62" y2="75" stroke="rgba(80,200,255,0.25)" stroke-width="0.6"/>
+            <circle cx="55" cy="66" r="11" fill="#0D0D1A" stroke="rgba(80,200,255,0.3)" stroke-width="0.8"/>
+            <text x="55" y="69" text-anchor="middle" font-family="Inter" font-size="5.5" fill="#50C8FF">Objectifs</text>
+          </g>
+          <!-- Connexions (bottom) -->
+          <g>
+            <line x1="110" y1="144" x2="110" y2="165" stroke="rgba(123,97,255,0.2)" stroke-width="0.5"/>
+            <circle cx="110" cy="175" r="12" fill="#0A0A18" stroke="rgba(123,97,255,0.35)" stroke-width="0.8"/>
+            <text x="110" y="172" text-anchor="middle" font-family="JetBrains Mono" font-size="5.5" fill="#7B61FF">612</text>
+            <text x="110" y="181" text-anchor="middle" font-family="Inter" font-size="5" fill="#4A5568">connexions</text>
+          </g>
+          <!-- Floating particles -->
+          <circle cx="95" cy="190" r="1.5" fill="#7B61FF" opacity="0.5">
+            <animate attributeName="cy" values="190;185;190" dur="2s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.5;0.9;0.5" dur="2s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="125" cy="195" r="1" fill="#00FF88" opacity="0.4">
+            <animate attributeName="cy" values="195;190;195" dur="2.5s" repeatCount="indefinite"/>
+          </circle>
+          <!-- Build progress text -->
+          <text x="110" y="210" text-anchor="middle" font-family="Inter" font-size="7.5" fill="#4A5568">Construction en cours...</text>
+          <rect x="40" y="216" width="140" height="2" rx="1" fill="#1A1A2E"/>
+          <rect x="40" y="216" width="105" height="2" rx="1" fill="#7B61FF">
+            <animate attributeName="width" values="0;140" dur="3s" repeatCount="indefinite"/>
+          </rect>
+          <!-- Timeline -->
+          <rect x="20" y="250" width="180" height="2" fill="#1A1A2E" rx="1"/>
+          <rect x="20" y="250" width="175" height="2" fill="#7B61FF" rx="1"/>
+        </svg>
+      `;
+    }
+  },
+  {
+    num: "11",
+    title: "Jumeau Prêt — Stats",
+    desc: "Animation finale. Le jumeau cognitif est complet. Stats révélées progressivement. Bouton vert pour entrer dans Cognitarium.",
+    tags: [["anim","Stats reveal"],["anim","Confetti neural"],["interact","Enter Cognitarium"]],
+    render: (el) => {
+      el.innerHTML = `
+        <svg width="100%" height="100%" viewBox="0 0 220 260">
+          <defs>
+            <radialGradient id="celebGlow" cx="50%" cy="45%" r="55%">
+              <stop offset="0%" stop-color="#00FF88" stop-opacity="0.12"/>
+              <stop offset="60%" stop-color="#7B61FF" stop-opacity="0.06"/>
+              <stop offset="100%" stop-color="#050508" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <rect width="220" height="260" fill="#050508"/>
+          <rect width="220" height="260" fill="url(#celebGlow)"/>
+          <!-- Title -->
+          <text x="110" y="22" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="white">Votre jumeau cognitif</text>
+          <text x="110" y="36" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="#00FF88">est prêt.</text>
+          <!-- Avatar with full glow -->
+          <circle cx="110" cy="85" r="35" fill="rgba(0,255,136,0.05)" stroke="rgba(0,255,136,0.2)" stroke-width="0.8"/>
+          <circle cx="110" cy="85" r="26" fill="#0A0A18" stroke="#00FF88" stroke-width="1.2"/>
+          <circle cx="110" cy="78" r="10" fill="#1A1A35" stroke="rgba(0,255,136,0.4)" stroke-width="0.8"/>
+          <path d="M101 92 Q110 100 119 92" stroke="rgba(0,255,136,0.6)" stroke-width="1" fill="none"/>
+          <!-- Pulse from avatar -->
+          <circle cx="110" cy="85" r="30" fill="none" stroke="#00FF88" stroke-width="0.5" opacity="0.8">
+            <animate attributeName="r" values="28;55;28" dur="3s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.8;0;0.8" dur="3s" repeatCount="indefinite"/>
+          </circle>
+          <!-- Stats grid -->
+          <rect x="10" y="126" width="92" height="34" rx="6" fill="#0A0A12" stroke="rgba(123,97,255,0.2)"/>
+          <text x="56" y="140" text-anchor="middle" font-family="JetBrains Mono" font-size="14" font-weight="500" fill="#9B8BFF">3</text>
+          <text x="56" y="153" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#4A5568">métiers</text>
+          <rect x="118" y="126" width="92" height="34" rx="6" fill="#0A0A12" stroke="rgba(0,255,136,0.2)"/>
+          <text x="164" y="140" text-anchor="middle" font-family="JetBrains Mono" font-size="14" font-weight="500" fill="#00C870">127</text>
+          <text x="164" y="153" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#4A5568">compétences</text>
+          <rect x="10" y="166" width="92" height="34" rx="6" fill="#0A0A12" stroke="rgba(80,200,255,0.2)"/>
+          <text x="56" y="180" text-anchor="middle" font-family="JetBrains Mono" font-size="14" font-weight="500" fill="#50C8FF">24</text>
+          <text x="56" y="193" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#4A5568">cap. cognitives</text>
+          <rect x="118" y="166" width="92" height="34" rx="6" fill="#0A0A12" stroke="rgba(255,200,80,0.2)"/>
+          <text x="164" y="180" text-anchor="middle" font-family="JetBrains Mono" font-size="14" font-weight="500" fill="#CCA84A">612</text>
+          <text x="164" y="193" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#4A5568">connexions</text>
+          <!-- Particle effects -->
+          <circle cx="30" cy="110" r="2" fill="#7B61FF" opacity="0.7">
+            <animate attributeName="cy" values="110;90;110" dur="1.5s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.7;0.2;0.7" dur="1.5s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="190" cy="105" r="1.5" fill="#00FF88" opacity="0.6">
+            <animate attributeName="cy" values="105;85;105" dur="2s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="160" cy="115" r="1" fill="#CCA84A" opacity="0.5">
+            <animate attributeName="cy" values="115;95;115" dur="1.8s" repeatCount="indefinite"/>
+          </circle>
+          <!-- CTA Button -->
+          <rect x="20" y="210" width="180" height="38" rx="19" fill="#00FF88"/>
+          <text x="110" y="233" text-anchor="middle" font-family="Inter" font-size="12" font-weight="600" fill="#050508">Entrer dans Cognitarium →</text>
+          <!-- Annotation -->
+          <text x="110" y="255" text-anchor="middle" font-family="Inter" font-size="7" fill="#2D2D45">Le bouton s'active une fois la construction terminée</text>
+        </svg>
+      `;
+    }
+  },
+  {
+    num: "12",
+    title: "Dashboard Home",
+    desc: "Transition : le graphe se dissout. La Home apparaît vide. L'avatar seul au centre, puis les modules satellites apparaissent un à un.",
+    tags: [["trans","Graph dissolve"],["anim","Satellite emergence"],["anim","Module reveal séquentiel"]],
+    render: (el) => {
+      el.innerHTML = `
+        <svg width="100%" height="100%" viewBox="0 0 220 260">
+          <rect width="220" height="260" fill="#050508"/>
+          <!-- App shell -->
+          <rect x="0" y="0" width="220" height="18" fill="#070710"/>
+          <text x="12" y="12" font-family="Inter" font-size="6.5" fill="#2D2D45">Cognitarium</text>
+          <circle cx="207" cy="9" r="3.5" fill="#1A1A2E" stroke="rgba(123,97,255,0.3)"/>
+          <!-- Avatar center (solo, bright) -->
+          <circle cx="110" cy="110" r="28" fill="rgba(123,97,255,0.08)" stroke="rgba(123,97,255,0.2)"/>
+          <circle cx="110" cy="110" r="20" fill="#0F0F22" stroke="#7B61FF" stroke-width="1.2"/>
+          <circle cx="110" cy="105" r="8" fill="#1A1A35" stroke="rgba(123,97,255,0.5)"/>
+          <path d="M103 118 Q110 124 117 118" stroke="rgba(123,97,255,0.6)" stroke-width="1" fill="none"/>
+          <!-- Pulse -->
+          <circle cx="110" cy="110" r="25" fill="none" stroke="#7B61FF" stroke-width="0.5">
+            <animate attributeName="r" values="22;40;22" dur="3s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.6;0;0.6" dur="3s" repeatCount="indefinite"/>
+          </circle>
+          <!-- Satellite modules appearing (12 modules) -->
+          <!-- Top -->
+          <circle cx="110" cy="55" r="14" fill="#0D0D1A" stroke="rgba(123,97,255,0.5)" stroke-width="0.8">
+            <animate attributeName="r" values="0;14" dur="0.3s" begin="0.5s" fill="freeze"/>
+          </circle>
+          <line x1="110" y1="82" x2="110" y2="69" stroke="rgba(123,97,255,0.3)" stroke-width="0.5"/>
+          <text x="110" y="53" text-anchor="middle" font-family="Inter" font-size="6" fill="#9B8BFF">Métiers</text>
+          <!-- Top-right -->
+          <circle cx="155" cy="70" r="13" fill="#0D0D1A" stroke="rgba(0,200,112,0.4)" stroke-width="0.8">
+            <animate attributeName="r" values="0;13" dur="0.3s" begin="0.8s" fill="freeze"/>
+          </circle>
+          <line x1="127" y1="92" x2="143" y2="80" stroke="rgba(0,200,112,0.2)" stroke-width="0.5"/>
+          <text x="155" y="73" text-anchor="middle" font-family="Inter" font-size="5.5" fill="#00C870">Compét.</text>
+          <!-- Right -->
+          <circle cx="177" cy="110" r="13" fill="#0D0D1A" stroke="rgba(80,200,255,0.35)" stroke-width="0.8">
+            <animate attributeName="r" values="0;13" dur="0.3s" begin="1.1s" fill="freeze"/>
+          </circle>
+          <line x1="130" y1="110" x2="164" y2="110" stroke="rgba(80,200,255,0.2)" stroke-width="0.5"/>
+          <text x="177" y="113" text-anchor="middle" font-family="Inter" font-size="5.5" fill="#50C8FF">Process.</text>
+          <!-- Bottom-right -->
+          <circle cx="155" cy="150" r="13" fill="#0D0D1A" stroke="rgba(255,200,80,0.35)" stroke-width="0.8">
+            <animate attributeName="r" values="0;13" dur="0.3s" begin="1.4s" fill="freeze"/>
+          </circle>
+          <line x1="127" y1="130" x2="143" y2="142" stroke="rgba(255,200,80,0.2)" stroke-width="0.5"/>
+          <text x="155" y="153" text-anchor="middle" font-family="Inter" font-size="5.5" fill="#CCA84A">Valeurs</text>
+          <!-- Bottom -->
+          <circle cx="110" cy="167" r="14" fill="#0D0D1A" stroke="rgba(255,100,100,0.3)" stroke-width="0.8">
+            <animate attributeName="r" values="0;14" dur="0.3s" begin="1.7s" fill="freeze"/>
+          </circle>
+          <line x1="110" y1="138" x2="110" y2="153" stroke="rgba(255,100,100,0.2)" stroke-width="0.5"/>
+          <text x="110" y="170" text-anchor="middle" font-family="Inter" font-size="5.5" fill="#FF8080">Soft skills</text>
+          <!-- Bottom-left -->
+          <circle cx="65" cy="150" r="13" fill="#0D0D1A" stroke="rgba(150,100,255,0.35)" stroke-width="0.8">
+            <animate attributeName="r" values="0;13" dur="0.3s" begin="2s" fill="freeze"/>
+          </circle>
+          <line x1="93" y1="130" x2="77" y2="142" stroke="rgba(150,100,255,0.2)" stroke-width="0.5"/>
+          <text x="65" y="153" text-anchor="middle" font-family="Inter" font-size="5.5" fill="#B090FF">Objectifs</text>
+          <!-- Left -->
+          <circle cx="43" cy="110" r="13" fill="#0D0D1A" stroke="rgba(123,97,255,0.35)" stroke-width="0.8">
+            <animate attributeName="r" values="0;13" dur="0.3s" begin="2.3s" fill="freeze"/>
+          </circle>
+          <line x1="90" y1="110" x2="56" y2="110" stroke="rgba(123,97,255,0.2)" stroke-width="0.5"/>
+          <text x="43" y="113" text-anchor="middle" font-family="Inter" font-size="5.5" fill="#9B8BFF">IA</text>
+          <!-- Top-left -->
+          <circle cx="65" cy="70" r="13" fill="#0D0D1A" stroke="rgba(0,255,136,0.3)" stroke-width="0.8">
+            <animate attributeName="r" values="0;13" dur="0.3s" begin="2.6s" fill="freeze"/>
+          </circle>
+          <line x1="93" y1="92" x2="77" y2="80" stroke="rgba(0,255,136,0.2)" stroke-width="0.5"/>
+          <text x="65" y="73" text-anchor="middle" font-family="Inter" font-size="5.5" fill="#00C870">Simul.</text>
+          <!-- Additional small modules -->
+          <circle cx="135" cy="42" r="10" fill="#0A0A12" stroke="rgba(123,97,255,0.2)" stroke-width="0.5">
+            <animate attributeName="r" values="0;10" dur="0.3s" begin="2.9s" fill="freeze"/>
+          </circle>
+          <text x="135" y="45" text-anchor="middle" font-family="Inter" font-size="5" fill="#4A5568">Opport.</text>
+          <circle cx="85" cy="42" r="10" fill="#0A0A12" stroke="rgba(123,97,255,0.2)" stroke-width="0.5">
+            <animate attributeName="r" values="0;10" dur="0.3s" begin="3.2s" fill="freeze"/>
+          </circle>
+          <text x="85" y="45" text-anchor="middle" font-family="Inter" font-size="5" fill="#4A5568">Histo.</text>
+          <!-- Sequence indicator -->
+          <text x="110" y="193" text-anchor="middle" font-family="Inter" font-size="7" fill="#4A5568">Modules en cours d'apparition...</text>
+          <text x="110" y="204" text-anchor="middle" font-family="JetBrains Mono" font-size="6.5" fill="#7B61FF">un par un ↑</text>
+          <!-- Timeline -->
+          <rect x="20" y="250" width="180" height="2" fill="#1A1A2E" rx="1"/>
+          <rect x="20" y="250" width="180" height="2" fill="#7B61FF" rx="1"/>
+        </svg>
+      `;
+    }
+  },
+  {
+    num: "13",
+    title: "Graphe Métiers Vivant",
+    desc: "Click sur 'Métiers'. Transition synaptique. Le graphe s'illumine progressivement du métier vers les compétences, capacités et valeurs.",
+    tags: [["trans","Synapse awakening"],["anim","Graph illuminate"],["interact","Explore métier"]],
+    render: (el) => {
+      el.innerHTML = `
+        <svg width="100%" height="100%" viewBox="0 0 220 260">
+          <rect width="220" height="260" fill="#050508"/>
+          <!-- Header -->
+          <rect x="0" y="0" width="220" height="24" fill="#070710" stroke="none"/>
+          <text x="12" y="15" font-family="Inter" font-size="7" fill="#4A5568">← Retour</text>
+          <text x="110" y="15" text-anchor="middle" font-family="Inter" font-size="8" font-weight="500" fill="white">Mes Métiers</text>
+          <!-- Central job node (illuminated) -->
+          <circle cx="110" cy="95" r="22" fill="#12122A" stroke="#7B61FF" stroke-width="2"/>
+          <circle cx="110" cy="95" r="28" fill="none" stroke="#7B61FF" stroke-width="0.5" opacity="0.5">
+            <animate attributeName="r" values="24;38;24" dur="2s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.5;0;0.5" dur="2s" repeatCount="indefinite"/>
+          </circle>
+          <text x="110" y="91" text-anchor="middle" font-family="Inter" font-size="8" font-weight="600" fill="white">Conducteur</text>
+          <text x="110" y="103" text-anchor="middle" font-family="Inter" font-size="7" fill="#7B61FF">de Travaux</text>
+          <!-- Missions (level 1) -->
+          <line x1="88" y1="78" x2="68" y2="56" stroke="#7B61FF" stroke-width="1">
+            <animate attributeName="stroke-opacity" values="0;1" dur="0.5s" begin="0.3s" fill="freeze"/>
+          </line>
+          <circle cx="62" cy="50" r="13" fill="#0D0D1A" stroke="rgba(123,97,255,0.7)" stroke-width="1">
+            <animate attributeName="r" values="0;13" dur="0.4s" begin="0.3s" fill="freeze"/>
+          </circle>
+          <text x="62" y="53" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#9B8BFF">Missions</text>
+          <line x1="132" y1="78" x2="155" y2="56" stroke="#7B61FF" stroke-width="1">
+            <animate attributeName="stroke-opacity" values="0;1" dur="0.5s" begin="0.6s" fill="freeze"/>
+          </line>
+          <circle cx="162" cy="50" r="14" fill="#0D0D1A" stroke="rgba(123,97,255,0.7)" stroke-width="1">
+            <animate attributeName="r" values="0;14" dur="0.4s" begin="0.6s" fill="freeze"/>
+          </circle>
+          <text x="162" y="53" text-anchor="middle" font-family="Inter" font-size="6.5" fill="#9B8BFF">Tâches</text>
+          <!-- Compétences (level 2) - from missions -->
+          <line x1="50" y1="63" x2="35" y2="82" stroke="rgba(0,200,112,0.6)" stroke-width="0.8">
+            <animate attributeName="stroke-opacity" values="0;0.6" dur="0.4s" begin="0.9s" fill="freeze"/>
+          </line>
+          <circle cx="29" cy="90" r="11" fill="#0A0A15" stroke="rgba(0,200,112,0.5)" stroke-width="0.8">
+            <animate attributeName="r" values="0;11" dur="0.3s" begin="0.9s" fill="freeze"/>
+          </circle>
+          <text x="29" y="93" text-anchor="middle" font-family="Inter" font-size="5.5" fill="#00C870">Budget</text>
+          <line x1="62" y1="63" x2="55" y2="82" stroke="rgba(0,200,112,0.6)" stroke-width="0.8">
+            <animate attributeName="stroke-opacity" values="0;0.6" dur="0.4s" begin="1.1s" fill="freeze"/>
+          </line>
+          <circle cx="52" cy="90" r="11" fill="#0A0A15" stroke="rgba(0,200,112,0.5)" stroke-width="0.8">
+            <animate attributeName="r" values="0;11" dur="0.3s" begin="1.1s" fill="freeze"/>
+          </circle>
+          <text x="52" y="93" text-anchor="middle" font-family="Inter" font-size="5.5" fill="#00C870">Plans</text>
+          <line x1="148" y1="62" x2="158" y2="80" stroke="rgba(0,200,112,0.6)" stroke-width="0.8">
+            <animate attributeName="stroke-opacity" values="0;0.6" dur="0.4s" begin="1.3s" fill="freeze"/>
+          </line>
+          <circle cx="164" cy="88" r="11" fill="#0A0A15" stroke="rgba(0,200,112,0.5)" stroke-width="0.8">
+            <animate attributeName="r" values="0;11" dur="0.3s" begin="1.3s" fill="freeze"/>
+          </circle>
+          <text x="164" y="91" text-anchor="middle" font-family="Inter" font-size="5.5" fill="#00C870">Planning</text>
+          <!-- Capacités (deeper) -->
+          <line x1="88" y1="117" x2="70" y2="138" stroke="rgba(80,200,255,0.4)" stroke-width="0.7">
+            <animate attributeName="stroke-opacity" values="0;0.4" dur="0.4s" begin="1.6s" fill="freeze"/>
+          </line>
+          <circle cx="64" cy="146" r="12" fill="#0A0A15" stroke="rgba(80,200,255,0.4)" stroke-width="0.7">
+            <animate attributeName="r" values="0;12" dur="0.3s" begin="1.6s" fill="freeze"/>
+          </circle>
+          <text x="64" y="144" text-anchor="middle" font-family="Inter" font-size="5.5" fill="#50C8FF">Capacités</text>
+          <text x="64" y="153" text-anchor="middle" font-family="Inter" font-size="5" fill="#4A5568">cogn.</text>
+          <!-- Valeurs -->
+          <line x1="132" y1="117" x2="150" y2="138" stroke="rgba(255,200,80,0.35)" stroke-width="0.7">
+            <animate attributeName="stroke-opacity" values="0;0.35" dur="0.4s" begin="1.9s" fill="freeze"/>
+          </line>
+          <circle cx="157" cy="147" r="12" fill="#0A0A15" stroke="rgba(255,200,80,0.35)" stroke-width="0.7">
+            <animate attributeName="r" values="0;12" dur="0.3s" begin="1.9s" fill="freeze"/>
+          </circle>
+          <text x="157" y="150" text-anchor="middle" font-family="Inter" font-size="5.5" fill="#CCA84A">Valeurs</text>
+          <!-- Bottom level - processus -->
+          <line x1="90" y1="117" x2="90" y2="165" stroke="rgba(150,100,255,0.3)" stroke-width="0.6">
+            <animate attributeName="stroke-opacity" values="0;0.3" dur="0.4s" begin="2.2s" fill="freeze"/>
+          </line>
+          <circle cx="90" cy="175" r="12" fill="#0A0A15" stroke="rgba(150,100,255,0.35)" stroke-width="0.7">
+            <animate attributeName="r" values="0;12" dur="0.3s" begin="2.2s" fill="freeze"/>
+          </circle>
+          <text x="90" y="173" text-anchor="middle" font-family="Inter" font-size="5.5" fill="#B090FF">Process.</text>
+          <text x="90" y="182" text-anchor="middle" font-family="Inter" font-size="5" fill="#4A5568">cognitifs</text>
+          <line x1="130" y1="117" x2="130" y2="165" stroke="rgba(150,100,255,0.3)" stroke-width="0.6">
+            <animate attributeName="stroke-opacity" values="0;0.3" dur="0.4s" begin="2.4s" fill="freeze"/>
+          </line>
+          <circle cx="130" cy="175" r="12" fill="#0A0A15" stroke="rgba(150,100,255,0.35)" stroke-width="0.7">
+            <animate attributeName="r" values="0;12" dur="0.3s" begin="2.4s" fill="freeze"/>
+          </circle>
+          <text x="130" y="178" text-anchor="middle" font-family="Inter" font-size="5.5" fill="#B090FF">Soft skills</text>
+          <!-- Pulse trail throughout graph -->
+          <circle cx="110" cy="95" r="2" fill="#00FF88">
+            <animate attributeName="cx" values="110;62;29" dur="1.5s" repeatCount="indefinite"/>
+            <animate attributeName="cy" values="95;50;90" dur="1.5s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0;1;0" dur="1.5s" repeatCount="indefinite"/>
+          </circle>
+          <!-- Caption -->
+          <text x="110" y="205" text-anchor="middle" font-family="Inter" font-size="7.5" fill="#4A5568">Le cerveau prend vie...</text>
+          <!-- Timeline -->
+          <rect x="20" y="250" width="180" height="2" fill="#1A1A2E" rx="1"/>
+          <rect x="20" y="250" width="180" height="2" fill="#00FF88" rx="1"/>
+        </svg>
+      `;
+    }
+  },
+  {
+    num: "14",
+    title: "Assistant IA — Choix d'Entrée",
+    desc: "L'assistant IA apparaît avec le message d'initialisation. Trois chemins proposés : Explorer, Découvrir, Construire.",
+    tags: [["anim","IA typing effect"],["interact","3 entry paths"],["trans","Vers app principale"]],
+    render: (el) => {
+      el.innerHTML = `
+        <svg width="100%" height="100%" viewBox="0 0 220 260">
+          <rect width="220" height="260" fill="#050508"/>
+          <!-- IA avatar / header -->
+          <rect x="0" y="0" width="220" height="50" fill="#070710"/>
+          <circle cx="28" cy="25" r="14" fill="#12122A" stroke="#7B61FF" stroke-width="1"/>
+          <circle cx="28" cy="25" r="5" fill="rgba(123,97,255,0.6)"/>
+          <circle cx="28" cy="25" r="8" fill="none" stroke="#7B61FF" stroke-width="0.5">
+            <animate attributeName="r" values="7;12;7" dur="2s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.6;0;0.6" dur="2s" repeatCount="indefinite"/>
+          </circle>
+          <text x="48" y="20" font-family="Inter" font-size="8" font-weight="600" fill="white">Assistant Cognitarium</text>
+          <text x="48" y="32" font-family="Inter" font-size="6.5" fill="#7B61FF">IA personnalisée · en ligne</text>
+          <circle cx="208" cy="25" r="4" fill="#00FF88">
+            <animate attributeName="opacity" values="1;0.3;1" dur="1s" repeatCount="indefinite"/>
+          </circle>
+          <!-- IA message bubble -->
+          <rect x="10" y="60" width="165" height="56" rx="10" rx_bottom_left="2" fill="#0D0D1A" stroke="rgba(123,97,255,0.3)" stroke-width="1"/>
+          <circle cx="10" cy="116" r="0" fill="#0D0D1A"/>
+          <text x="20" y="75" font-family="Inter" font-size="7.5" fill="white">Votre jumeau cognitif</text>
+          <text x="20" y="87" font-family="Inter" font-size="7.5" fill="white">est initialisé.</text>
+          <text x="20" y="102" font-family="Inter" font-size="7" fill="#7B8BA0">Je suis prêt à vous accompagner</text>
+          <text x="20" y="112" font-family="Inter" font-size="7" fill="#7B8BA0">dans votre exploration.</text>
+          <!-- Typing indicator / cursor -->
+          <circle cx="192" cy="80" r="2" fill="#7B61FF">
+            <animate attributeName="opacity" values="0;1;0" dur="1.2s" repeatCount="indefinite"/>
+          </circle>
+          <!-- Choice cards -->
+          <text x="110" y="135" text-anchor="middle" font-family="Inter" font-size="7" fill="#4A5568">Choisissez votre point d'entrée</text>
+          <!-- Card 1: Explorer librement -->
+          <rect x="10" y="144" width="200" height="30" rx="8" fill="#0D0D1A" stroke="rgba(123,97,255,0.35)" stroke-width="1"/>
+          <circle cx="26" cy="159" r="8" fill="rgba(123,97,255,0.15)" stroke="rgba(123,97,255,0.4)" stroke-width="0.8"/>
+          <text x="26" y="162" text-anchor="middle" font-family="Inter" font-size="9">🧭</text>
+          <text x="42" y="156" font-family="Inter" font-size="8.5" font-weight="500" fill="white">Explorer librement</text>
+          <text x="42" y="167" font-family="Inter" font-size="7" fill="#4A5568">Naviguez dans votre graphe</text>
+          <text x="203" y="162" text-anchor="end" font-family="Inter" font-size="10" fill="#7B61FF">→</text>
+          <!-- Card 2: Découvrir mon profil -->
+          <rect x="10" y="181" width="200" height="30" rx="8" fill="#0D0D1A" stroke="rgba(0,200,112,0.3)" stroke-width="1"/>
+          <circle cx="26" cy="196" r="8" fill="rgba(0,200,112,0.1)" stroke="rgba(0,200,112,0.3)" stroke-width="0.8"/>
+          <text x="26" y="199" text-anchor="middle" font-family="Inter" font-size="9">🧠</text>
+          <text x="42" y="193" font-family="Inter" font-size="8.5" font-weight="500" fill="white">Découvrir mon profil</text>
+          <text x="42" y="204" font-family="Inter" font-size="7" fill="#4A5568">Analysez vos forces et patterns</text>
+          <text x="203" y="199" text-anchor="end" font-family="Inter" font-size="10" fill="#00C870">→</text>
+          <!-- Card 3: Construire mon évolution (primary/green) -->
+          <rect x="10" y="218" width="200" height="32" rx="8" fill="rgba(0,255,136,0.06)" stroke="#00FF88" stroke-width="1.2"/>
+          <circle cx="26" cy="234" r="8" fill="rgba(0,255,136,0.15)" stroke="rgba(0,255,136,0.4)" stroke-width="0.8"/>
+          <text x="26" y="237" text-anchor="middle" font-family="Inter" font-size="9">🚀</text>
+          <text x="42" y="230" font-family="Inter" font-size="8.5" font-weight="600" fill="white">Construire mon évolution</text>
+          <text x="42" y="241" font-family="Inter" font-size="7" fill="#00C870">Définissez votre trajectoire</text>
+          <text x="203" y="236" text-anchor="end" font-family="Inter" font-size="10" fill="#00FF88">→</text>
+          <!-- Small recommended badge -->
+          <rect x="148" y="218" width="60" height="12" rx="6" fill="rgba(0,255,136,0.15)"/>
+          <text x="178" y="228" text-anchor="middle" font-family="Inter" font-size="6" fill="#00FF88">Recommandé ✦</text>
+          <!-- Timeline (complete) -->
+          <rect x="20" y="253" width="180" height="2" fill="#1A1A2E" rx="1"/>
+          <rect x="20" y="253" width="180" height="2" fill="#00FF88" rx="1"/>
+          <text x="110" y="260" text-anchor="middle" font-family="Inter" font-size="6" fill="#2D2D45">ONBOARDING COMPLET</text>
+        </svg>
+      `;
+    }
+  }
+];
+
+const track = document.getElementById('sbTrack');
+const navDots = document.getElementById('navDots');
+
+screens.forEach((sc, i) => {
+  // Nav dot
+  const dot = document.createElement('div');
+  dot.className = 'sb-nav-dot' + (i === 0 ? ' active' : '');
+  dot.title = `Écran ${sc.num}`;
+  dot.onclick = () => {
+    const cards = document.querySelectorAll('.sb-card');
+    cards[i].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    document.querySelectorAll('.sb-nav-dot').forEach((d, j) => d.classList.toggle('active', j === i));
+  };
+  navDots.appendChild(dot);
+
+  // Connector (not before first)
+  if (i > 0) {
+    const conn = document.createElement('div');
+    conn.className = 'sb-connector';
+    conn.innerHTML = `<div class="sb-connector-line"><div class="sb-connector-arrow"></div></div>`;
+    track.appendChild(conn);
+  }
+
+  // Card
+  const card = document.createElement('div');
+  card.className = 'sb-card';
+  
+  const screenEl = document.createElement('div');
+  screenEl.className = 'sb-screen';
+  sc.render(screenEl);
+
+  const tagsHTML = sc.tags.map(([type, label]) => 
+    `<span class="sb-tag sb-tag-${type === 'anim' ? 'anim' : type === 'interact' ? 'interact' : 'trans'}">${label}</span>`
+  ).join('');
+
+  card.innerHTML = `
+    <div class="sb-card-num">${sc.num}</div>
+  `;
+  card.appendChild(screenEl);
+  
+  const info = document.createElement('div');
+  info.className = 'sb-card-info';
+  info.innerHTML = `
+    <div class="sb-card-title">${sc.title}</div>
+    <div class="sb-card-desc">${sc.desc}</div>
+    <div class="sb-tags">${tagsHTML}</div>
+  `;
+  card.appendChild(info);
+  
+  track.appendChild(card);
+});
+
+// Update active dot on scroll
+const scroll = document.getElementById('sbScroll');
+scroll.addEventListener('scroll', () => {
+  const cards = document.querySelectorAll('.sb-card');
+  const scrollLeft = scroll.scrollLeft;
+  const containerWidth = scroll.clientWidth;
+  const center = scrollLeft + containerWidth / 2;
+  
+  let activeIdx = 0;
+  let minDist = Infinity;
+  cards.forEach((c, i) => {
+    const rect = c.getBoundingClientRect();
+    const cardCenter = rect.left + rect.width / 2;
+    const dist = Math.abs(cardCenter - containerWidth / 2);
+    if (dist < minDist) { minDist = dist; activeIdx = i; }
+  });
+  
+  document.querySelectorAll('.sb-nav-dot').forEach((d, j) => d.classList.toggle('active', j === activeIdx));
+});
+</script>
