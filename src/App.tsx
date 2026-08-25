@@ -6,12 +6,19 @@ import { TemporalNetworkGraph } from './components/TemporalNetworkGraph';
 import { TreeView } from './components/TreeView';
 import { TableView } from './components/TableView';
 import { HorizonsBridge } from './components/HorizonsBridge';
+import { MetiersGraph } from './components/MetiersGraph';
 import { DecayTimeline } from './components/DecayTimeline';
 import { CognitiveSignature } from './components/CognitiveSignature';
 import { NodeInspectorModal } from './components/NodeInspectorModal';
 import { ExperienceDistillerModal } from './components/ExperienceDistillerModal';
 import { ValidationCenterModal } from './components/ValidationCenterModal';
 import { OnboardingModal } from './components/OnboardingModal';
+import { PsychologyAtlasView } from './components/PsychologyAtlasView';
+import { ExperimentStudio } from './components/ExperimentStudio';
+import { MetacogLoopView } from './components/MetacogLoopView';
+import { PsyRefView } from './components/PsyRefView';
+import { ResourcesView } from './components/ResourcesView';
+import { MesEvaluationsView } from './components/MesEvaluationsView';
 import { INITIAL_COGNITORIUM_PROFILE, PROFILES_PRESETS } from './data/initialData';
 import { 
   CognitiveProfile, 
@@ -20,7 +27,8 @@ import {
   SkillNode, 
   HorizonJobNode, 
   AppActiveTab, 
-  ComplexityMode 
+  ComplexityMode,
+  ProfileAssessment
 } from './types';
 
 const STORAGE_KEY = 'cognitorium_active_profile_v5_graph_levels';
@@ -47,6 +55,8 @@ export default function App() {
   const [isDistillerOpen, setIsDistillerOpen] = useState<boolean>(false);
   const [isValidationCenterOpen, setIsValidationCenterOpen] = useState<boolean>(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
+  const [posterFocus, setPosterFocus] = useState<string | null>(null);
+  const [refFocus, setRefFocus] = useState<string | null>(null);
 
   // Persist profile changes to localStorage
   useEffect(() => {
@@ -337,6 +347,29 @@ export default function App() {
           />
         )}
 
+        {activeTab === 'metiers' && (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h1 className="text-xl font-bold text-slate-900">Graphe des métiers</h1>
+                <p className="text-xs text-slate-500">
+                  Tous les métiers que tu as exercés, les autres intitulés du même métier, les voisins ROME, et les passerelles moins attractives — reliés entre eux.
+                </p>
+              </div>
+              <div className="text-xs text-slate-600 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-xs flex items-center gap-2 self-start sm:self-auto">
+                <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                <span>Référentiel France Travail · clustering par grand domaine</span>
+              </div>
+            </div>
+            <MetiersGraph
+              profile={profile}
+              selectedNodeId={selectedNode?.id || null}
+              onSelectNode={handleSelectNode}
+              onAddHorizon={handleAddHorizon}
+            />
+          </div>
+        )}
+
         {/* VIEW 5: DECAY TIMELINE & REACTIVATION */}
         {activeTab === 'decay' && (
           <DecayTimeline
@@ -353,6 +386,52 @@ export default function App() {
           <CognitiveSignature
             profile={profile}
             simulationYear={simulationYear}
+          />
+        )}
+
+        {activeTab === 'atlas' && (
+          <PsychologyAtlasView
+            onNavigate={setActiveTab}
+            onOpenPoster={(id) => {
+              setPosterFocus(id);
+              setActiveTab('posters');
+            }}
+            onOpenRef={(id) => {
+              setRefFocus(id);
+              setActiveTab('psyref');
+            }}
+          />
+        )}
+        {activeTab === 'posters' && (
+          <ExperimentStudio
+            focusId={posterFocus}
+            onOpenRef={(id) => {
+              setRefFocus(id);
+              setActiveTab('psyref');
+            }}
+          />
+        )}
+        {activeTab === 'metacog' && <MetacogLoopView />}
+        {activeTab === 'psyref' && <PsyRefView focusId={refFocus} />}
+        {activeTab === 'ressources' && (
+          <ResourcesView
+            onOpenPoster={(id) => {
+              setPosterFocus(id);
+              setActiveTab('posters');
+            }}
+            onNavigate={setActiveTab}
+          />
+        )}
+        {activeTab === 'evaluations' && (
+          <MesEvaluationsView
+            profile={profile}
+            onSelectNodeById={handleSelectNodeById}
+            onAdd={(item: ProfileAssessment) => {
+              setProfile((prev) => ({
+                ...prev,
+                evaluations: [...(prev.evaluations || []), item]
+              }));
+            }}
           />
         )}
       </main>

@@ -1,0 +1,561 @@
+export type LibraryFolder =
+  | '01_Generalites_Methodologie'
+  | '02_Cognition_Neurosciences'
+  | '03_Developpement_Education'
+  | '04_Social_Personnalite'
+  | '05_Clinique_Sante'
+  | '06_Travail_Orientation'
+  | '07_Ergonomie_IHM_UX'
+  | '08_Psychometrie_Statistiques'
+  | '09_Experimentations_Paradigmes'
+  | '10_Normes_Recommandations';
+
+export type EvidenceMark = 'A' | 'B' | 'C' | 'D' | 'E' | 'N';
+
+export interface LibraryWork {
+  id: string;
+  titre: string;
+  auteurs: string;
+  annee: number | string;
+  domaine: string;
+  folder: LibraryFolder;
+  type: string;
+  langue: 'en' | 'fr' | 'multi';
+  licence: string;
+  niveauPreuve: EvidenceMark;
+  role: string;
+  url: string;
+  doi?: string;
+  priorite: 1 | 2 | 3 | 4 | 5;
+  legal: 'oer' | 'institutionnel' | 'commercial-ne-pas-telecharger';
+  note?: string;
+}
+
+export const LEGAL_RULE =
+  'Télécharger uniquement depuis l’éditeur, l’université, une archive institutionnelle ou une plateforme OER. Jamais Scribd, Studylib, dokumen.pub ou miroir non autorisé.';
+
+export const EVIDENCE_MARKS: Record<EvidenceMark, string> = {
+  A: 'Synthèse / reco officielle',
+  B: 'Recherche primaire / paradigme',
+  C: 'Manuel universitaire OER',
+  D: 'Encyclopédie / handbook',
+  E: 'Introduction pédagogique',
+  N: 'Norme / classification'
+};
+
+export const LIBRARY_FOLDERS: { id: LibraryFolder; label: string }[] = [
+  { id: '01_Generalites_Methodologie', label: 'Généralités & méthodologie' },
+  { id: '02_Cognition_Neurosciences', label: 'Cognition & neurosciences' },
+  { id: '03_Developpement_Education', label: 'Développement & éducation' },
+  { id: '04_Social_Personnalite', label: 'Sociale & personnalité' },
+  { id: '05_Clinique_Sante', label: 'Clinique & santé (non diagnostique)' },
+  { id: '06_Travail_Orientation', label: 'Travail & orientation' },
+  { id: '07_Ergonomie_IHM_UX', label: 'Ergonomie, IHM, UX' },
+  { id: '08_Psychometrie_Statistiques', label: 'Psychométrie & statistiques' },
+  { id: '09_Experimentations_Paradigmes', label: 'Expérimentations' },
+  { id: '10_Normes_Recommandations', label: 'Normes & recommandations' }
+];
+
+export const PSYREF_LIBRARY: LibraryWork[] = [
+  {
+    id: 'openstax-psy-2e',
+    titre: 'Psychology 2e',
+    auteurs: 'Spielman, R. M., Jenkins, W. J. & Lovett, M. D.',
+    annee: 2020,
+    domaine: 'Psychologie générale',
+    folder: '01_Generalites_Methodologie',
+    type: 'Manuel universitaire OER',
+    langue: 'en',
+    licence: 'CC BY 4.0',
+    niveauPreuve: 'E',
+    role: 'Cartographie générale : histoire, méthodes, cerveau, perception, cognition, développement, personnalité, social, clinique, I-O.',
+    url: 'https://openstax.org/details/books/psychology-2e',
+    priorite: 1,
+    legal: 'oer'
+  },
+  {
+    id: 'rmp-4e',
+    titre: 'Research Methods in Psychology, 4th American Edition',
+    auteurs: 'Jhangiani, R. S., Chiang, I. A., Cuttler, C. & Leighton, D. C.',
+    annee: 2019,
+    domaine: 'Méthodologie',
+    folder: '01_Generalites_Methodologie',
+    type: 'Manuel universitaire OER',
+    langue: 'en',
+    licence: 'CC BY-NC-SA 4.0',
+    niveauPreuve: 'C',
+    role: 'Qualifier chaque fiche : hypothèses, plans, VI/VD, échantillonnage, validité, éthique.',
+    url: 'https://kpu.pressbooks.pub/psychmethods4e/',
+    priorite: 1,
+    legal: 'oer'
+  },
+  {
+    id: 'stangor-walinga',
+    titre: 'Introduction to Psychology',
+    auteurs: 'Stangor, C. & Walinga, J.',
+    annee: '2014/2018',
+    domaine: 'Psychologie générale',
+    folder: '01_Generalites_Methodologie',
+    type: 'Manuel universitaire OER',
+    langue: 'en',
+    licence: 'CC BY-NC-SA',
+    niveauPreuve: 'E',
+    role: 'Alternative généraliste, principes empiriques.',
+    url: 'https://opentextbc.ca/introductiontopsychology/',
+    priorite: 3,
+    legal: 'oer'
+  },
+  {
+    id: 'open-dev-science',
+    titre: 'Open Developmental Science: An Overview and Annotated Reading List',
+    auteurs: 'voir article (open developmental science reading list)',
+    annee: 2022,
+    domaine: 'Science ouverte',
+    folder: '01_Generalites_Methodologie',
+    type: 'Article / lecture list',
+    langue: 'en',
+    licence: 'libre (éditeur)',
+    niveauPreuve: 'A',
+    role: 'Réplication, pré-enregistrement, open data, reproductibilité.',
+    url: 'https://www.cos.io/',
+    priorite: 4,
+    legal: 'institutionnel',
+    note: 'Pointer aussi OSF Guides : https://www.cos.io/initiatives/prereg'
+  },
+  {
+    id: 'mehta-memory',
+    titre: 'Memory & Cognition',
+    auteurs: 'Mehta, P.',
+    annee: 2026,
+    domaine: 'Cognition',
+    folder: '02_Cognition_Neurosciences',
+    type: 'Manuel universitaire OER',
+    langue: 'en',
+    licence: 'CC BY-NC-SA',
+    niveauPreuve: 'C',
+    role: 'Mémoire, imagerie, décision, raisonnement.',
+    url: 'https://open.umn.edu/opentextbooks/textbooks/memory-cognition',
+    priorite: 1,
+    legal: 'oer',
+    note: 'Correction : l’OER Open Textbook Library n’est pas « Jhangiani et al. » — auteur catalogué : Priyanka Mehta (UW System, 2026).'
+  },
+  {
+    id: 'hove-martinez-biopsych',
+    titre: 'Biological Psychology [Revised Edition]',
+    auteurs: 'Hove, M. J. & Martinez, S. A.',
+    annee: 2024,
+    domaine: 'Neurosciences comportementales',
+    folder: '02_Cognition_Neurosciences',
+    type: 'Manuel universitaire OER',
+    langue: 'en',
+    licence: 'CC BY-NC-SA',
+    niveauPreuve: 'C',
+    role: 'Gènes, hormones, neurotransmetteurs, structures, émotions.',
+    url: 'https://open.umn.edu/opentextbooks/textbooks/1626',
+    priorite: 1,
+    legal: 'oer',
+    note: 'Correction : Garrett, Brain & Behavior (SAGE) est commercial — ne pas télécharger. L’OER légal proche est Hove & Martinez (ROTEL).'
+  },
+  {
+    id: 'garrett-commercial',
+    titre: 'Brain & Behavior / Biological Psychology (éd. SAGE)',
+    auteurs: 'Garrett, B.',
+    annee: 2015,
+    domaine: 'Neurosciences comportementales',
+    folder: '02_Cognition_Neurosciences',
+    type: 'Manuel commercial',
+    langue: 'en',
+    licence: 'Tous droits réservés',
+    niveauPreuve: 'C',
+    role: 'Référence dense cerveau–comportement — accès universitaire seulement.',
+    url: 'https://us.sagepub.com/',
+    priorite: 5,
+    legal: 'commercial-ne-pas-telecharger'
+  },
+  {
+    id: 'lally-lifespan-4e',
+    titre: 'Lifespan Development: A Psychological Perspective, 4e',
+    auteurs: 'Lally, M. & Valentine-French, S.',
+    annee: 2022,
+    domaine: 'Développement',
+    folder: '03_Developpement_Education',
+    type: 'Manuel universitaire OER',
+    langue: 'en',
+    licence: 'CC BY-NC-SA 4.0',
+    niveauPreuve: 'C',
+    role: 'Théories et changements de la conception à la mort.',
+    url: 'https://socialsci.libretexts.org/Bookshelves/Human_Development/Lifespan_Development%3A_A_Psychological_Perspective_4e_(Lally_and_Valentine-French)',
+    priorite: 1,
+    legal: 'oer',
+    note: 'PDF institutionnel College of Lake County. « Hutchison » non retenu faute d’édition OER clairement identifiable.'
+  },
+  {
+    id: 'lumen-lifespan',
+    titre: 'Lifespan Development (Lumen Learning)',
+    auteurs: 'Lumen Learning',
+    annee: 's.d.',
+    domaine: 'Développement',
+    folder: '03_Developpement_Education',
+    type: 'Cours OER',
+    langue: 'en',
+    licence: 'CC (Lumen)',
+    niveauPreuve: 'E',
+    role: 'Développement physique, cognitif, social, émotionnel.',
+    url: 'https://courses.lumenlearning.com/wm-lifespandevelopment/',
+    priorite: 2,
+    legal: 'oer'
+  },
+  {
+    id: 'seifert-sutton',
+    titre: 'Educational Psychology',
+    auteurs: 'Seifert, K. & Sutton, R.',
+    annee: 2022,
+    domaine: 'Psychologie de l’éducation',
+    folder: '03_Developpement_Education',
+    type: 'Manuel universitaire OER',
+    langue: 'en',
+    licence: 'CC BY 4.0',
+    niveauPreuve: 'C',
+    role: 'Apprentissage, motivation, évaluation, instruction, diversité, climat.',
+    url: 'https://socialsci.libretexts.org/Bookshelves/Education_and_Professional_Development/Educational_Psychology_(Seifert_and_Sutton)',
+    priorite: 1,
+    legal: 'oer'
+  },
+  {
+    id: 'openstax-social-ch',
+    titre: 'Psychology 2e — chapitre Social Psychology',
+    auteurs: 'Spielman, Jenkins & Lovett',
+    annee: 2020,
+    domaine: 'Psychologie sociale',
+    folder: '04_Social_Personnalite',
+    type: 'Chapitre OER',
+    langue: 'en',
+    licence: 'CC BY 4.0',
+    niveauPreuve: 'E',
+    role: 'Attitudes, influence, groupes, préjugés, prosocialité. Compléter par méta-analyses, pas seulement classiques.',
+    url: 'https://openstax.org/books/psychology-2e/pages/12-introduction',
+    priorite: 2,
+    legal: 'oer'
+  },
+  {
+    id: 'icd11-browser',
+    titre: 'CIM-11 — navigateur MMS (latest release)',
+    auteurs: 'OMS / WHO',
+    annee: '2024–2026',
+    domaine: 'Classification clinique',
+    folder: '10_Normes_Recommandations',
+    type: 'Classification officielle',
+    langue: 'multi',
+    licence: 'Licence OMS ICD-11 (bien public, conditions d’usage)',
+    niveauPreuve: 'N',
+    role: 'Terminologie internationale. Jamais moteur de diagnostic automatique.',
+    url: 'https://icd.who.int/browse/latest-release/mms/en',
+    priorite: 1,
+    legal: 'institutionnel'
+  },
+  {
+    id: 'icd11-cddr',
+    titre: 'Clinical Descriptions and Diagnostic Requirements (CIM-11)',
+    auteurs: 'OMS / WHO',
+    annee: 2024,
+    domaine: 'Classification clinique',
+    folder: '10_Normes_Recommandations',
+    type: 'Manuel clinique institutionnel',
+    langue: 'en',
+    licence: 'OMS',
+    niveauPreuve: 'N',
+    role: 'Descriptions cliniques troubles mentaux / neurodéveloppement. Zone clinique séparée, statut non diagnostique.',
+    url: 'https://www.who.int/publications/i/item/9789240077263',
+    priorite: 1,
+    legal: 'institutionnel'
+  },
+  {
+    id: 'has',
+    titre: 'HAS — recommandations de bonne pratique',
+    auteurs: 'Haute Autorité de Santé',
+    annee: 'continu',
+    domaine: 'Clinique France',
+    folder: '10_Normes_Recommandations',
+    type: 'Recommandations',
+    langue: 'fr',
+    licence: 'Institutionnel public',
+    niveauPreuve: 'A',
+    role: 'Pratique clinique française. Pas un traité de cognition.',
+    url: 'https://www.has-sante.fr/',
+    priorite: 2,
+    legal: 'institutionnel'
+  },
+  {
+    id: 'mh-atlas-2024',
+    titre: 'WHO Mental Health Atlas 2024',
+    auteurs: 'OMS / WHO',
+    annee: 2024,
+    domaine: 'Santé mentale publique',
+    folder: '05_Clinique_Sante',
+    type: 'Rapport institutionnel',
+    langue: 'en',
+    licence: 'OMS',
+    niveauPreuve: 'A',
+    role: 'Systèmes de soins, politiques, données internationales.',
+    url: 'https://www.who.int/publications/i/item/9789240089983',
+    priorite: 3,
+    legal: 'institutionnel'
+  },
+  {
+    id: 'openstax-disorders',
+    titre: 'Psychology 2e — Psychological Disorders & Treatment',
+    auteurs: 'Spielman, Jenkins & Lovett',
+    annee: 2020,
+    domaine: 'Psychopathologie pédagogique',
+    folder: '05_Clinique_Sante',
+    type: 'Chapitres OER',
+    langue: 'en',
+    licence: 'CC BY 4.0',
+    niveauPreuve: 'E',
+    role: 'Introduction pédagogique uniquement — pas un protocole de soin.',
+    url: 'https://openstax.org/books/psychology-2e/pages/15-introduction',
+    priorite: 3,
+    legal: 'oer'
+  },
+  {
+    id: 'psycom',
+    titre: 'Psycom',
+    auteurs: 'Psycom / Santé publique',
+    annee: 'continu',
+    domaine: 'Psychoéducation',
+    folder: '05_Clinique_Sante',
+    type: 'Information publique',
+    langue: 'fr',
+    licence: 'Institutionnel',
+    niveauPreuve: 'E',
+    role: 'Orientation des publics, déstigmatisation. Pas source primaire.',
+    url: 'https://www.psycom.org/',
+    priorite: 3,
+    legal: 'institutionnel'
+  },
+  {
+    id: 'rome',
+    titre: 'France Travail — ROME',
+    auteurs: 'France Travail',
+    annee: 2026,
+    domaine: 'Orientation',
+    folder: '06_Travail_Orientation',
+    type: 'Référentiel métier',
+    langue: 'fr',
+    licence: 'Open data / conditions France Travail',
+    niveauPreuve: 'N',
+    role: 'Métiers, compétences, activités — déjà dans le moteur Cognitorium.',
+    url: 'https://www.francetravail.fr/employeur/vos-recrutements/le-rome-et-les-fiches-metiers.html',
+    priorite: 1,
+    legal: 'institutionnel'
+  },
+  {
+    id: 'anact',
+    titre: 'ANACT — organisation et QVT',
+    auteurs: 'ANACT',
+    annee: 'continu',
+    domaine: 'Travail',
+    folder: '06_Travail_Orientation',
+    type: 'Rapports et outils',
+    langue: 'fr',
+    licence: 'Institutionnel',
+    niveauPreuve: 'A',
+    role: 'Organisation du travail, conditions de travail.',
+    url: 'https://www.anact.fr/',
+    priorite: 2,
+    legal: 'institutionnel'
+  },
+  {
+    id: 'inrs',
+    titre: 'INRS — santé travail',
+    auteurs: 'INRS',
+    annee: 'continu',
+    domaine: 'Santé au travail',
+    folder: '06_Travail_Orientation',
+    type: 'Guides',
+    langue: 'fr',
+    licence: 'Institutionnel',
+    niveauPreuve: 'A',
+    role: 'RPS, TMS, ergonomie physique et organisationnelle.',
+    url: 'https://www.inrs.fr/',
+    priorite: 2,
+    legal: 'institutionnel'
+  },
+  {
+    id: 'openstax-io',
+    titre: 'Psychology 2e — Industrial-Organizational Psychology',
+    auteurs: 'Spielman, Jenkins & Lovett',
+    annee: 2020,
+    domaine: 'I-O',
+    folder: '06_Travail_Orientation',
+    type: 'Chapitre OER',
+    langue: 'en',
+    licence: 'CC BY 4.0',
+    niveauPreuve: 'E',
+    role: 'Recrutement, motivation, leadership. Spector / Muchinsky = commerciaux, accès BU seulement.',
+    url: 'https://openstax.org/books/psychology-2e/pages/13-introduction',
+    priorite: 2,
+    legal: 'oer'
+  },
+  {
+    id: 'hornbaek-hci',
+    titre: 'Introduction to Human-Computer Interaction',
+    auteurs: 'Hornbæk, K., Kristensson, P. O. & Oulasvirta, A.',
+    annee: 2025,
+    domaine: 'IHM',
+    folder: '07_Ergonomie_IHM_UX',
+    type: 'Manuel universitaire OA',
+    langue: 'en',
+    licence: 'CC BY-NC-ND 4.0',
+    niveauPreuve: 'C',
+    role: 'Design, ingénierie, méthodes empiriques, UX, IA, VR. ND : pas de dérivés.',
+    url: 'https://academic.oup.com/book/59525',
+    priorite: 1,
+    legal: 'oer',
+    note: 'OA Oxford Academic. Vérifier la page OUP si l’URL de livre change.'
+  },
+  {
+    id: 'ixdf-encyclopedia',
+    titre: 'The Encyclopedia of Human-Computer Interaction, 2e',
+    auteurs: 'Interaction Design Foundation',
+    annee: '2e éd.',
+    domaine: 'IHM / UX',
+    folder: '07_Ergonomie_IHM_UX',
+    type: 'Encyclopédie en ligne',
+    langue: 'en',
+    licence: 'Lecture gratuite IxDF (conditions du site)',
+    niveauPreuve: 'D',
+    role: 'Interaction, perception, évaluation, accessibilité.',
+    url: 'https://www.interaction-design.org/literature/book/the-encyclopedia-of-human-computer-interaction-2nd-ed',
+    priorite: 2,
+    legal: 'oer'
+  },
+  {
+    id: 'hci-zenodo',
+    titre: 'Human-Computer Interaction: Fundamentals and Applications',
+    auteurs: 'voir dépôt Zenodo',
+    annee: 's.d.',
+    domaine: 'IHM',
+    folder: '07_Ergonomie_IHM_UX',
+    type: 'Module OER',
+    langue: 'en',
+    licence: 'selon dépôt Zenodo',
+    niveauPreuve: 'E',
+    role: 'Concepts et méthodes de systèmes utilisables.',
+    url: 'https://zenodo.org/',
+    priorite: 4,
+    legal: 'oer',
+    note: 'Vérifier le record DOI exact avant archivage local.'
+  },
+  {
+    id: 'openintro',
+    titre: 'OpenIntro Statistics',
+    auteurs: 'Diez, D., Çetinkaya-Rundel, M. & Barr, C.',
+    annee: 2019,
+    domaine: 'Statistiques',
+    folder: '08_Psychometrie_Statistiques',
+    type: 'Manuel OER',
+    langue: 'en',
+    licence: 'CC BY-SA',
+    niveauPreuve: 'C',
+    role: 'Descriptives, inférentielles, modèles de base.',
+    url: 'https://www.openintro.org/book/os/',
+    priorite: 2,
+    legal: 'oer'
+  },
+  {
+    id: 'osf-guides',
+    titre: 'Open Science Framework — Guides',
+    auteurs: 'Center for Open Science',
+    annee: 'continu',
+    domaine: 'Science ouverte',
+    folder: '08_Psychometrie_Statistiques',
+    type: 'Guides',
+    langue: 'en',
+    licence: 'COS',
+    niveauPreuve: 'A',
+    role: 'Pré-enregistrement, dépôt, versionnage.',
+    url: 'https://www.cos.io/products/osf',
+    priorite: 2,
+    legal: 'institutionnel'
+  },
+  {
+    id: 'openalex-docs',
+    titre: 'OpenAlex Documentation',
+    auteurs: 'OurResearch',
+    annee: 'continu',
+    domaine: 'Métadonnées',
+    folder: '08_Psychometrie_Statistiques',
+    type: 'Documentation API',
+    langue: 'en',
+    licence: 'CC0 données',
+    niveauPreuve: 'D',
+    role: 'Citations, graphes bibliographiques, API Référence.',
+    url: 'https://docs.openalex.org/',
+    priorite: 2,
+    legal: 'institutionnel'
+  },
+  {
+    id: 'crossref',
+    titre: 'Crossref Documentation',
+    auteurs: 'Crossref',
+    annee: 'continu',
+    domaine: 'DOI',
+    folder: '08_Psychometrie_Statistiques',
+    type: 'Documentation',
+    langue: 'en',
+    licence: 'Crossref',
+    niveauPreuve: 'D',
+    role: 'Résolution et vérification des DOI.',
+    url: 'https://www.crossref.org/documentation/',
+    priorite: 3,
+    legal: 'institutionnel'
+  },
+  {
+    id: 'vatakis-2018',
+    titre: 'Timing and Time Perception: Procedures, Measures, & Applications',
+    auteurs: 'Vatakis, A., Balcı, F., Di Luca, M. & Correa, Á. (éds.)',
+    annee: 2018,
+    domaine: 'Timing / psychophysique',
+    folder: '09_Experimentations_Paradigmes',
+    type: 'Handbook de méthodes',
+    langue: 'en',
+    licence: 'Tous droits réservés (Brill)',
+    niveauPreuve: 'D',
+    role: 'Procédures et mesures du timing : bissection, reproduction, TOJ/SJ, foreperiod, rythme, analyses. Accès éditeur / BU seulement.',
+    url: 'https://brill.com/display/title/26606',
+    doi: '10.1163/9789004280205',
+    priorite: 2,
+    legal: 'commercial-ne-pas-telecharger',
+    note: 'Ne pas héberger le PDF. Citer le DOI 10.1163/9789004280205. Les démos Cognitorium sont pédagogiques, pas des réplications des protocoles du volume.'
+  },
+  {
+    id: 'psytoolkit',
+    titre: 'PsyToolkit Experiment Library',
+    auteurs: 'Stoet, G.',
+    annee: 'continu',
+    domaine: 'Paradigmes expérimentaux',
+    folder: '09_Experimentations_Paradigmes',
+    type: 'Plateforme + code',
+    langue: 'en',
+    licence: 'Usage académique gratuit (conditions PsyToolkit)',
+    niveauPreuve: 'B',
+    role: 'Stroop, n-back, rotation, Simon, Flanker, Posner, Go/No-Go. Démo ≠ réplication.',
+    url: 'https://www.psytoolkit.org/experiment-library/',
+    priorite: 1,
+    legal: 'oer'
+  }
+];
+
+export const DOWNLOAD_ORDER = [
+  'openstax-psy-2e',
+  'rmp-4e',
+  'mehta-memory',
+  'hove-martinez-biopsych',
+  'lally-lifespan-4e',
+  'seifert-sutton',
+  'hornbaek-hci',
+  'ixdf-encyclopedia',
+  'icd11-browser',
+  'psytoolkit'
+];

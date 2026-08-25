@@ -7,7 +7,8 @@ import {
   User, 
   Briefcase, 
   Award, 
-  TrendingUp 
+  TrendingUp,
+  BookOpen
 } from 'lucide-react';
 import { AppActiveTab, ComplexityMode, CognitiveProfile, CognitoriumSection, SECTION_OF_TAB, SECTION_LABELS, SECTION_DEFAULT_TAB } from '../types';
 import { PROFILES_PRESETS } from '../data/initialData';
@@ -20,7 +21,8 @@ const SECTION_META: { id: CognitoriumSection; icon: React.ReactNode; color: stri
   { id: 'experiences', icon: <Briefcase className="w-3.5 h-3.5" />, color: 'emerald' },
   { id: 'competences', icon: <Award className="w-3.5 h-3.5" />, color: 'cyan' },
   { id: 'possibilites', icon: <Compass className="w-3.5 h-3.5" />, color: 'orange' },
-  { id: 'evolution', icon: <TrendingUp className="w-3.5 h-3.5" />, color: 'indigo' }
+  { id: 'evolution', icon: <TrendingUp className="w-3.5 h-3.5" />, color: 'indigo' },
+  { id: 'savoirs', icon: <BookOpen className="w-3.5 h-3.5" />, color: 'violet' }
 ];
 
 const SECTION_VIEWS: Record<CognitoriumSection, { tab: AppActiveTab; label: string; testId: string }[]> = {
@@ -39,11 +41,20 @@ const SECTION_VIEWS: Record<CognitoriumSection, { tab: AppActiveTab; label: stri
     { tab: 'tree', label: 'Arbre', testId: 'tab-btn-tree-competences' }
   ],
   possibilites: [
-    { tab: 'horizons', label: 'Horizons ROME', testId: 'tab-btn-horizons' }
+    { tab: 'horizons', label: 'Horizons ROME', testId: 'tab-btn-horizons' },
+    { tab: 'metiers', label: 'Graphe métiers', testId: 'tab-btn-metiers-graph' }
   ],
   evolution: [
     { tab: 'decay', label: 'Vitalité & Temps', testId: 'tab-btn-decay' },
     { tab: 'temporal', label: 'Graphe Temporel', testId: 'tab-btn-temporal-evolution' }
+  ],
+  savoirs: [
+    { tab: 'atlas', label: 'Arborescence', testId: 'tab-btn-atlas' },
+    { tab: 'posters', label: 'Posters', testId: 'tab-btn-posters' },
+    { tab: 'metacog', label: 'Boucle SRL', testId: 'tab-btn-metacog' },
+    { tab: 'psyref', label: 'Référence', testId: 'tab-btn-psyref' },
+    { tab: 'ressources', label: 'Ressources', testId: 'tab-btn-ressources' },
+    { tab: 'evaluations', label: 'Mes évaluations', testId: 'tab-btn-evaluations' }
   ]
 };
 
@@ -52,7 +63,8 @@ const ACTIVE_COLORS: Record<string, { active: string }> = {
   emerald: { active: 'bg-white text-emerald-600 shadow-xs' },
   cyan: { active: 'bg-white text-cyan-600 shadow-xs' },
   orange: { active: 'bg-white text-orange-600 shadow-xs' },
-  indigo: { active: 'bg-white text-indigo-600 shadow-xs' }
+  indigo: { active: 'bg-white text-indigo-600 shadow-xs' },
+  violet: { active: 'bg-white text-violet-600 shadow-xs' }
 };
 
 const VIEW_ACTIVE_COLORS: Record<AppActiveTab, string> = {
@@ -63,7 +75,14 @@ const VIEW_ACTIVE_COLORS: Record<AppActiveTab, string> = {
   temporal: 'bg-cyan-600 text-white',
   table: 'bg-cyan-600 text-white',
   horizons: 'bg-orange-600 text-white',
-  decay: 'bg-indigo-600 text-white'
+  metiers: 'bg-amber-600 text-white',
+  decay: 'bg-indigo-600 text-white',
+  atlas: 'bg-violet-600 text-white',
+  posters: 'bg-amber-600 text-white',
+  metacog: 'bg-violet-700 text-white',
+  psyref: 'bg-slate-900 text-amber-200',
+  ressources: 'bg-teal-700 text-white',
+  evaluations: 'bg-teal-800 text-white'
 };
 
 interface HeaderProps {

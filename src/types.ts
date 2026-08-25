@@ -201,6 +201,29 @@ export interface MatchMetiersProfile {
   recommendedRomeCodes: { code: string; title: string; matchScore: number; description: string }[];
 }
 
+export type AssessmentKind =
+  | 'diplome'
+  | 'certification'
+  | 'verification'
+  | 'evaluation'
+  | 'test_psy'
+  | 'physio'
+  | 'bci';
+
+export interface ProfileAssessment {
+  id: string;
+  kind: AssessmentKind;
+  title: string;
+  issuer: string;
+  year: number | string;
+  summary: string;
+  status?: VerificationStatus;
+  relatedNodeIds?: string[];
+  documentLabel?: string;
+  clinical?: boolean;
+  tags?: string[];
+}
+
 export type UserJourneyType = 'student' | 'professional' | 'transition';
 
 export interface CognitiveProfile {
@@ -225,6 +248,7 @@ export interface CognitiveProfile {
   };
   nodes: AnyCognitiveNode[];
   edges: GraphEdge[];
+  evaluations?: ProfileAssessment[];
 }
 
 export type AppActiveTab = 
@@ -234,22 +258,30 @@ export type AppActiveTab =
   | 'tree'        // Vue Arbre & Décomposition Hiérarchique
   | 'table'       // Vue Tableau & Matrice de Maîtrise
   | 'horizons'    // Passerelles ROME & Horizons Métiers
+  | 'metiers'     // Graphe métiers (données & filtres ROME)
   | 'decay'       // Vitalité & Temporalité (Decay Engine)
-  | 'signature';  // Signature Cognitive & Passeport
+  | 'signature'   // Signature Cognitive & Passeport
+  | 'atlas'       // Arborescence des savoirs psychologiques
+  | 'posters'     // Atlas expérimental (posters / infographies)
+  | 'metacog'     // Boucle métacognitive & SRL
+  | 'psyref'      // Référence — bibliothèque de sources
+  | 'ressources'  // Carte de lecture OER + classiques
+  | 'evaluations'; // Mes évaluations — preuves, diplômes, mesures
 
 // ============================================================================
 // STRUCTURE DU PRODUIT : MON COGNITORIUM est organisé en 5 sections orientées
 // parcours. Les vues (Graphe, Arbre, Tableau, Temps) sont des MODES de
 // représentation à l'intérieur des sections, pas des destinations expertes.
 // ============================================================================
-export type CognitoriumSection = 'profil' | 'experiences' | 'competences' | 'possibilites' | 'evolution';
+export type CognitoriumSection = 'profil' | 'experiences' | 'competences' | 'possibilites' | 'evolution' | 'savoirs';
 
 export const SECTION_LABELS: Record<CognitoriumSection, string> = {
   profil: 'Mon profil',
   experiences: 'Mes expériences',
   competences: 'Mes compétences',
   possibilites: 'Mes possibilités',
-  evolution: 'Mon évolution'
+  evolution: 'Mon évolution',
+  savoirs: 'Savoirs'
 };
 
 /** Section principale de chaque vue (une vue appartient à une seule section). */
@@ -261,7 +293,14 @@ export const SECTION_OF_TAB: Record<AppActiveTab, CognitoriumSection> = {
   temporal: 'experiences',
   table: 'competences',
   horizons: 'possibilites',
-  decay: 'evolution'
+  metiers: 'possibilites',
+  decay: 'evolution',
+  atlas: 'savoirs',
+  posters: 'savoirs',
+  metacog: 'savoirs',
+  psyref: 'savoirs',
+  ressources: 'savoirs',
+  evaluations: 'savoirs'
 };
 
 /** Vues par défaut de chaque section. */
@@ -270,7 +309,8 @@ export const SECTION_DEFAULT_TAB: Record<CognitoriumSection, AppActiveTab> = {
   experiences: 'tree',
   competences: 'table',
   possibilites: 'horizons',
-  evolution: 'decay'
+  evolution: 'decay',
+  savoirs: 'atlas'
 };
 
 export type ComplexityMode = 'essential' | 'expert';

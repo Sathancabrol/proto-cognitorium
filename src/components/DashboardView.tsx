@@ -17,7 +17,8 @@ import {
   ListTree, 
   Table2, 
   Layers,
-  RefreshCw
+  RefreshCw,
+  FlaskConical
 } from 'lucide-react';
 import { CognitiveProfile, AppActiveTab, ComplexityMode, SkillNode, HorizonJobNode, AnyCognitiveNode } from '../types';
 import { calculateSkillVitality, getVitalityStatus } from '../utils/decay';
@@ -344,7 +345,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
             ) : (
               <p className="text-[11px] leading-relaxed text-indigo-100">
-                ✅ Aucun écart critique détecté sur vos horizons prioritaires. Vérifiez la vitalité de vos compétences ou explorez de nouveaux métiers dans « Mes possibilités ».
+                ✅ Aucun écart critique détecté sur tes compétences prioritaires. Vérifie la vitalité de tes compétences ou explore de nouveaux métiers dans « Mes possibilités ».
               </p>
             )}
           </div>
@@ -575,7 +576,51 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
+          <div
+            id="entry-card-atlas"
+            onClick={() => onNavigateTab('atlas')}
+            className="p-5 bg-white rounded-3xl border border-slate-200 hover:border-violet-400 hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between space-y-4"
+          >
+            <div className="space-y-2">
+              <div className="w-10 h-10 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center font-bold">
+                <FlaskConical className="w-5 h-5" />
+              </div>
+              <h3 className="font-bold text-sm text-slate-900 group-hover:text-violet-600">
+                Atlas & posters expérimentaux
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Huit branches de la psychologie, références les plus citées, infographies interactives (Sherif, Asch, Stroop) et boucle métacognitive.
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-bold text-violet-600">
+              <span>Ouvrir les savoirs</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+
           {/* Card 6: Diagnostic & Passeport */}
+          <div
+            id="entry-card-evaluations"
+            onClick={() => onNavigateTab('evaluations')}
+            className="p-5 bg-white rounded-3xl border border-slate-200 hover:border-teal-400 hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between space-y-4"
+          >
+            <div className="space-y-2">
+              <div className="w-10 h-10 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center font-bold">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <h3 className="font-bold text-sm text-slate-900 group-hover:text-teal-700">
+                Mes évaluations
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Diplômes, certifs, documents de vérification, tests, mesures physio et BCI — coffre de preuves, jamais un diagnostic.
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-bold text-teal-700">
+              <span>Ouvrir le coffre</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+
           <div
             id="entry-card-signature"
             onClick={() => onNavigateTab('signature')}

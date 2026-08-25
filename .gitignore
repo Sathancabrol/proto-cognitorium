@@ -6,3 +6,6 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Secrets accidentally dropped in raw/ on older branches
+raw/identifiants_cognitorium*.json
