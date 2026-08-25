@@ -12,6 +12,9 @@ import { NodeInspectorModal } from './components/NodeInspectorModal';
 import { ExperienceDistillerModal } from './components/ExperienceDistillerModal';
 import { ValidationCenterModal } from './components/ValidationCenterModal';
 import { OnboardingModal } from './components/OnboardingModal';
+import { PsychologyAtlasView } from './components/PsychologyAtlasView';
+import { ExperimentStudio } from './components/ExperimentStudio';
+import { MetacogLoopView } from './components/MetacogLoopView';
 import { INITIAL_COGNITORIUM_PROFILE, PROFILES_PRESETS } from './data/initialData';
 import { 
   CognitiveProfile, 
@@ -355,6 +358,10 @@ export default function App() {
             simulationYear={simulationYear}
           />
         )}
+
+        {activeTab === 'atlas' && <PsychologyAtlasView />}
+        {activeTab === 'posters' && <ExperimentStudio />}
+        {activeTab === 'metacog' && <MetacogLoopView />}
       </main>
 
       {/* Slide-out Node Inspector Drawer */}
