@@ -1,71 +1,22 @@
 import React, { useMemo, useState } from 'react';
-import { BookOpen, ChevronRight, Quote, Search } from 'lucide-react';
+import { BookOpen, ChevronRight, ListTree, Network, Quote, Search } from 'lucide-react';
 import { KEY_CITATIONS, PSYCHOLOGY_BRANCHES, PsyNode } from '../data/psychologyAtlas';
 import { CoverFlowCarousel, CarouselItem } from './ui/CoverFlowCarousel';
 import { AppActiveTab } from '../types';
-import coverMetacog from '../assets/images/cover-metacog.jpg';
-import coverAtlas from '../assets/images/cover-atlas.jpg';
-import coverLab from '../assets/images/cover-lab.jpg';
-import coverPsyref from '../assets/images/cover-psyref.jpg';
-import coverIcd from '../assets/images/cover-icd.jpg';
-import coverSrl from '../assets/images/cover-srl.jpg';
+import { DisciplineGraph, findNode } from './atlas/DisciplineGraph';
 
-const SAVOIR_CARDS: CarouselItem[] = [
-  {
-    id: 'atlas',
-    tag: '#Taxonomie',
-    titleLine1: 'Huit branches',
-    titleLine2: '— carte de la discipline',
-    desc: 'Du processus cognitif à l’I-O. Une ontologie de navigation, pas un diagnostic.',
-    img: coverAtlas,
-    ctaText: 'Parcourir l’arbre'
-  },
-  {
-    id: 'metacog',
-    tag: '#Métacognition',
-    titleLine1: 'Monitoring',
-    titleLine2: '— régulation & éducation',
-    desc: 'Flavell, Zimmerman, Dignath. La régulation prédit mieux que la seule connaissance.',
-    img: coverMetacog,
-    ctaText: 'Boucle SRL'
-  },
-  {
-    id: 'posters',
-    tag: '#Paradigmes',
-    titleLine1: 'Douze démos',
-    titleLine2: '— posters expérimentaux',
-    desc: 'Stroop, Wason, Loftus, n-back… VI, VD, DOI, cartouche de rigueur.',
-    img: coverLab,
-    ctaText: 'Ouvrir le labo'
-  },
-  {
-    id: 'psyref',
-    tag: '#PsyRef',
-    titleLine1: 'Sources réelles',
-    titleLine2: '— hiérarchie de preuves',
-    desc: 'Norme, synthèse, primaire, plateforme. DSM = Psychiatric Association.',
-    img: coverPsyref,
-    ctaText: 'Consulter PsyRef'
-  },
-  {
-    id: 'psyref',
-    tag: '#Clinique',
-    titleLine1: 'CIM-11 / DSM',
-    titleLine2: '— et la CIF',
-    desc: 'Troubles ≠ psychologie entière. API OMS versionnée. Fonctionnement via ICF.',
-    img: coverIcd,
-    ctaText: 'Nuances cliniques'
-  },
-  {
-    id: 'metacog',
-    tag: '#SRL',
-    titleLine1: 'Forethought',
-    titleLine2: '— performance — reflection',
-    desc: 'Garde-fou GenAI : planifier avant, évaluer après. Journal local.',
-    img: coverSrl,
-    ctaText: 'Entrer dans la boucle'
-  }
-];
+type AtlasMode = 'titres' | 'graphe' | 'coverflow';
+
+const TONE: Record<string, string> = {
+  blue: 'linear-gradient(160deg,#1d4ed8,#0f172a)',
+  rose: 'linear-gradient(160deg,#be123c,#0f172a)',
+  emerald: 'linear-gradient(160deg,#047857,#0f172a)',
+  amber: 'linear-gradient(160deg,#b45309,#0f172a)',
+  violet: 'linear-gradient(160deg,#6d28d9,#0f172a)',
+  teal: 'linear-gradient(160deg,#0f766e,#0f172a)',
+  indigo: 'linear-gradient(160deg,#4338ca,#0f172a)',
+  slate: 'linear-gradient(160deg,#334155,#0c0a09)'
+};
 
 const COLOR: Record<string, { chip: string; bar: string; ring: string }> = {
   blue: { chip: 'bg-blue-50 text-blue-700 border-blue-200', bar: 'bg-blue-600', ring: 'hover:border-blue-400' },
@@ -78,167 +29,336 @@ const COLOR: Record<string, { chip: string; bar: string; ring: string }> = {
   slate: { chip: 'bg-slate-100 text-slate-700 border-slate-300', bar: 'bg-slate-800', ring: 'hover:border-slate-500' }
 };
 
-const TreeNodes: React.FC<{ nodes: PsyNode[]; depth?: number }> = ({ nodes, depth = 0 }) => {
-  const [open, setOpen] = useState<Record<string, boolean>>({});
+interface Level {
+  id: string;
+  label: string;
+  object?: string;
+  children: PsyNode[];
+  tone: string;
+}
+
+function rootLevel(): Level {
+  return {
+    id: 'root',
+    label: 'Psychologie',
+    object: 'Huit branches — carte de navigation, pas un diagnostic.',
+    tone: TONE.slate,
+    children: PSYCHOLOGY_BRANCHES.map((b) => ({
+      id: b.id,
+      label: b.title,
+      children: b.trees.map((t) => ({
+        id: `${b.id}::${t.title}`,
+        label: t.title,
+        children: t.children
+      }))
+    }))
+  };
+}
+
+function splitLabel(label: string): { a: string; b?: string } {
+  const i = label.indexOf('—');
+  if (i < 0) return { a: label };
+  return { a: label.slice(0, i).trim(), b: label.slice(i).trim() };
+}
+
+const TitleOutline: React.FC<{
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}> = ({ selectedId, onSelect }) => {
+  const [open, setOpen] = useState<Record<string, boolean>>({ cognitive: true });
+
+  const renderNodes = (nodes: PsyNode[], depth: number) =>
+    nodes.map((n) => {
+      const has = !!n.children?.length;
+      const isOpen = open[n.id] ?? depth < 1;
+      const sizes = ['text-base', 'text-sm', 'text-xs', 'text-[11px]'];
+      const weights = ['font-black', 'font-bold', 'font-semibold', 'font-medium'];
+      return (
+        <li key={n.id} className={depth ? 'ml-4 border-l border-slate-200 pl-3' : ''}>
+          <button
+            type="button"
+            onClick={() => {
+              onSelect(n.id);
+              if (has) setOpen((s) => ({ ...s, [n.id]: !isOpen }));
+            }}
+            className={`flex items-baseline gap-2 w-full text-left py-1.5 ${
+              selectedId === n.id ? 'text-indigo-700' : 'text-slate-800 hover:text-indigo-600'
+            }`}
+          >
+            {has && (
+              <ChevronRight className={`w-3.5 h-3.5 shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+            )}
+            <span className={`${sizes[Math.min(depth, 3)]} ${weights[Math.min(depth, 3)]} tracking-tight leading-snug`}>
+              {n.label}
+            </span>
+          </button>
+          {has && isOpen && <ul>{renderNodes(n.children!, depth + 1)}</ul>}
+        </li>
+      );
+    });
+
   return (
-    <ul className={depth === 0 ? 'space-y-1' : 'mt-1 ml-3 border-l border-slate-200 pl-3 space-y-1'}>
-      {nodes.map((n) => {
-        const has = !!n.children?.length;
-        const isOpen = open[n.id] ?? depth < 1;
-        return (
-          <li key={n.id}>
-            <button
-              type="button"
-              onClick={() => has && setOpen((s) => ({ ...s, [n.id]: !isOpen }))}
-              className={`flex items-start gap-1.5 text-left w-full rounded-lg px-2 py-1.5 ${
-                has ? 'hover:bg-slate-50 cursor-pointer' : 'cursor-default'
-              }`}
-            >
-              {has ? (
-                <ChevronRight className={`w-3.5 h-3.5 mt-0.5 text-slate-400 shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
-              ) : (
-                <span className="w-3.5 h-3.5 mt-0.5 shrink-0 flex items-center justify-center">
-                  <span className="w-1 h-1 rounded-full bg-slate-300" />
-                </span>
-              )}
-              <span className={`text-xs leading-snug ${has ? 'font-semibold text-slate-800' : 'text-slate-600'}`}>
-                {n.label}
-              </span>
-            </button>
-            {has && isOpen && <TreeNodes nodes={n.children!} depth={depth + 1} />}
-          </li>
-        );
-      })}
-    </ul>
+    <div className="bg-white rounded-3xl border border-slate-200 p-6 space-y-6">
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-slate-400">Affiche</p>
+        <h2 className="text-3xl font-black tracking-tight text-slate-900">Psychologie</h2>
+      </div>
+      {PSYCHOLOGY_BRANCHES.map((b) => (
+        <div key={b.id}>
+          <button
+            type="button"
+            onClick={() => {
+              onSelect(b.id);
+              setOpen((s) => ({ ...s, [b.id]: !s[b.id] }));
+            }}
+            className={`text-left ${selectedId === b.id ? 'text-indigo-700' : ''}`}
+          >
+            <h3 className="text-xl font-black tracking-tight">{b.title}</h3>
+            <p className="text-xs text-slate-500 italic mt-0.5">{b.object}</p>
+          </button>
+          {(open[b.id] ?? b.id === 'cognitive') &&
+            b.trees.map((t) => (
+              <div key={t.title} className="mt-3">
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">{t.title}</h4>
+                <ul>{renderNodes(t.children, 1)}</ul>
+              </div>
+            ))}
+        </div>
+      ))}
+    </div>
   );
 };
 
-export const PsychologyAtlasView: React.FC<{ onNavigate?: (tab: AppActiveTab) => void }> = ({ onNavigate }) => {
-  const [branchId, setBranchId] = useState(PSYCHOLOGY_BRANCHES[0].id);
+const CitationsPanel: React.FC = () => {
   const [query, setQuery] = useState('');
-  const branch = PSYCHOLOGY_BRANCHES.find((b) => b.id === branchId) ?? PSYCHOLOGY_BRANCHES[0];
-  const colors = COLOR[branch.color];
-
   const citations = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return KEY_CITATIONS.filter((c) => {
-      if (!q) return true;
-      return `${c.authors} ${c.title} ${c.venue} ${c.category}`.toLowerCase().includes(q);
-    });
+    return KEY_CITATIONS.filter((c) => !q || `${c.authors} ${c.title} ${c.venue} ${c.category}`.toLowerCase().includes(q));
   }, [query]);
 
   return (
-    <div className="space-y-5 pb-12">
-      <CoverFlowCarousel
-        items={SAVOIR_CARDS}
-        sectionLabel="Savoirs Cognitorium"
-        onCtaClick={(item) => {
-          if (item.id && onNavigate) onNavigate(item.id as AppActiveTab);
-        }}
-      />
-
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
-        <div className="relative z-10 space-y-2">
-          <span className="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full border border-indigo-200">
-            Atlas académique
-          </span>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-            Arborescence de la psychologie
-          </h1>
-          <p className="text-sm text-slate-600 max-w-3xl leading-relaxed">
-            Huit grandes branches, du général au spécialisé. Une carte pour taguer des ressources,
-            concevoir des modules, et relier un vécu à un mécanisme — pas un diagnostic.
-          </p>
+    <div className="space-y-3">
+      <div className="bg-slate-900 text-white rounded-3xl p-5 space-y-3">
+        <div className="flex items-center gap-2">
+          <BookOpen className="w-4 h-4 text-indigo-300" />
+          <h3 className="text-sm font-bold">Références les plus citées</h3>
+        </div>
+        <p className="text-[11px] text-slate-400 leading-relaxed">
+          Ordres de grandeur pour prioriser une lecture, pas des mesures officielles.
+        </p>
+        <div className="relative">
+          <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Filtrer auteur, titre…"
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-8 pr-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
         </div>
       </div>
+      <div className="space-y-2 max-h-[36rem] overflow-y-auto pr-1">
+        {citations.map((c) => (
+          <article key={c.id} className="bg-white rounded-2xl border border-slate-200 p-3.5 space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-wide text-indigo-600">{c.category}</span>
+              {c.citationsApprox != null && (
+                <span className="text-[10px] font-bold text-slate-500">~{c.citationsApprox.toLocaleString('fr-FR')} cit.</span>
+              )}
+            </div>
+            <h4 className="text-xs font-bold text-slate-900 leading-snug">{c.title}</h4>
+            <p className="text-[11px] text-slate-600">
+              {c.authors} ({c.year}). <em>{c.venue}</em>
+            </p>
+            <p className="text-[11px] text-slate-500 leading-relaxed flex gap-1.5">
+              <Quote className="w-3 h-3 mt-0.5 shrink-0 text-slate-300" />
+              {c.note}
+            </p>
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+};
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        {PSYCHOLOGY_BRANCHES.map((b) => {
-          const active = b.id === branchId;
-          const c = COLOR[b.color];
-          return (
+export const PsychologyAtlasView: React.FC<{ onNavigate?: (tab: AppActiveTab) => void }> = () => {
+  const [mode, setMode] = useState<AtlasMode>('coverflow');
+  const [stack, setStack] = useState<Level[]>([rootLevel()]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const current = stack[stack.length - 1];
+
+  const hit = selectedId ? findNode(PSYCHOLOGY_BRANCHES, selectedId) : null;
+  const selectedBranch = hit?.branch ?? PSYCHOLOGY_BRANCHES.find((b) => b.id === selectedId);
+  const colors = COLOR[selectedBranch?.color || 'slate'];
+
+  const enter = (node: PsyNode) => {
+    setSelectedId(node.id);
+    const found = findNode(PSYCHOLOGY_BRANCHES, node.id);
+    const tone = TONE[found?.branch.color || 'slate'];
+    const kids = node.children;
+    if (kids && kids.length) {
+      setStack((s) => [
+        ...s,
+        {
+          id: node.id,
+          label: node.label,
+          object: found?.branch && node.id === found.branch.id ? found.branch.object : undefined,
+          children: kids,
+          tone
+        }
+      ]);
+    }
+  };
+
+  const items: CarouselItem[] = current.children.map((n) => {
+    const parts = splitLabel(n.label);
+    const found = findNode(PSYCHOLOGY_BRANCHES, n.id);
+    const nKids = n.children?.length ?? 0;
+    return {
+      id: n.id,
+      tag: current.label,
+      titleLine1: parts.a,
+      titleLine2: parts.b,
+      desc:
+        found?.branch && n.id === found.branch.id
+          ? found.branch.object
+          : nKids
+            ? `${nKids} sous-niveaux — cliquer pour descendre`
+            : n.label,
+      tone: TONE[found?.branch.color || 'slate'],
+      ctaText: nKids ? 'Descendre' : 'Fiche'
+    };
+  });
+
+  return (
+    <div className="space-y-5 pb-12">
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs">
+        <span className="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full border border-indigo-200">
+          Atlas académique
+        </span>
+        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight mt-3">Arborescence de la psychologie</h1>
+        <p className="text-sm text-slate-600 max-w-3xl mt-2 leading-relaxed">
+          Même contenu, trois affichages : affiche titrée, graphe d’ontologie (pas le graphe de compétences), coverflow à
+          descente. Clique une branche, puis un processus, puis une fiche.
+        </p>
+        <div className="flex flex-wrap gap-1.5 mt-4">
+          {(
+            [
+              { id: 'coverflow' as const, label: 'Coverflow', icon: <ChevronRight className="w-3.5 h-3.5" /> },
+              { id: 'titres' as const, label: 'Titres / affiche', icon: <ListTree className="w-3.5 h-3.5" /> },
+              { id: 'graphe' as const, label: 'Graphe disciplinaire', icon: <Network className="w-3.5 h-3.5" /> }
+            ]
+          ).map((m) => (
             <button
-              key={b.id}
+              key={m.id}
               type="button"
-              onClick={() => setBranchId(b.id)}
-              className={`text-left p-3 rounded-2xl border transition-all ${
-                active ? 'bg-white border-slate-900 shadow-sm' : `bg-white border-slate-200 ${c.ring}`
+              onClick={() => setMode(m.id)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${
+                mode === m.id ? 'bg-slate-900 text-white border-slate-900' : 'bg-white border-slate-200'
               }`}
             >
-              <span className={`inline-block w-8 h-1 rounded-full mb-2 ${c.bar}`} />
-              <div className="text-xs font-bold text-slate-900 leading-snug">{b.title}</div>
+              {m.icon}
+              {m.label}
             </button>
-          );
-        })}
+          ))}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        <div className="lg:col-span-3 bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 space-y-4">
-          <div>
-            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${colors.chip}`}>
-              Branche
-            </span>
-            <h2 className="text-lg font-bold text-slate-900 mt-2">{branch.title}</h2>
-            <p className="text-xs text-slate-600 mt-1 leading-relaxed">{branch.object}</p>
-          </div>
-          <div className="space-y-5">
-            {branch.trees.map((tree) => (
-              <div key={tree.title}>
-                <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
-                  {tree.title}
-                </h3>
-                <TreeNodes nodes={tree.children} />
-              </div>
+      {mode === 'coverflow' && (
+        <div className="space-y-3">
+          <nav className="flex flex-wrap items-center gap-1 text-xs">
+            {stack.map((lvl, i) => (
+              <React.Fragment key={lvl.id}>
+                {i > 0 && <ChevronRight className="w-3 h-3 text-slate-400" />}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStack((s) => s.slice(0, i + 1));
+                    setSelectedId(lvl.id === 'root' ? null : lvl.id);
+                  }}
+                  className={`px-2 py-1 rounded-lg font-bold ${i === stack.length - 1 ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'}`}
+                >
+                  {lvl.label}
+                </button>
+              </React.Fragment>
             ))}
-          </div>
+          </nav>
+          {items.length > 0 ? (
+            <CoverFlowCarousel
+              items={items}
+              sectionLabel={current.label}
+              autoplay={false}
+              onCtaClick={(item) => {
+                const node = current.children.find((c) => c.id === item.id);
+                if (node) enter(node);
+              }}
+            />
+          ) : (
+            <div className="rounded-3xl border border-slate-200 bg-white p-8">
+              <p className="text-sm text-slate-500">Feuille atteinte — voir la fiche à droite.</p>
+            </div>
+          )}
         </div>
+      )}
 
-        <div className="lg:col-span-2 space-y-4">
-          <div className="bg-slate-900 text-white rounded-3xl p-5 space-y-3">
-            <div className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-indigo-300" />
-              <h3 className="text-sm font-bold">Références les plus citées</h3>
-            </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
-              Compteurs approximatifs (Google Scholar / revues de citations). Ordres de grandeur
-              pour prioriser une lecture, pas des mesures officielles.
-            </p>
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Filtrer auteur, titre, catégorie…"
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-8 pr-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-          </div>
+      {mode === 'titres' && <TitleOutline selectedId={selectedId} onSelect={setSelectedId} />}
 
-          <div className="space-y-2 max-h-[42rem] overflow-y-auto pr-1">
-            {citations.map((c) => (
-              <article key={c.id} className="bg-white rounded-2xl border border-slate-200 p-3.5 space-y-1.5">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wide text-indigo-600">
-                    {c.category}
-                  </span>
-                  {c.citationsApprox != null && (
-                    <span className="text-[10px] font-bold text-slate-500">
-                      ~{c.citationsApprox.toLocaleString('fr-FR')} cit.
-                    </span>
-                  )}
-                </div>
-                <h4 className="text-xs font-bold text-slate-900 leading-snug">{c.title}</h4>
-                <p className="text-[11px] text-slate-600">
-                  {c.authors} ({c.year}). <em>{c.venue}</em>
-                </p>
-                <p className="text-[11px] text-slate-500 leading-relaxed flex gap-1.5">
-                  <Quote className="w-3 h-3 mt-0.5 shrink-0 text-slate-300" />
-                  {c.note}
-                </p>
-              </article>
-            ))}
-          </div>
+      {mode === 'graphe' && (
+        <DisciplineGraph
+          branches={PSYCHOLOGY_BRANCHES}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+        />
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        <div className="lg:col-span-3 bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 space-y-3">
+          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${colors.chip}`}>
+            Fiche
+          </span>
+          {hit || selectedBranch ? (
+            <>
+              <h2 className="text-lg font-bold text-slate-900">
+                {hit?.node?.label || selectedBranch?.title}
+              </h2>
+              {hit?.group && <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{hit.group}</p>}
+              <p className="text-sm text-slate-600 leading-relaxed">
+                {selectedBranch?.object}
+                {hit?.node && !hit.node.children?.length
+                  ? ' Niveau de spécialisation : feuille de l’arbre. Relier à un paradigme expérimental ou à une source PsyRef, jamais à un diagnostic automatique.'
+                  : null}
+              </p>
+              {hit?.node?.children && (
+                <ul className="flex flex-wrap gap-1.5">
+                  {hit.node.children.map((c) => (
+                    <li key={c.id}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedId(c.id)}
+                        className="text-[11px] font-semibold px-2 py-1 rounded-lg bg-slate-100 hover:bg-indigo-50"
+                      >
+                        {c.label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {selectedBranch && !hit?.node && (
+                <ul className="space-y-2 pt-2">
+                  {selectedBranch.trees.map((t) => (
+                    <li key={t.title}>
+                      <div className="text-[10px] font-bold uppercase text-slate-400">{t.title}</div>
+                      <div className="text-xs text-slate-600">{t.children.map((c) => c.label).join(' · ')}</div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          ) : (
+            <p className="text-sm text-slate-500">Choisis un nœud dans le coverflow, l’affiche ou le graphe.</p>
+          )}
+        </div>
+        <div className="lg:col-span-2">
+          <CitationsPanel />
         </div>
       </div>
     </div>

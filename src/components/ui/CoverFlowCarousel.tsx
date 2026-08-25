@@ -24,7 +24,8 @@ export interface CarouselItem {
   titleLine1: string;
   titleLine2?: string;
   desc?: string;
-  img: string;
+  img?: string;
+  tone?: string;
   ctaText?: string;
   ctaUrl?: string;
 }
@@ -59,7 +60,12 @@ export function CoverFlowCarousel({
     setCurrentIndex((prev) => (prev - 1 + total) % total);
   }, [total]);
 
-  const goToSlide = (idx: number) => setCurrentIndex(idx % total);
+  const goToSlide = (idx: number) => setCurrentIndex(idx % Math.max(total, 1));
+
+  const itemsKey = items.map((i) => i.id || i.titleLine1).join('|');
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [itemsKey]);
 
   useEffect(() => {
     if (!autoplay || isHovered || total <= 1) return;
@@ -196,11 +202,21 @@ export function CoverFlowCarousel({
                   cursor: isCenter ? 'default' : 'pointer'
                 }}
               >
-                <img
-                  src={item.img}
-                  alt={item.titleLine1}
-                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-                />
+                {item.img ? (
+                  <img
+                    src={item.img}
+                    alt={item.titleLine1}
+                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: item.tone || 'linear-gradient(160deg, #1e293b, #0c0a09)'
+                    }}
+                  />
+                )}
                 <div
                   style={{
                     position: 'absolute',
