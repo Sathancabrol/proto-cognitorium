@@ -1,1 +1,36 @@
 @import "tailwindcss";
+
+:root {
+  --layer: #ffffff;
+  --layer-glass: rgba(255, 255, 255, 0.94);
+  --foreground: #0f172a;
+  --foreground-feint: #64748b;
+  --border: #e2e8f0;
+  --accent: #3b82f6;
+  --accent-light: rgba(59, 130, 246, 0.08);
+  --dossier-stripe-angle: 119deg;
+  --kicker-tracking-tight: 0.08em;
+  --kicker-tracking-loose: 0.12em;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.dark, [data-theme="dark"], .dossier-dark {
+  --layer: #181920;
+  --layer-glass: rgba(24, 25, 32, 0.96);
+  --foreground: #f1f5f9;
+  --foreground-feint: #94a3b8;
+  --border: #334155;
+  --accent: #60a5fa;
+  --accent-light: rgba(96, 165, 250, 0.14);
+}
+
+.create-stage {
+  display: inline-flex;
+  position: relative;
+  z-index: 40;
+}
+
+.create-root {
+  position: relative;
+  display: inline-flex;
+}
