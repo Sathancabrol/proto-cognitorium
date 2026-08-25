@@ -6,7 +6,8 @@ import {
   DimensionMode, 
   NodeSpatialData, 
   getNodeStrataLayer, 
-  extractNodeYear 
+  extractNodeYear,
+  computeChronologicalGraphYears 
 } from '../utils/graphDimensions';
 import { 
   ZoomIn, 
@@ -151,58 +152,47 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
     return degMap;
   }, [nodes, edges]);
 
-  // Transitive Connected Subgraph computation when a node is selected/focused
-  // Returns all entities linked directly or transitively (Experience -> Tasks -> Skills -> Capacities -> Horizons)
-  const reactivatedSubgraph = useMemo(() => {
+  // Calculate chronological graph years for all nodes
+  const nodeYearsMap = useMemo(() => {
+    return computeChronologicalGraphYears(nodes, edges);
+  }, [nodes, edges]);
+
+  // Direct Neighbors set when a node is clicked / selected (exactly identical to hover feedback)
+  const selectedNeighbors = useMemo(() => {
+    if (!selectedNodeId) return new Set<string>();
+    const set = new Set<string>();
+    set.add(selectedNodeId);
+    edges.forEach((edge) => {
+      if (edge.source === selectedNodeId) set.add(edge.target);
+      if (edge.target === selectedNodeId) set.add(edge.source);
+    });
+    return set;
+  }, [selectedNodeId, edges]);
+
+  const selectedNodeData = useMemo(() => {
     if (!selectedNodeId) return null;
+    return nodes.find(n => n.id === selectedNodeId) || null;
+  }, [selectedNodeId, nodes]);
 
-    const targetNode = nodes.find(n => n.id === selectedNodeId);
-    if (!targetNode) return null;
-
-    const visitedNodeIds = new Set<string>();
-    visitedNodeIds.add(selectedNodeId);
-
-    // Breadth-First-Search across edges (depth up to 3)
-    let currentQueue = [selectedNodeId];
-    for (let depth = 0; depth < 3; depth++) {
-      const nextQueue: string[] = [];
-      for (const currId of currentQueue) {
-        edges.forEach((edge) => {
-          if (edge.source === currId && !visitedNodeIds.has(edge.target)) {
-            visitedNodeIds.add(edge.target);
-            nextQueue.push(edge.target);
-          } else if (edge.target === currId && !visitedNodeIds.has(edge.source)) {
-            visitedNodeIds.add(edge.source);
-            nextQueue.push(edge.source);
-          }
-        });
+  const timelineStats = useMemo(() => {
+    if (dimensionMode !== 'timeline') return null;
+    let unlockedTotal = 0;
+    const newlyUnlockedNames: string[] = [];
+    nodes.forEach((n) => {
+      const y = nodeYearsMap.get(n.id) ?? extractNodeYear(n);
+      if (y <= timelineYear) {
+        unlockedTotal++;
       }
-      currentQueue = nextQueue;
-      if (currentQueue.length === 0) break;
-    }
-
-    const connectedNodesList = nodes.filter(n => visitedNodeIds.has(n.id));
-    
-    // Group breakdown
-    const skillsCount = connectedNodesList.filter(n => n.category.startsWith('skill_') || n.category === 'knowledge').length;
-    const tasksCount = connectedNodesList.filter(n => n.category === 'task').length;
-    const cognitionCount = connectedNodesList.filter(n => n.category === 'capacity_cognitive').length;
-    const horizonsCount = connectedNodesList.filter(n => n.category === 'horizon_job').length;
-    const expCount = connectedNodesList.filter(n => ['experience', 'formation', 'research_project'].includes(n.category)).length;
-
+      if (y === timelineYear) {
+        newlyUnlockedNames.push(n.name);
+      }
+    });
     return {
-      rootNode: targetNode,
-      nodeIds: visitedNodeIds,
-      count: visitedNodeIds.size,
-      breakdown: {
-        skillsCount,
-        tasksCount,
-        cognitionCount,
-        horizonsCount,
-        expCount
-      }
+      unlockedTotal,
+      newlyUnlockedCount: newlyUnlockedNames.length,
+      sampleNames: newlyUnlockedNames.slice(0, 3)
     };
-  }, [selectedNodeId, nodes, edges]);
+  }, [dimensionMode, nodes, nodeYearsMap, timelineYear]);
 
   // Immediate neighbor set for hover feedback
   const hoveredNeighbors = useMemo(() => {
@@ -223,7 +213,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
     spatialNodesRef.current = nodes.map((node, index) => {
       const existing = existingMap.get(node.id);
       const layerIndex = getNodeStrataLayer(node);
-      const year = extractNodeYear(node);
+      const year = nodeYearsMap.get(node.id) ?? extractNodeYear(node);
       const degree = nodeDegrees.get(node.id) || 1;
 
       // Obsidian dynamic node radius based on connection degree and importance
@@ -265,7 +255,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         yTimeline: timelineY
       };
     });
-  }, [nodes, nodeDegrees, simulationYear]);
+  }, [nodes, nodeDegrees, nodeYearsMap, simulationYear]);
 
   // Timeline Auto-play Loop
   useEffect(() => {
@@ -315,66 +305,18 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       ctx.scale(zoom, zoom);
 
       // --- OBSIDIAN SUBTLE GRID DOTS ---
-      if (dimensionMode === '2d') {
-        const gridSize = 45;
-        const startX = -pan.x / zoom - 400;
-        const endX = startX + width / zoom + 800;
-        const startY = -pan.y / zoom - 400;
-        const endY = startY + height / zoom + 800;
+      const gridSize = 45;
+      const startX = -pan.x / zoom - 400;
+      const endX = startX + width / zoom + 800;
+      const startY = -pan.y / zoom - 400;
+      const endY = startY + height / zoom + 800;
 
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
-        for (let x = Math.floor(startX / gridSize) * gridSize; x < endX; x += gridSize) {
-          for (let y = Math.floor(startY / gridSize) * gridSize; y < endY; y += gridSize) {
-            ctx.beginPath();
-            ctx.arc(x + width / 2, y + height / 2, 1.2, 0, Math.PI * 2);
-            ctx.fill();
-          }
-        }
-      }
-
-      // --- TIMELINE AXIS & BARS ---
-      if (dimensionMode === 'timeline') {
-        const lineY = height / 2;
-        const startX = (-0.5) * 1200 + width / 2;
-        const endX = 0.5 * 1200 + width / 2;
-
-        ctx.beginPath();
-        ctx.moveTo(startX - 60, lineY + 230);
-        ctx.lineTo(endX + 60, lineY + 230);
-        ctx.strokeStyle = 'rgba(148, 163, 184, 0.25)';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-
-        for (let y = minTimelineYear; y <= maxTimelineYear; y++) {
-          const prog = (y - minTimelineYear) / (maxTimelineYear - minTimelineYear);
-          const tickX = (prog - 0.5) * 1200 + width / 2;
-          const isPassed = y <= timelineYear;
-
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+      for (let x = Math.floor(startX / gridSize) * gridSize; x < endX; x += gridSize) {
+        for (let y = Math.floor(startY / gridSize) * gridSize; y < endY; y += gridSize) {
           ctx.beginPath();
-          ctx.moveTo(tickX, lineY - 260);
-          ctx.lineTo(tickX, lineY + 230);
-          ctx.strokeStyle = isPassed 
-            ? (y === timelineYear ? 'rgba(56, 189, 248, 0.55)' : 'rgba(148, 163, 184, 0.12)') 
-            : 'rgba(51, 65, 85, 0.08)';
-          ctx.lineWidth = y === timelineYear ? 2 : 1;
-          if (y !== timelineYear) ctx.setLineDash([4, 4]);
-          ctx.stroke();
-          ctx.setLineDash([]);
-
-          ctx.font = y === timelineYear ? 'bold 13px sans-serif' : '11px sans-serif';
-          ctx.fillStyle = isPassed ? (y === timelineYear ? '#38bdf8' : '#94a3b8') : '#475569';
-          ctx.textAlign = 'center';
-          ctx.fillText(`${y}`, tickX, lineY + 250);
-
-          if (y === timelineYear) {
-            ctx.beginPath();
-            ctx.arc(tickX, lineY + 230, 6, 0, Math.PI * 2);
-            ctx.fillStyle = '#38bdf8';
-            ctx.fill();
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-          }
+          ctx.arc(x + width / 2, y + height / 2, 1.2, 0, Math.PI * 2);
+          ctx.fill();
         }
       }
 
@@ -382,137 +324,134 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       const rawNodeMap = new Map(nodes.map((n) => [n.id, n]));
       const pNodeMap = new Map(pNodes.map((n) => [n.id, n]));
 
-      // --- REAL DATA CALIBRATED OBSIDIAN PHYSICS SIMULATION (2D Mode) ---
-      if (dimensionMode === '2d') {
-        if (!isPhysicsLocked) {
-          const timeNow = performance.now() * 0.001;
+      // --- REAL DATA CALIBRATED OBSIDIAN PHYSICS SIMULATION (2D & Mon Parcours Modes) ---
+      if (!isPhysicsLocked) {
+        const timeNow = performance.now() * 0.001;
 
-          // 1. Coulomb Repulsion based on node degrees and masses (safely capped & bounded)
-          const baseRepel = 750;
-          const minDist = 30;
-          for (let i = 0; i < pNodes.length; i++) {
-            const n1 = pNodes[i];
-            const deg1 = nodeDegrees.get(n1.id) || 1;
+        // 1. Coulomb Repulsion based on node degrees and masses (safely capped & bounded)
+        const baseRepel = 750;
+        const minDist = 30;
+        for (let i = 0; i < pNodes.length; i++) {
+          const n1 = pNodes[i];
+          const deg1 = nodeDegrees.get(n1.id) || 1;
 
-            // Gentle zero-sum organic breathing (living motion without drift)
-            const phase = i * 1.1;
-            n1.vx += Math.sin(timeNow + phase) * 0.04;
-            n1.vy += Math.cos(timeNow * 0.85 + phase) * 0.04;
+          // Gentle zero-sum organic breathing (living motion without drift)
+          const phase = i * 1.1;
+          n1.vx += Math.sin(timeNow + phase) * 0.04;
+          n1.vy += Math.cos(timeNow * 0.85 + phase) * 0.04;
 
-            for (let j = i + 1; j < pNodes.length; j++) {
-              const n2 = pNodes[j];
-              const deg2 = nodeDegrees.get(n2.id) || 1;
-              const dx = n2.x2d - n1.x2d;
-              const dy = n2.y2d - n1.y2d;
-              const dist = Math.hypot(dx, dy) || 1;
-              
-              if (dist < 320) {
-                const effectiveDist = Math.max(dist, minDist);
-                const repelMultiplier = 1 + (deg1 + deg2) * 0.1;
-                const rawForce = (baseRepel * repelMultiplier) / (effectiveDist * effectiveDist);
-                const force = Math.min(2.8, rawForce);
-                const fx = (dx / dist) * force;
-                const fy = (dy / dist) * force;
-                n1.vx -= fx;
-                n1.vy -= fy;
-                n2.vx += fx;
-                n2.vy += fy;
-              }
-            }
-          }
-
-          // 2. Real Semantic Edge Spring Attraction (Hooke's Law calibrated by relationship type)
-          edges.forEach((edge) => {
-            const n1 = pNodeMap.get(edge.source);
-            const n2 = pNodeMap.get(edge.target);
-            if (!n1 || !n2) return;
-
-            // Real Semantic Relationship Distance & Elasticity Mapping based on relation type & strength
-            let targetDist = 95;
-            let springStiffness = 0.018;
-
-            const edgeStrength = typeof edge.strength === 'number' ? edge.strength : 0.7;
-
-            if (edge.type === 'composed_of') {
-              targetDist = 65;
-              springStiffness = 0.028 * (0.8 + edgeStrength * 0.4);
-            } else if (edge.type === 'demonstrates_skill' || edge.type === 'acquired_in') {
-              targetDist = 80;
-              springStiffness = 0.024 * (0.8 + edgeStrength * 0.4);
-            } else if (edge.type === 'requires_knowledge' || edge.type === 'decomposes_into') {
-              targetDist = 75;
-              springStiffness = 0.024 * (0.8 + edgeStrength * 0.4);
-            } else if (edge.type === 'feeds_capacity') {
-              targetDist = 110;
-              springStiffness = 0.016 * (0.8 + edgeStrength * 0.4);
-            } else if (edge.type === 'unlocks_horizon') {
-              targetDist = 140;
-              springStiffness = 0.012 * (0.8 + edgeStrength * 0.4);
-            } else if (edge.type === 'synergy_with') {
-              targetDist = 120;
-              springStiffness = 0.014 * (0.8 + edgeStrength * 0.4);
-            }
-
+          for (let j = i + 1; j < pNodes.length; j++) {
+            const n2 = pNodes[j];
+            const deg2 = nodeDegrees.get(n2.id) || 1;
             const dx = n2.x2d - n1.x2d;
             const dy = n2.y2d - n1.y2d;
             const dist = Math.hypot(dx, dy) || 1;
-            const displacement = dist - targetDist;
-            const rawForce = displacement * springStiffness;
-            const force = Math.max(-2.5, Math.min(2.5, rawForce));
-            const fx = (dx / dist) * force;
-            const fy = (dy / dist) * force;
-
-            n1.vx += fx;
-            n1.vy += fy;
-            n2.vx -= fx;
-            n2.vy -= fy;
-          });
-
-          // 3. Central Gravity, Soft Boundary Wall & Velocity Integration with High Damping
-          const gravity = 0.0032;
-          pNodes.forEach((n) => {
-            n.vx -= n.x2d * gravity;
-            n.vy -= n.y2d * gravity;
-
-            // Soft boundary wall to keep constellations centered and prevent drifting away
-            const distFromCenter = Math.hypot(n.x2d, n.y2d);
-            if (distFromCenter > 420) {
-              const excess = distFromCenter - 420;
-              n.vx -= (n.x2d / distFromCenter) * (excess * 0.012);
-              n.vy -= (n.y2d / distFromCenter) * (excess * 0.012);
+            
+            if (dist < 320) {
+              const effectiveDist = Math.max(dist, minDist);
+              const repelMultiplier = 1 + (deg1 + deg2) * 0.1;
+              const rawForce = (baseRepel * repelMultiplier) / (effectiveDist * effectiveDist);
+              const force = Math.min(2.8, rawForce);
+              const fx = (dx / dist) * force;
+              const fy = (dy / dist) * force;
+              n1.vx -= fx;
+              n1.vy -= fy;
+              n2.vx += fx;
+              n2.vy += fy;
             }
+          }
+        }
 
-            // High damping factor for smooth, stable settling (no wild oscillation)
-            n.vx *= 0.78;
-            n.vy *= 0.78;
+        // 2. Real Semantic Edge Spring Attraction (Hooke's Law calibrated by relationship type)
+        edges.forEach((edge) => {
+          const n1 = pNodeMap.get(edge.source);
+          const n2 = pNodeMap.get(edge.target);
+          if (!n1 || !n2) return;
 
-            // Cap maximum speed per frame
-            const speed = Math.hypot(n.vx, n.vy);
-            if (speed > 2.5) {
-              n.vx = (n.vx / speed) * 2.5;
-              n.vy = (n.vy / speed) * 2.5;
-            }
+          // Real Semantic Relationship Distance & Elasticity Mapping based on relation type & strength
+          let targetDist = 95;
+          let springStiffness = 0.018;
 
-            if (n.id !== draggedNodeId) {
-              n.x2d += n.vx;
-              n.y2d += n.vy;
-            } else {
-              n.vx = 0;
-              n.vy = 0;
-            }
-          });
-        } else {
-          // When physics is locked, freeze velocities immediately
-          pNodes.forEach((n) => {
+          const edgeStrength = typeof edge.strength === 'number' ? edge.strength : 0.7;
+
+          if (edge.type === 'composed_of') {
+            targetDist = 65;
+            springStiffness = 0.028 * (0.8 + edgeStrength * 0.4);
+          } else if (edge.type === 'demonstrates_skill' || edge.type === 'acquired_in') {
+            targetDist = 80;
+            springStiffness = 0.024 * (0.8 + edgeStrength * 0.4);
+          } else if (edge.type === 'requires_knowledge' || edge.type === 'decomposes_into') {
+            targetDist = 75;
+            springStiffness = 0.024 * (0.8 + edgeStrength * 0.4);
+          } else if (edge.type === 'feeds_capacity') {
+            targetDist = 110;
+            springStiffness = 0.016 * (0.8 + edgeStrength * 0.4);
+          } else if (edge.type === 'unlocks_horizon') {
+            targetDist = 140;
+            springStiffness = 0.012 * (0.8 + edgeStrength * 0.4);
+          } else if (edge.type === 'synergy_with') {
+            targetDist = 120;
+            springStiffness = 0.014 * (0.8 + edgeStrength * 0.4);
+          }
+
+          const dx = n2.x2d - n1.x2d;
+          const dy = n2.y2d - n1.y2d;
+          const dist = Math.hypot(dx, dy) || 1;
+          const displacement = dist - targetDist;
+          const rawForce = displacement * springStiffness;
+          const force = Math.max(-2.5, Math.min(2.5, rawForce));
+          const fx = (dx / dist) * force;
+          const fy = (dy / dist) * force;
+
+          n1.vx += fx;
+          n1.vy += fy;
+          n2.vx += fx;
+          n2.vy += fy;
+        });
+
+        // 3. Central Gravity, Soft Boundary Wall & Velocity Integration with High Damping
+        const gravity = 0.0032;
+        pNodes.forEach((n) => {
+          n.vx -= n.x2d * gravity;
+          n.vy -= n.y2d * gravity;
+
+          // Soft boundary wall to keep constellations centered and prevent drifting away
+          const distFromCenter = Math.hypot(n.x2d, n.y2d);
+          if (distFromCenter > 420) {
+            const excess = distFromCenter - 420;
+            n.vx -= (n.x2d / distFromCenter) * (excess * 0.012);
+            n.vy -= (n.y2d / distFromCenter) * (excess * 0.012);
+          }
+
+          // High damping factor for smooth, stable settling (no wild oscillation)
+          n.vx *= 0.78;
+          n.vy *= 0.78;
+
+          // Cap maximum speed per frame
+          const speed = Math.hypot(n.vx, n.vy);
+          if (speed > 2.5) {
+            n.vx = (n.vx / speed) * 2.5;
+            n.vy = (n.vy / speed) * 2.5;
+          }
+
+          if (n.id !== draggedNodeId) {
+            n.x2d += n.vx;
+            n.y2d += n.vy;
+          } else {
             n.vx = 0;
             n.vy = 0;
-          });
-        }
+          }
+        });
+      } else {
+        // When physics is locked, freeze velocities immediately
+        pNodes.forEach((n) => {
+          n.vx = 0;
+          n.vy = 0;
+        });
       }
 
-      // --- MULTI-FILTER VISIBILITY & REACTIVATED SUBGRAPH LOGIC ---
+      // --- MULTI-FILTER VISIBILITY & FOCUS LOGIC ---
       const isCategoryActive = (node: AnyCognitiveNode) => {
-        // If categories are selected, check if node matches any active category
         for (const group of CATEGORY_GROUPS) {
           if (selectedFilterKeys.has(group.key) && group.categories.includes(node.category)) {
             return true;
@@ -522,13 +461,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       };
 
       const isVisible = (node: AnyCognitiveNode) => {
-        // If a node is focused in subgraph reactivation mode:
-        if (reactivatedSubgraph) {
-          // The selected root node and all its connected entities are always highlighted/visible
-          if (reactivatedSubgraph.nodeIds.has(node.id)) return true;
-        }
-
-        // Otherwise check category multi-filters
+        // Direct category filters check
         if (!isCategoryActive(node)) return false;
 
         // Check text search query
@@ -543,21 +476,13 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         return true;
       };
 
-      // Project positions
+      // Project positions: Mon Parcours (timeline mode) uses 2D spatial positions with chronological progressive activation
       const projectedList = pNodes.map((n) => {
         const raw = rawNodeMap.get(n.id);
-        let x = 0;
-        let y = 0;
-        let isTimelineActive = true;
-
-        if (dimensionMode === '2d') {
-          x = width / 2 + n.x2d;
-          y = height / 2 + n.y2d;
-        } else if (dimensionMode === 'timeline') {
-          x = width / 2 + n.xTimeline;
-          y = height / 2 + n.yTimeline;
-          isTimelineActive = n.yearAcquired <= timelineYear;
-        }
+        const x = width / 2 + n.x2d;
+        const y = height / 2 + n.y2d;
+        const isTimelineActive = dimensionMode !== 'timeline' || (n.yearAcquired <= timelineYear);
+        const isNewlyActivated = dimensionMode === 'timeline' && n.yearAcquired === timelineYear;
 
         return {
           node: n,
@@ -565,6 +490,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
           x,
           y,
           isTimelineActive,
+          isNewlyActivated,
           radiusScreen: n.radius
         };
       });
@@ -573,6 +499,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
 
       // Active focus target (hovered or selected)
       const activeFocusNodeId = hoveredNodeId || selectedNodeId;
+      const activeNeighborSet = hoveredNodeId ? hoveredNeighbors : (selectedNodeId ? selectedNeighbors : null);
 
       // --- 1. DESSIN DES LIENS OBSIDIAN (Luminous Glowing Connection Lines) ---
       edges.forEach((edge) => {
@@ -582,24 +509,23 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
 
         if (!isVisible(src.rawNode) || !isVisible(tgt.rawNode)) return;
 
+        // In Mon Parcours mode, links light up when both connected nodes are unlocked/acquired
         if (dimensionMode === 'timeline' && (!src.isTimelineActive || !tgt.isTimelineActive)) {
           return;
         }
 
-        // Subgraph focus link status
-        const isReactivatedLink = reactivatedSubgraph && 
-          reactivatedSubgraph.nodeIds.has(edge.source) && 
-          reactivatedSubgraph.nodeIds.has(edge.target);
-
-        const isDirectConnection = activeFocusNodeId && (edge.source === activeFocusNodeId || edge.target === activeFocusNodeId);
-        const isDimmed = (reactivatedSubgraph && !isReactivatedLink) || (activeFocusNodeId && !isDirectConnection && !reactivatedSubgraph);
+        const isDirectConnection = Boolean(activeFocusNodeId && (edge.source === activeFocusNodeId || edge.target === activeFocusNodeId));
+        const isDimmed = Boolean(activeFocusNodeId && !isDirectConnection);
 
         let strokeColor = 'rgba(161, 161, 170, 0.22)';
         let lineWidth = 1.2;
 
-        if (isReactivatedLink || isDirectConnection) {
+        if (isDirectConnection) {
           strokeColor = 'rgba(56, 189, 248, 0.95)';
           lineWidth = 2.4;
+        } else if (dimensionMode === 'timeline' && (src.isNewlyActivated || tgt.isNewlyActivated)) {
+          strokeColor = 'rgba(251, 191, 36, 0.9)';
+          lineWidth = 2.0;
         } else if (isDimmed) {
           strokeColor = 'rgba(100, 116, 139, 0.05)';
           lineWidth = 0.8;
@@ -616,7 +542,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         ctx.stroke();
 
         // Obsidian Arrow Heads on links
-        if (!isDimmed && (zoom > 0.6 || isDirectConnection || isReactivatedLink)) {
+        if (!isDimmed && (zoom > 0.6 || isDirectConnection)) {
           const arrowLength = 7 * Math.min(1.4, Math.max(0.7, zoom));
           const angle = Math.atan2(tgt.y - src.y, tgt.x - src.x);
           const midX = src.x + (tgt.x - src.x) * 0.58;
@@ -630,7 +556,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
           ctx.lineTo(-arrowLength, -arrowLength * 0.45);
           ctx.lineTo(-arrowLength, arrowLength * 0.45);
           ctx.closePath();
-          ctx.fillStyle = (isDirectConnection || isReactivatedLink) ? '#38bdf8' : 'rgba(148, 163, 184, 0.4)';
+          ctx.fillStyle = isDirectConnection ? '#38bdf8' : (dimensionMode === 'timeline' && (src.isNewlyActivated || tgt.isNewlyActivated) ? '#fbbf24' : 'rgba(148, 163, 184, 0.4)');
           ctx.fill();
           ctx.restore();
         }
@@ -638,24 +564,22 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
 
       // --- 2. DESSIN DES NŒUDS OBSIDIAN (Luminous Glowing Orbs) ---
       const sortedNodes = [...projectedList].sort((a, b) => {
-        // Draw reactivated and focused nodes on top
-        const aReactivated = reactivatedSubgraph && reactivatedSubgraph.nodeIds.has(a.node.id);
-        const bReactivated = reactivatedSubgraph && reactivatedSubgraph.nodeIds.has(b.node.id);
-        if (aReactivated && !bReactivated) return 1;
-        if (!aReactivated && bReactivated) return -1;
         if (a.node.id === activeFocusNodeId) return 1;
         if (b.node.id === activeFocusNodeId) return -1;
+        if (activeNeighborSet?.has(a.node.id) && !activeNeighborSet?.has(b.node.id)) return 1;
+        if (!activeNeighborSet?.has(a.node.id) && activeNeighborSet?.has(b.node.id)) return -1;
         return 0;
       });
 
-      sortedNodes.forEach(({ node, rawNode, x, y, isTimelineActive, radiusScreen }) => {
+      sortedNodes.forEach(({ node, rawNode, x, y, isTimelineActive, isNewlyActivated, radiusScreen }) => {
         if (!rawNode || !isVisible(rawNode)) return;
 
+        // In Mon Parcours mode, unacquired future nodes are displayed as faint subtle ghost placeholders
         if (dimensionMode === 'timeline' && !isTimelineActive) {
           ctx.save();
-          ctx.globalAlpha = 0.15;
+          ctx.globalAlpha = 0.12;
           ctx.beginPath();
-          ctx.arc(x, y, radiusScreen * 0.7, 0, Math.PI * 2);
+          ctx.arc(x, y, radiusScreen * 0.65, 0, Math.PI * 2);
           ctx.fillStyle = '#27272a';
           ctx.fill();
           ctx.strokeStyle = '#52525b';
@@ -668,14 +592,11 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
 
         const isSelected = selectedNodeId === node.id;
         const isHovered = hoveredNodeId === node.id;
-        const isHoverConnected = hoveredNeighbors.has(node.id);
-        const isReactivatedInSubgraph = reactivatedSubgraph && reactivatedSubgraph.nodeIds.has(node.id);
+        const isConnectedNeighbor = Boolean(activeNeighborSet && activeNeighborSet.has(node.id));
 
         let isDimmed = false;
-        if (reactivatedSubgraph) {
-          isDimmed = !isReactivatedInSubgraph;
-        } else if (activeFocusNodeId) {
-          isDimmed = !isSelected && !isHovered && !isHoverConnected;
+        if (activeFocusNodeId) {
+          isDimmed = !isSelected && !isHovered && !isConnectedNeighbor;
         }
 
         const visualDesc = getNodeVisualDescriptor(rawNode, simulationYear);
@@ -693,11 +614,16 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         ctx.globalAlpha = opacity;
 
         // --- OBSIDIAN NEON HALO / GLOW ---
-        if ((isSelected || isHovered || isHoverConnected || isReactivatedInSubgraph) && !isDimmed) {
-          const isRoot = isSelected;
-          const glowRadius = radiusScreen + (isRoot ? 16 : (isHovered ? 12 : 7));
+        if ((isSelected || isHovered || isConnectedNeighbor || isNewlyActivated) && !isDimmed) {
+          const isRoot = isSelected || isHovered;
+          const glowRadius = radiusScreen + (isRoot ? 16 : 10);
           const glowGrad = ctx.createRadialGradient(x, y, radiusScreen * 0.4, x, y, glowRadius);
-          glowGrad.addColorStop(0, isRoot ? 'rgba(56, 189, 248, 0.85)' : colorMeta.glow);
+          
+          if (isNewlyActivated && !isRoot) {
+            glowGrad.addColorStop(0, 'rgba(251, 191, 36, 0.85)');
+          } else {
+            glowGrad.addColorStop(0, isRoot ? 'rgba(56, 189, 248, 0.85)' : colorMeta.glow);
+          }
           glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
           ctx.beginPath();
           ctx.arc(x, y, glowRadius, 0, Math.PI * 2);
@@ -726,12 +652,12 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
 
         ctx.strokeStyle = isSelected 
           ? '#ffffff' 
-          : (isReactivatedInSubgraph ? 'rgba(255, 255, 255, 0.75)' : 'rgba(255, 255, 255, 0.4)');
-        ctx.lineWidth = isSelected ? 2.8 : (isReactivatedInSubgraph ? 2.0 : 1.2);
+          : (isNewlyActivated ? '#fbbf24' : (isConnectedNeighbor ? 'rgba(255, 255, 255, 0.75)' : 'rgba(255, 255, 255, 0.4)'));
+        ctx.lineWidth = isSelected ? 2.8 : (isNewlyActivated ? 2.4 : (isConnectedNeighbor ? 2.0 : 1.2));
         ctx.stroke();
 
         // --- INNER ICON GLYPH ---
-        if (radiusScreen > 15 || isHovered || isSelected || isReactivatedInSubgraph) {
+        if (radiusScreen > 15 || isHovered || isSelected || isConnectedNeighbor || isNewlyActivated) {
           const fontSize = Math.max(9, Math.round(radiusScreen * 0.72));
           ctx.font = `${fontSize}px "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
           ctx.textAlign = 'center';
@@ -744,13 +670,13 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
           zoom >= 0.65 || 
           isSelected || 
           isHovered || 
-          isHoverConnected ||
-          isReactivatedInSubgraph ||
+          isConnectedNeighbor ||
+          isNewlyActivated ||
           (nodeDegrees.get(node.id) || 0) >= 3
         );
 
         if (shouldShowLabel) {
-          const isHighPrio = isSelected || isHovered || isReactivatedInSubgraph;
+          const isHighPrio = isSelected || isHovered || isConnectedNeighbor || isNewlyActivated;
           ctx.font = isHighPrio ? '600 11px Inter, system-ui, sans-serif' : '400 10px Inter, system-ui, sans-serif';
           
           ctx.fillStyle = isHighPrio ? '#ffffff' : 'rgba(212, 212, 216, 0.8)';
@@ -788,7 +714,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
     selectedNodeId, 
     hoveredNodeId, 
     hoveredNeighbors,
-    reactivatedSubgraph,
+    selectedNeighbors,
     zoom, 
     pan, 
     selectedFilterKeys, 
@@ -845,17 +771,12 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       const raw = rawNodeMap.get(n.id);
       if (!raw) continue;
 
-      let screenX = 0;
-      let screenY = 0;
+      let screenX = width / 2 + n.x2d;
+      let screenY = height / 2 + n.y2d;
       let hitRadius = n.radius + 5;
 
-      if (dimensionMode === '2d') {
-        screenX = width / 2 + n.x2d;
-        screenY = height / 2 + n.y2d;
-      } else if (dimensionMode === 'timeline') {
+      if (dimensionMode === 'timeline') {
         if (n.yearAcquired > timelineYear) continue;
-        screenX = width / 2 + n.xTimeline;
-        screenY = height / 2 + n.yTimeline;
       }
 
       const dx = (mouseX - pan.x) / zoom - screenX;
@@ -885,7 +806,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const coords = getCanvasCoords(e);
 
-    if (draggedNodeId && dimensionMode === '2d') {
+    if (draggedNodeId) {
       const node = spatialNodesRef.current.find((n) => n.id === draggedNodeId);
       if (node) {
         const canvas = canvasRef.current;
@@ -991,7 +912,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
               <span>Graphe Réseau</span>
             </button>
 
-            {/* Ligne Temporelle */}
+            {/* Mon Parcours (2D chronologique) */}
             <button
               id="dimension-btn-timeline"
               onClick={() => setDimensionMode('timeline')}
@@ -1000,42 +921,40 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
                   ? 'bg-amber-600/90 text-white shadow-md font-semibold ring-1 ring-amber-400/50' 
                   : 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
               }`}
-              title="Ligne temporelle chronologique"
+              title="Mon parcours : Constellation 2D animée dans le temps"
             >
               <Clock className="w-3.5 h-3.5" />
-              <span>Ligne temporelle</span>
+              <span>Mon parcours</span>
             </button>
           </div>
 
           {/* Lock / Delock Motion Capsule (Bulles en mouvement vs Bulles figées) */}
-          {dimensionMode === '2d' && (
-            <button
-              id="graph-lock-toggle-btn"
-              onClick={() => setIsPhysicsLocked((prev) => !prev)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all backdrop-blur-md shadow-lg border ${
-                isPhysicsLocked
-                  ? 'bg-[#1e1f24]/90 text-zinc-400 border-zinc-700/70 hover:text-zinc-200 hover:border-zinc-500'
-                  : 'bg-emerald-600/90 text-white border-emerald-400/50 shadow-emerald-950/40 hover:bg-emerald-500 ring-1 ring-emerald-400/40'
-              }`}
-              title={
-                isPhysicsLocked
-                  ? "Positions verrouillées (figé). Cliquez pour déverrouiller et mettre les bulles en mouvement dynamique."
-                  : "Bulles en mouvement dynamique et flottement actif. Cliquez pour verrouiller et figer les positions."
-              }
-            >
-              {isPhysicsLocked ? (
-                <>
-                  <Lock className="w-3.5 h-3.5 text-zinc-400" />
-                  <span>Figé (Lock)</span>
-                </>
-              ) : (
-                <>
-                  <Unlock className="w-3.5 h-3.5 text-emerald-200 animate-pulse" />
-                  <span className="font-semibold">En mouvement (Délock)</span>
-                </>
-              )}
-            </button>
-          )}
+          <button
+            id="graph-lock-toggle-btn"
+            onClick={() => setIsPhysicsLocked((prev) => !prev)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all backdrop-blur-md shadow-lg border ${
+              isPhysicsLocked
+                ? 'bg-[#1e1f24]/90 text-zinc-400 border-zinc-700/70 hover:text-zinc-200 hover:border-zinc-500'
+                : 'bg-emerald-600/90 text-white border-emerald-400/50 shadow-emerald-950/40 hover:bg-emerald-500 ring-1 ring-emerald-400/40'
+            }`}
+            title={
+              isPhysicsLocked
+                ? "Positions verrouillées (figé). Cliquez pour déverrouiller et mettre les bulles en mouvement fluide."
+                : "Bulles en mouvement dynamique et flottement actif. Cliquez pour verrouiller et figer les positions."
+            }
+          >
+            {isPhysicsLocked ? (
+              <>
+                <Lock className="w-3.5 h-3.5 text-zinc-400" />
+                <span>Figé (Lock)</span>
+              </>
+            ) : (
+              <>
+                <Unlock className="w-3.5 h-3.5 text-emerald-200 animate-pulse" />
+                <span className="font-semibold">En mouvement (Délock)</span>
+              </>
+            )}
+          </button>
 
           {/* Multi-Select Category Filters Bar */}
           <div className="flex items-center gap-1 p-1 bg-[#1e1f24]/90 backdrop-blur-md border border-zinc-700/70 rounded-xl shadow-lg overflow-x-auto max-w-[620px]">
@@ -1108,33 +1027,20 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         </div>
       </div>
 
-      {/* REACTIVATED SUBGRAPH FOCUS BANNER (When a node like Experience is clicked) */}
-      {reactivatedSubgraph && (
+      {/* DIRECT NEIGHBORS FOCUS BANNER (When a node like Experience is clicked) */}
+      {selectedNodeData && (
         <div className="absolute top-16 left-3.5 right-3.5 z-20 flex items-center justify-between gap-3 bg-[#1e1f24]/95 backdrop-blur-xl border border-sky-500/50 px-3.5 py-2 rounded-xl shadow-2xl text-xs text-zinc-200 animate-in fade-in slide-in-from-top-2 duration-150">
           <div className="flex items-center gap-2.5 overflow-hidden">
             <span 
               className="w-3 h-3 rounded-full shrink-0 animate-pulse shadow-sm"
-              style={{ backgroundColor: OBSIDIAN_COLORS[reactivatedSubgraph.rootNode.category]?.main || '#38bdf8' }}
+              style={{ backgroundColor: OBSIDIAN_COLORS[selectedNodeData.category]?.main || '#38bdf8' }}
             />
             <div className="flex items-center gap-2 truncate">
-              <span className="font-semibold text-sky-300">Focus réactivé :</span>
-              <span className="font-bold text-white truncate">{reactivatedSubgraph.rootNode.name}</span>
+              <span className="font-semibold text-sky-300">Nœud sélectionné :</span>
+              <span className="font-bold text-white truncate">{selectedNodeData.name}</span>
             </div>
             <div className="hidden md:flex items-center gap-1.5 ml-2 text-[11px] text-zinc-400 border-l border-zinc-700 pl-3">
-              <span>{reactivatedSubgraph.count} entités reliées</span>
-              <span className="text-zinc-600">•</span>
-              {reactivatedSubgraph.breakdown.skillsCount > 0 && (
-                <span className="text-cyan-400">{reactivatedSubgraph.breakdown.skillsCount} compétences</span>
-              )}
-              {reactivatedSubgraph.breakdown.tasksCount > 0 && (
-                <span className="text-indigo-400">{reactivatedSubgraph.breakdown.tasksCount} missions</span>
-              )}
-              {reactivatedSubgraph.breakdown.cognitionCount > 0 && (
-                <span className="text-pink-400">{reactivatedSubgraph.breakdown.cognitionCount} cognitions</span>
-              )}
-              {reactivatedSubgraph.breakdown.horizonsCount > 0 && (
-                <span className="text-amber-400">{reactivatedSubgraph.breakdown.horizonsCount} horizons</span>
-              )}
+              <span>{Math.max(0, selectedNeighbors.size - 1)} connexion(s) directe(s) connectée(s)</span>
             </div>
           </div>
 
@@ -1181,34 +1087,46 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
             </p>
           )}
           <div className="mt-2 pt-1.5 border-t border-zinc-800/80 flex items-center justify-between text-[10px] text-zinc-500">
-            <span>Connexions : {nodeDegrees.get(hoveredNode.id) || 0}</span>
-            <span className="text-sky-400 font-medium">Cliquez pour réactiver le sous-graphe</span>
+            <span>Connexions directes : {nodeDegrees.get(hoveredNode.id) || 0}</span>
+            <span className="text-sky-400 font-medium">Cliquez pour isoler les liens directs</span>
           </div>
         </div>
       )}
 
-      {/* LIGNE TEMPORELLE CONTROLLER BAR */}
+      {/* MON PARCOURS CONTROLLER BAR */}
       {dimensionMode === 'timeline' && (
         <div className="absolute bottom-4 left-4 right-20 z-20 bg-[#1e1f24]/95 backdrop-blur-md border border-amber-500/40 p-3 rounded-2xl shadow-2xl text-white flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="p-1.5 bg-amber-500/20 text-amber-300 rounded-lg">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="p-2 bg-amber-500/20 text-amber-300 rounded-xl shrink-0">
                 <Clock className="w-4 h-4" />
               </span>
-              <div>
+              <div className="min-w-0">
                 <div className="text-xs font-bold text-amber-200 flex items-center gap-2">
-                  <span>Ligne temporelle d'Acquisition</span>
+                  <span>Mon Parcours (Progression temporelle)</span>
                   <span className="px-2 py-0.5 bg-amber-500 text-slate-950 rounded font-black text-[11px]">
-                    Année : {timelineYear}
+                    {timelineYear}
                   </span>
+                  {timelineStats && (
+                    <span className="text-[11px] font-medium text-amber-400/90 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                      {timelineStats.unlockedTotal} / {nodes.length} acquis
+                    </span>
+                  )}
                 </div>
-                <p className="text-[11px] text-zinc-400">
-                  Visualisez l'apparition chronologique des diplômes, chantiers, missions et compétences.
+                <p className="text-[11px] text-zinc-400 truncate max-w-xl">
+                  {timelineStats && timelineStats.newlyUnlockedCount > 0 ? (
+                    <span className="text-amber-300">
+                      ✨ Nouveautés {timelineYear} ({timelineStats.newlyUnlockedCount}) : {timelineStats.sampleNames.join(' • ')}
+                      {timelineStats.newlyUnlockedCount > 3 ? '…' : ''}
+                    </span>
+                  ) : (
+                    <span>Les items s'allument et se lient selon leur date d'implantation réelle.</span>
+                  )}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => setIsPlayingTimeline((p) => !p)}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs transition-all shadow-md"
@@ -1259,20 +1177,18 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
 
       {/* Bottom Right Obsidian Navigation Controls */}
       <div className="absolute bottom-4 right-4 z-20 flex flex-col items-center gap-1 bg-[#1e1f24]/90 backdrop-blur-md p-1 rounded-xl shadow-lg border border-zinc-700/80">
-        {dimensionMode === '2d' && (
-          <button
-            id="quick-lock-btn"
-            onClick={() => setIsPhysicsLocked((prev) => !prev)}
-            title={isPhysicsLocked ? "Déverrouiller le mouvement (Mettre en mouvement)" : "Verrouiller les positions (Figer)"}
-            className={`p-1.5 rounded-lg transition-colors ${
-              isPhysicsLocked
-                ? 'text-zinc-400 hover:text-white hover:bg-zinc-800'
-                : 'text-emerald-400 bg-emerald-950/60 ring-1 ring-emerald-500/40 hover:bg-emerald-900/60'
-            }`}
-          >
-            {isPhysicsLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
-          </button>
-        )}
+        <button
+          id="quick-lock-btn"
+          onClick={() => setIsPhysicsLocked((prev) => !prev)}
+          title={isPhysicsLocked ? "Déverrouiller le mouvement (Mettre en mouvement)" : "Verrouiller les positions (Figer)"}
+          className={`p-1.5 rounded-lg transition-colors ${
+            isPhysicsLocked
+              ? 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+              : 'text-emerald-400 bg-emerald-950/60 ring-1 ring-emerald-500/40 hover:bg-emerald-900/60'
+          }`}
+        >
+          {isPhysicsLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+        </button>
         <button
           id="zoom-in-btn"
           onClick={() => setZoom((prev) => Math.min(3.2, prev * 1.18))}
@@ -1300,7 +1216,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       </div>
 
       {/* Bottom Obsidian Group Tags Legend */}
-      {dimensionMode === '2d' && !hoveredNode && !reactivatedSubgraph && (
+      {dimensionMode === '2d' && !hoveredNode && !selectedNodeId && (
         <div className="absolute bottom-4 left-4 z-10 hidden sm:flex items-center gap-3 bg-[#1e1f24]/90 backdrop-blur-md px-3.5 py-2 rounded-xl shadow-lg border border-zinc-700/70 text-xs text-zinc-400">
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6] shadow-xs" />

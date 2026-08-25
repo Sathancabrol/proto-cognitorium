@@ -1,4 +1,4 @@
-import { AnyCognitiveNode, CapacityNode, HorizonJobNode, NodeCategory, TaskNode } from '../types';
+import { AnyCognitiveNode, GraphEdge, NodeCategory } from '../types';
 
 export type DimensionMode = '2d' | 'timeline';
 
@@ -64,7 +64,7 @@ export function getNodeStrataLayer(node: AnyCognitiveNode): number {
 }
 
 /**
- * Récupère l'année chronologique précise d'apparition/ancrage de l'élément
+ * Récupère l'année chronologique précise d'apparition/ancrage d'un nœud
  */
 export function extractNodeYear(node: AnyCognitiveNode): number {
   if ('startYear' in node && typeof (node as any).startYear === 'number') {
@@ -89,14 +89,14 @@ export function extractNodeYear(node: AnyCognitiveNode): number {
     case 'research_project':
       return 2018;
     case 'task':
-      return 2021;
+      return 2020;
     case 'skill_tech':
     case 'skill_transversal':
     case 'skill_relational':
     case 'knowledge':
-      return 2022;
+      return 2021;
     case 'capacity_cognitive':
-      return 2024;
+      return 2023;
     case 'horizon_job':
       return 2026;
     default:
@@ -105,70 +105,67 @@ export function extractNodeYear(node: AnyCognitiveNode): number {
 }
 
 /**
- * Année d'apparition dans le graphe temporel.
- * Cascade : vécu → tâches → compétences → capacités → horizons.
- * Un léger décalage intra-année évite que tous les ronds d'une même année explosent d'un coup.
+ * Propage chronologiquement les années d'implantation/acquisition réelles
+ * le long des relations du graphe (ex: Diplôme/Formation -> Tâches/Modules -> Compétences validées -> Capacités -> Horizons).
  */
-export function computeAppearYears(nodes: AnyCognitiveNode[]): Map<string, number> {
-  const years = new Map<string, number>();
-  const byId = new Map(nodes.map((n) => [n.id, n]));
+export function computeChronologicalGraphYears(nodes: AnyCognitiveNode[], edges: GraphEdge[]): Map<string, number> {
+  const yearMap = new Map<string, number>();
 
-  for (const node of nodes) {
-    if (
-      node.category === 'task' ||
-      node.category === 'capacity_cognitive' ||
-      node.category === 'horizon_job'
-    ) {
-      continue;
+  // 1. Détection des années explicites sur les ancres (formations, expériences, projets, etc.)
+  nodes.forEach((node) => {
+    if ('startYear' in node && typeof (node as any).startYear === 'number') {
+      yearMap.set(node.id, (node as any).startYear);
+    } else if ('period' in node && typeof (node as any).period === 'string') {
+      const match = (node as any).period.match(/\b(20\d\d|19\d\d)\b/);
+      if (match) {
+        yearMap.set(node.id, parseInt(match[1], 10));
+      }
+    } else if ('year' in node && typeof (node as any).year === 'number') {
+      yearMap.set(node.id, (node as any).year);
+    } else if ('lastPracticedYear' in node && typeof (node as any).lastPracticedYear === 'number') {
+      yearMap.set(node.id, (node as any).lastPracticedYear);
     }
-    years.set(node.id, extractNodeYear(node));
-  }
+  });
 
-  for (const node of nodes) {
-    if (node.category !== 'task') continue;
-    const task = node as TaskNode;
-    const parent = byId.get(task.experienceId);
-    const parentYear = parent
-      ? (years.get(parent.id) ?? extractNodeYear(parent))
-      : extractNodeYear(node);
-    years.set(node.id, parentYear + 0.16);
-  }
+  // 2. Construction de la table d'adjacence
+  const adj = new Map<string, string[]>();
+  edges.forEach((edge) => {
+    if (!adj.has(edge.source)) adj.set(edge.source, []);
+    if (!adj.has(edge.target)) adj.set(edge.target, []);
+    adj.get(edge.source)!.push(edge.target);
+    adj.get(edge.target)!.push(edge.source);
+  });
 
-  for (const node of nodes) {
-    if (node.category !== 'capacity_cognitive') continue;
-    const cap = node as CapacityNode;
-    const skillYears = (cap.underlyingSkills || [])
-      .map((id) => years.get(id))
-      .filter((y): y is number => typeof y === 'number');
-    years.set(node.id, skillYears.length > 0 ? Math.max(...skillYears) + 0.28 : extractNodeYear(node));
-  }
+  // 3. Propagation multi-passes pour transmettre l'année des formations/expériences aux modules & compétences
+  for (let pass = 0; pass < 5; pass++) {
+    nodes.forEach((node) => {
+      const neighbors = adj.get(node.id) || [];
+      const neighborYears = neighbors
+        .map((nid) => yearMap.get(nid))
+        .filter((y): y is number => typeof y === 'number');
 
-  const knownYears = Array.from(years.values());
-  const fallbackHorizon = knownYears.length > 0 ? Math.max(...knownYears) + 0.35 : extractNodeYear(nodes[0] || ({ category: 'horizon_job' } as AnyCognitiveNode));
-
-  for (const node of nodes) {
-    if (node.category !== 'horizon_job') continue;
-    const job = node as HorizonJobNode;
-    const related = (job.matchingSkillIds || [])
-      .map((id) => years.get(id))
-      .filter((y): y is number => typeof y === 'number');
-    years.set(node.id, related.length > 0 ? Math.max(...related) + 0.42 : fallbackHorizon);
-  }
-
-  const buckets = new Map<number, string[]>();
-  for (const [id, year] of years) {
-    const key = Math.round(year);
-    const list = buckets.get(key) || [];
-    list.push(id);
-    buckets.set(key, list);
-  }
-  for (const ids of buckets.values()) {
-    ids.forEach((id, index) => {
-      years.set(id, (years.get(id) || 0) + index * 0.032);
+      if (neighborYears.length > 0) {
+        const minNeighborYear = Math.min(...neighborYears);
+        if (!yearMap.has(node.id)) {
+          yearMap.set(node.id, minNeighborYear);
+        } else {
+          // Pour les compétences transversales, si acquises plus tôt via une formation antérieure, garder la plus précoce
+          if (node.category.startsWith('skill_') || node.category === 'knowledge') {
+            yearMap.set(node.id, Math.min(yearMap.get(node.id)!, minNeighborYear));
+          }
+        }
+      }
     });
   }
 
-  return years;
+  // 4. Compléter les résiduels avec les années par défaut
+  nodes.forEach((node) => {
+    if (!yearMap.has(node.id)) {
+      yearMap.set(node.id, extractNodeYear(node));
+    }
+  });
+
+  return yearMap;
 }
 
 /**
