@@ -14,14 +14,16 @@ import {
 import { CognitiveProfile, HorizonJobNode } from '../types';
 import {
   COMPAT_META,
+  KIND_META,
   MetierCompat,
   MetierGraphNode,
+  MetierKind,
   ROME_DOMAIN_META,
   buildMetiersGraph
 } from '../utils/metiersGraphData';
 
 type DimensionMode = '2d' | 'proximity';
-type SourceKey = 'horizon' | 'suggestion';
+type SourceKey = 'exercised' | 'equivalent' | 'voisin' | 'horizon' | 'suggestion';
 
 interface SpatialNode {
   id: string;
@@ -42,7 +44,21 @@ interface MetiersGraphProps {
 }
 
 const ALL_COMPAT: MetierCompat[] = ['tres_forte', 'forte', 'moderee', 'explorer'];
-const ALL_SOURCES: SourceKey[] = ['horizon', 'suggestion'];
+const ALL_SOURCES: SourceKey[] = ['exercised', 'equivalent', 'voisin', 'horizon', 'suggestion'];
+const SOURCE_OF_KIND: Record<Exclude<MetierKind, 'domain'>, SourceKey> = {
+  exercised: 'exercised',
+  equivalent: 'equivalent',
+  voisin: 'voisin',
+  horizon: 'horizon',
+  suggestion: 'suggestion'
+};
+const SOURCE_STYLE: Record<SourceKey, string> = {
+  exercised: 'bg-orange-600 text-white font-semibold',
+  equivalent: 'bg-fuchsia-700 text-white font-semibold',
+  voisin: 'bg-teal-700 text-white font-semibold',
+  horizon: 'bg-sky-700 text-white font-semibold',
+  suggestion: 'bg-indigo-700 text-white font-semibold'
+};
 
 export const MetiersGraph: React.FC<MetiersGraphProps> = ({
   profile,
@@ -65,7 +81,7 @@ export const MetiersGraph: React.FC<MetiersGraphProps> = ({
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [graphFocusId, setGraphFocusId] = useState<string | null>(null);
 
-  const graph = useMemo(() => buildMetiersGraph(profile, 40), [profile]);
+  const graph = useMemo(() => buildMetiersGraph(profile, 90), [profile]);
   const { nodes, edges } = graph;
 
   const presentLetters = useMemo(
@@ -150,7 +166,7 @@ export const MetiersGraph: React.FC<MetiersGraphProps> = ({
       const prev = existing.get(node.id);
       const li = letterIndex.get(node.domainLetter) ?? 0;
       const angle = (li / Math.max(1, presentLetters.length)) * Math.PI * 2;
-      const hubDist = 210;
+      const hubDist = 260;
       let x = Math.cos(angle) * hubDist;
       let y = Math.sin(angle) * hubDist;
       let radius = 18;
@@ -164,7 +180,7 @@ export const MetiersGraph: React.FC<MetiersGraphProps> = ({
         const sd = 70 + (si % 4) * 18;
         x = Math.cos(angle) * hubDist + Math.cos(sa) * sd;
         y = Math.sin(angle) * hubDist + Math.sin(sa) * sd;
-        radius = 12 + Math.min(14, node.matchScore / 10);
+        radius = (node.kind === 'exercised' ? 16 : 12) + Math.min(14, node.matchScore / 10);
       }
 
       const proxX = node.kind === 'domain' ? -520 : (node.matchScore / 100 - 0.5) * 1100;
@@ -186,7 +202,7 @@ export const MetiersGraph: React.FC<MetiersGraphProps> = ({
   const jobVisible = useCallback(
     (node: MetierGraphNode) => {
       if (node.kind === 'domain') return true;
-      if (!sourceFilters.has(node.kind === 'horizon' ? 'horizon' : 'suggestion')) return false;
+      if (!sourceFilters.has(SOURCE_OF_KIND[node.kind])) return false;
       if (!compatFilters.has(node.compat)) return false;
       if (domainFilters.size > 0 && !domainFilters.has(node.domainLetter)) return false;
       if (searchQuery.trim()) {
@@ -307,8 +323,10 @@ export const MetiersGraph: React.FC<MetiersGraphProps> = ({
             const n1 = pMap.get(edge.source);
             const n2 = pMap.get(edge.target);
             if (!n1 || !n2) return;
-            const targetDist = edge.type === 'in_domain' ? 78 : 130;
-            const stiffness = edge.type === 'in_domain' ? 0.026 : 0.012;
+            const targetDist =
+              edge.type === 'equivalent' ? 52 : edge.type === 'voisin' ? 88 : edge.type === 'in_domain' ? 78 : 130;
+            const stiffness =
+              edge.type === 'equivalent' ? 0.04 : edge.type === 'voisin' ? 0.02 : edge.type === 'in_domain' ? 0.026 : 0.012;
             const dx = n2.x2d - n1.x2d;
             const dy = n2.y2d - n1.y2d;
             const dist = Math.hypot(dx, dy) || 1;
@@ -320,12 +338,12 @@ export const MetiersGraph: React.FC<MetiersGraphProps> = ({
           });
 
           pNodes.forEach((n) => {
-            n.vx -= n.x2d * 0.0032;
-            n.vy -= n.y2d * 0.0032;
+            n.vx -= n.x2d * 0.0038;
+            n.vy -= n.y2d * 0.0038;
             const d = Math.hypot(n.x2d, n.y2d);
-            if (d > 460) {
-              n.vx -= (n.x2d / d) * (d - 460) * 0.012;
-              n.vy -= (n.y2d / d) * (d - 460) * 0.012;
+            if (d > 560) {
+              n.vx -= (n.x2d / d) * (d - 560) * 0.012;
+              n.vy -= (n.y2d / d) * (d - 560) * 0.012;
             }
             n.vx *= 0.78;
             n.vy *= 0.78;
@@ -618,8 +636,8 @@ export const MetiersGraph: React.FC<MetiersGraphProps> = ({
       compatFilters.size === ALL_COMPAT.length &&
       sourceFilters.size === ALL_SOURCES.length;
     if (allOn) {
-      setSourceFilters(new Set<SourceKey>(['horizon']));
-      setCompatFilters(new Set<MetierCompat>(['tres_forte', 'forte']));
+      setSourceFilters(new Set<SourceKey>(['exercised', 'equivalent', 'voisin']));
+      setCompatFilters(new Set(ALL_COMPAT));
     } else {
       setDomainFilters(new Set(presentLetters));
       setCompatFilters(new Set(ALL_COMPAT));
@@ -631,7 +649,10 @@ export const MetiersGraph: React.FC<MetiersGraphProps> = ({
   const jobCount = nodes.filter((n) => n.kind !== 'domain').length;
   const focusedGraphNode = focusId ? nodeMap.get(focusId) : undefined;
   const canAdd =
-    focusedGraphNode?.kind === 'suggestion' &&
+    !!focusedGraphNode &&
+    (focusedGraphNode.kind === 'suggestion' ||
+      focusedGraphNode.kind === 'voisin' ||
+      focusedGraphNode.kind === 'equivalent') &&
     !!focusedGraphNode.horizon &&
     !!onAddHorizon &&
     !profile.nodes.some((n) => n.category === 'horizon_job' && (n as HorizonJobNode).romeCode === focusedGraphNode.romeCode);
@@ -762,14 +783,10 @@ export const MetiersGraph: React.FC<MetiersGraphProps> = ({
               id={`metiers-filter-src-${key}`}
               onClick={() => toggleSource(key)}
               className={`px-2.5 py-1 rounded-lg text-xs transition-all ${
-                active
-                  ? key === 'horizon'
-                    ? 'bg-orange-600 text-white font-semibold'
-                    : 'bg-sky-700 text-white font-semibold'
-                  : 'text-zinc-400 hover:text-zinc-200 opacity-60'
+                active ? SOURCE_STYLE[key] : 'text-zinc-400 hover:text-zinc-200 opacity-60'
               }`}
             >
-              {key === 'horizon' ? 'Mes horizons' : 'Suggestions'} ({count})
+              {KIND_META[key].filterLabel} ({count})
             </button>
           );
         })}
@@ -852,7 +869,7 @@ export const MetiersGraph: React.FC<MetiersGraphProps> = ({
             <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: hovered.color }} />
             <h4 className="text-xs font-bold text-white truncate">{hovered.name}</h4>
             <span className="ml-auto text-[10px] px-2 py-0.5 bg-zinc-800 text-zinc-400 rounded-md font-mono">
-              {hovered.kind === 'domain' ? 'Domaine' : hovered.kind === 'horizon' ? 'Mon horizon' : 'Suggestion'}
+              {hovered.kind === 'domain' ? 'Domaine' : KIND_META[hovered.kind].label}
             </span>
           </div>
           {hovered.kind !== 'domain' && (
@@ -860,6 +877,7 @@ export const MetiersGraph: React.FC<MetiersGraphProps> = ({
               {hovered.romeCode ? `ROME ${hovered.romeCode} · ` : ''}
               {hovered.domainLabel}
               {` · proximité ${hovered.matchScore}/100`}
+              {hovered.livedTitle && hovered.livedTitle !== hovered.name ? ` · lié à « ${hovered.livedTitle} »` : ''}
             </p>
           )}
           {hovered.matchingSkills.length > 0 && (

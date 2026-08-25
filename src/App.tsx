@@ -350,7 +350,7 @@ export default function App() {
               <div>
                 <h1 className="text-xl font-bold text-slate-900">Graphe des métiers</h1>
                 <p className="text-xs text-slate-500">
-                  Mêmes interactions que le graphe des compétences — données et filtres ROME : domaines, proximité, mes horizons vs suggestions.
+                  Tous les métiers que tu as exercés, les autres intitulés du même métier, les voisins ROME, et les passerelles moins attractives — reliés entre eux.
                 </p>
               </div>
               <div className="text-xs text-slate-600 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-xs flex items-center gap-2 self-start sm:self-auto">
