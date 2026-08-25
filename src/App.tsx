@@ -15,6 +15,7 @@ import { OnboardingModal } from './components/OnboardingModal';
 import { PsychologyAtlasView } from './components/PsychologyAtlasView';
 import { ExperimentStudio } from './components/ExperimentStudio';
 import { MetacogLoopView } from './components/MetacogLoopView';
+import { PsyRefView } from './components/PsyRefView';
 import { INITIAL_COGNITORIUM_PROFILE, PROFILES_PRESETS } from './data/initialData';
 import { 
   CognitiveProfile, 

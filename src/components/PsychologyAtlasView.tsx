@@ -1,6 +1,71 @@
 import React, { useMemo, useState } from 'react';
 import { BookOpen, ChevronRight, Quote, Search } from 'lucide-react';
 import { KEY_CITATIONS, PSYCHOLOGY_BRANCHES, PsyNode } from '../data/psychologyAtlas';
+import { CoverFlowCarousel, CarouselItem } from './ui/CoverFlowCarousel';
+import { AppActiveTab } from '../types';
+import coverMetacog from '../assets/images/cover-metacog.jpg';
+import coverAtlas from '../assets/images/cover-atlas.jpg';
+import coverLab from '../assets/images/cover-lab.jpg';
+import coverPsyref from '../assets/images/cover-psyref.jpg';
+import coverIcd from '../assets/images/cover-icd.jpg';
+import coverSrl from '../assets/images/cover-srl.jpg';
+
+const SAVOIR_CARDS: CarouselItem[] = [
+  {
+    id: 'atlas',
+    tag: '#Taxonomie',
+    titleLine1: 'Huit branches',
+    titleLine2: '— carte de la discipline',
+    desc: 'Du processus cognitif à l’I-O. Une ontologie de navigation, pas un diagnostic.',
+    img: coverAtlas,
+    ctaText: 'Parcourir l’arbre'
+  },
+  {
+    id: 'metacog',
+    tag: '#Métacognition',
+    titleLine1: 'Monitoring',
+    titleLine2: '— régulation & éducation',
+    desc: 'Flavell, Zimmerman, Dignath. La régulation prédit mieux que la seule connaissance.',
+    img: coverMetacog,
+    ctaText: 'Boucle SRL'
+  },
+  {
+    id: 'posters',
+    tag: '#Paradigmes',
+    titleLine1: 'Douze démos',
+    titleLine2: '— posters expérimentaux',
+    desc: 'Stroop, Wason, Loftus, n-back… VI, VD, DOI, cartouche de rigueur.',
+    img: coverLab,
+    ctaText: 'Ouvrir le labo'
+  },
+  {
+    id: 'psyref',
+    tag: '#PsyRef',
+    titleLine1: 'Sources réelles',
+    titleLine2: '— hiérarchie de preuves',
+    desc: 'Norme, synthèse, primaire, plateforme. DSM = Psychiatric Association.',
+    img: coverPsyref,
+    ctaText: 'Consulter PsyRef'
+  },
+  {
+    id: 'psyref',
+    tag: '#Clinique',
+    titleLine1: 'CIM-11 / DSM',
+    titleLine2: '— et la CIF',
+    desc: 'Troubles ≠ psychologie entière. API OMS versionnée. Fonctionnement via ICF.',
+    img: coverIcd,
+    ctaText: 'Nuances cliniques'
+  },
+  {
+    id: 'metacog',
+    tag: '#SRL',
+    titleLine1: 'Forethought',
+    titleLine2: '— performance — reflection',
+    desc: 'Garde-fou GenAI : planifier avant, évaluer après. Journal local.',
+    img: coverSrl,
+    ctaText: 'Entrer dans la boucle'
+  }
+];
 
 const COLOR: Record<string, { chip: string; bar: string; ring: string }> = {
   blue: { chip: 'bg-blue-50 text-blue-700 border-blue-200', bar: 'bg-blue-600', ring: 'hover:border-blue-400' },
@@ -48,7 +113,7 @@ const TreeNodes: React.FC<{ nodes: PsyNode[]; depth?: number }> = ({ nodes, dept
   );
 };
 
-export const PsychologyAtlasView: React.FC = () => {
+export const PsychologyAtlasView: React.FC<{ onNavigate?: (tab: AppActiveTab) => void }> = ({ onNavigate }) => {
   const [branchId, setBranchId] = useState(PSYCHOLOGY_BRANCHES[0].id);
   const [query, setQuery] = useState('');
   const branch = PSYCHOLOGY_BRANCHES.find((b) => b.id === branchId) ?? PSYCHOLOGY_BRANCHES[0];
@@ -64,6 +129,14 @@ export const PsychologyAtlasView: React.FC = () => {
 
   return (
     <div className="space-y-5 pb-12">
+      <CoverFlowCarousel
+        items={SAVOIR_CARDS}
+        sectionLabel="Savoirs Cognitorium"
+        onCtaClick={(item) => {
+          if (item.id && onNavigate) onNavigate(item.id as AppActiveTab);
+        }}
+      />
+
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs relative overflow-hidden">
         <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
         <div className="relative z-10 space-y-2">

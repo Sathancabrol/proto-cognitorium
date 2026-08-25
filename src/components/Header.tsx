@@ -50,7 +50,8 @@ const SECTION_VIEWS: Record<CognitoriumSection, { tab: AppActiveTab; label: stri
   savoirs: [
     { tab: 'atlas', label: 'Arborescence', testId: 'tab-btn-atlas' },
     { tab: 'posters', label: 'Posters', testId: 'tab-btn-posters' },
-    { tab: 'metacog', label: 'Boucle SRL', testId: 'tab-btn-metacog' }
+    { tab: 'metacog', label: 'Boucle SRL', testId: 'tab-btn-metacog' },
+    { tab: 'psyref', label: 'PsyRef', testId: 'tab-btn-psyref' }
   ]
 };
 
@@ -74,7 +75,8 @@ const VIEW_ACTIVE_COLORS: Record<AppActiveTab, string> = {
   decay: 'bg-indigo-600 text-white',
   atlas: 'bg-violet-600 text-white',
   posters: 'bg-amber-600 text-white',
-  metacog: 'bg-violet-700 text-white'
+  metacog: 'bg-violet-700 text-white',
+  psyref: 'bg-slate-900 text-amber-200'
 };
 
 interface HeaderProps {
