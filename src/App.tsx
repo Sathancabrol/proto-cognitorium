@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Header } from './components/Header';
 import { DashboardView } from './components/DashboardView';
 import { NetworkGraph } from './components/NetworkGraph';
+import { TemporalNetworkGraph } from './components/TemporalNetworkGraph';
 import { TreeView } from './components/TreeView';
 import { TableView } from './components/TableView';
 import { HorizonsBridge } from './components/HorizonsBridge';
@@ -273,6 +274,34 @@ export default function App() {
               onSelectNode={handleSelectNode}
               simulationYear={simulationYear}
               onAddExperienceClick={() => setIsDistillerOpen(true)}
+            />
+          </div>
+        )}
+
+        {/* VIEW 1b: TEMPORAL NETWORK — nœuds et liens s'activent dans le temps */}
+        {activeTab === 'temporal' && (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h1 className="text-xl font-bold text-slate-900">
+                  Graphe Temporel du Réseau Cognitif
+                </h1>
+                <p className="text-xs text-slate-500">
+                  Le réseau se construit année après année : les ronds s'allument, les liens se créent.
+                </p>
+              </div>
+              <div className="text-xs text-slate-600 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-xs flex items-center gap-2 self-start sm:self-auto">
+                <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
+                <span>Lecture chronologique · {profile.nodes.length} nœuds</span>
+              </div>
+            </div>
+
+            <TemporalNetworkGraph
+              nodes={profile.nodes}
+              edges={profile.edges}
+              selectedNodeId={selectedNode?.id || null}
+              onSelectNode={handleSelectNode}
+              simulationYear={simulationYear}
             />
           </div>
         )}

@@ -30,7 +30,8 @@ const SECTION_VIEWS: Record<CognitoriumSection, { tab: AppActiveTab; label: stri
   ],
   experiences: [
     { tab: 'tree', label: 'Arbre & Tâches', testId: 'tab-btn-tree' },
-    { tab: 'network', label: 'Graphe Réseau', testId: 'tab-btn-network' }
+    { tab: 'network', label: 'Graphe Réseau', testId: 'tab-btn-network' },
+    { tab: 'temporal', label: 'Graphe Temporel', testId: 'tab-btn-temporal' }
   ],
   competences: [
     { tab: 'table', label: 'Tableau', testId: 'tab-btn-table' },
@@ -41,7 +42,8 @@ const SECTION_VIEWS: Record<CognitoriumSection, { tab: AppActiveTab; label: stri
     { tab: 'horizons', label: 'Horizons ROME', testId: 'tab-btn-horizons' }
   ],
   evolution: [
-    { tab: 'decay', label: 'Vitalité & Temps', testId: 'tab-btn-decay' }
+    { tab: 'decay', label: 'Vitalité & Temps', testId: 'tab-btn-decay' },
+    { tab: 'temporal', label: 'Graphe Temporel', testId: 'tab-btn-temporal-evolution' }
   ]
 };
 
@@ -58,6 +60,7 @@ const VIEW_ACTIVE_COLORS: Record<AppActiveTab, string> = {
   signature: 'bg-pink-600 text-white',
   tree: 'bg-emerald-600 text-white',
   network: 'bg-blue-600 text-white',
+  temporal: 'bg-cyan-600 text-white',
   table: 'bg-cyan-600 text-white',
   horizons: 'bg-orange-600 text-white',
   decay: 'bg-indigo-600 text-white'
