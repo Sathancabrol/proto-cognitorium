@@ -1,6 +1,6 @@
 import {
+  ALL_SAVOIRS_RESOURCES,
   RESOURCE_COLLECTIONS,
-  SAVOIRS_RESOURCES,
   SavoirsResource
 } from '../data/savoirsResources';
 
@@ -48,13 +48,47 @@ const INTENTS: { keys: string[]; collections: string[]; kinds: SavoirsResource['
       'opensesame',
       'protocole'
     ],
-    collections: ['outils', 'methodes', 'concepts'],
+    collections: ['outils', 'outils-eval', 'outils-data', 'methodes', 'concepts'],
     kinds: ['tool', 'platform']
   },
   {
+    keys: [
+      'evaluation',
+      'cognitiv',
+      'batterie',
+      'neuropsy',
+      'wais',
+      'moca',
+      'stroop',
+      'nback',
+      'cantab',
+      'attention',
+      'memoire'
+    ],
+    collections: ['outils-eval', 'tests'],
+    kinds: ['tool', 'test']
+  },
+  {
+    keys: [
+      'donnee',
+      'data',
+      'stat',
+      'analyse',
+      'eeg',
+      'fmri',
+      'pipeline',
+      'preprocessing',
+      'jasp',
+      'python',
+      'matlab'
+    ],
+    collections: ['outils-data', 'outils', 'methodes'],
+    kinds: ['tool']
+  },
+  {
     keys: ['test', 'tests', 'questionnaire', 'inventaire', 'echelle', 'scale', 'psychometr', 'sondage'],
-    collections: ['tests'],
-    kinds: ['test']
+    collections: ['tests', 'outils-eval'],
+    kinds: ['test', 'tool']
   },
   {
     keys: ['concept', 'paradigme', 'theorie', 'biais', 'modele'],
@@ -90,7 +124,7 @@ export function searchResources(query: string, limit = 24): RankedResource[] {
   }
 
   const ranked: RankedResource[] = [];
-  for (const item of SAVOIRS_RESOURCES) {
+  for (const item of ALL_SAVOIRS_RESOURCES) {
     const col = RESOURCE_COLLECTIONS.find((c) => c.id === item.collection);
     const hay = norm(
       [
@@ -124,6 +158,9 @@ export function searchResources(query: string, limit = 24): RankedResource[] {
 
 export const SEARCH_EXAMPLES = [
   'outil pour une expérimentation',
+  'évaluation cognitive',
+  'traitement EEG',
+  'MoCA screening',
   'test de personnalité open source',
   'questionnaire métacognition',
   'paradigme Stroop',

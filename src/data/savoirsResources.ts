@@ -1,10 +1,15 @@
+import { OUTILS_DATA, OUTILS_EVAL } from './savoirsOutilsCatalog';
+
 export type ResourceKind = 'oer' | 'classic' | 'platform' | 'synthesis' | 'norm' | 'tool' | 'test' | 'concept';
 export type ResourceLegal = 'oer' | 'institutionnel' | 'commercial-ne-pas-telecharger';
+
+export type ResourceLayer = 'lecture' | 'outils';
 
 export interface ResourceCollection {
   id: string;
   label: string;
   blurb: string;
+  layer?: ResourceLayer;
 }
 
 export interface SavoirsResource {
@@ -85,7 +90,20 @@ export const RESOURCE_COLLECTIONS: ResourceCollection[] = [
   {
     id: 'outils',
     label: 'Outils d’expérimentation',
-    blurb: 'jsPsych, PsychoPy, PsyToolkit, OpenSesame, JATOS… pour construire, héberger et analyser une expérience.'
+    blurb: 'jsPsych, PsychoPy, PsyToolkit, OpenSesame, JATOS… pour construire, héberger et analyser une expérience.',
+    layer: 'outils'
+  },
+  {
+    id: 'outils-eval',
+    label: 'Évaluation cognitive',
+    blurb: 'Batteries et tâches (NIH Toolbox, CANTAB, MoCA, Stroop, n-back, WAIS…). Documentaire, jamais un diagnostic auto.',
+    layer: 'outils'
+  },
+  {
+    id: 'outils-data',
+    label: 'Traitement de données',
+    blurb: 'Stats, EEG/IRM, psychophysique, pipelines comportementaux (R, JASP, MNE, fMRIPrep, HDDM…).',
+    layer: 'outils'
   },
   {
     id: 'tests',
@@ -1359,3 +1377,21 @@ export const SAVOIRS_RESOURCES: SavoirsResource[] = [
     summary: 'Croiser avec le graphe métiers ROME. O*NET Interest Profiler est public.'
   }
 ];
+
+export const ALL_SAVOIRS_RESOURCES: SavoirsResource[] = [
+  ...SAVOIRS_RESOURCES,
+  ...OUTILS_EVAL,
+  ...OUTILS_DATA
+];
+
+export function layerOfCollection(id: string): ResourceLayer {
+  return RESOURCE_COLLECTIONS.find((c) => c.id === id)?.layer === 'outils' ? 'outils' : 'lecture';
+}
+
+export function collectionsForLayer(layer: ResourceLayer): ResourceCollection[] {
+  return RESOURCE_COLLECTIONS.filter((c) => layerOfCollection(c.id) === layer);
+}
+
+export function resourcesOf(collectionId: string): SavoirsResource[] {
+  return ALL_SAVOIRS_RESOURCES.filter((r) => r.collection === collectionId);
+}

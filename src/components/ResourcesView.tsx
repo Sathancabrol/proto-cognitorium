@@ -1,15 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, BookOpen, ExternalLink, Search } from 'lucide-react';
+import { AlertTriangle, BookOpen, ExternalLink, Search, Wrench } from 'lucide-react';
 import { CoverFlowCarousel, CarouselItem } from './ui/CoverFlowCarousel';
 import { ViewModeBar, SavoirsViewMode } from './savoirs/ViewModeBar';
 import { DisciplineGraph } from './atlas/DisciplineGraph';
 import { PsyBranch } from '../data/psychologyAtlas';
 import { AppActiveTab } from '../types';
 import {
+  ALL_SAVOIRS_RESOURCES,
   KIND_LABEL,
   RESOURCE_COLLECTIONS,
-  SAVOIRS_RESOURCES,
-  SavoirsResource
+  ResourceLayer,
+  SavoirsResource,
+  collectionsForLayer,
+  layerOfCollection,
+  resourcesOf
 } from '../data/savoirsResources';
 import { LEGAL_RULE } from '../data/psyRefLibrary';
 import { SEARCH_EXAMPLES, searchResources } from '../utils/resourceSearch';
@@ -46,10 +50,13 @@ const ResourceFiche: React.FC<{
 }> = ({ item, onOpenPoster, onNavigate }) => {
   const doiUrl = item.doi ? `https://doi.org/${item.doi}` : undefined;
   const col = RESOURCE_COLLECTIONS.find((c) => c.id === item.collection);
+  const isOutil = layerOfCollection(item.collection) === 'outils';
   return (
     <article id="ressources-fiche" className="rounded-3xl overflow-hidden border border-slate-800 bg-[#0f172a] text-slate-100 shadow-xl">
       <header className="px-5 sm:px-8 pt-6 pb-4 border-b border-white/10 space-y-2">
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-300">Fiche ressource</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-300">
+          {isOutil ? 'Fiche outil' : 'Fiche ressource'}
+        </p>
         <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight">{item.title}</h2>
         <p className="text-sm text-slate-300">{item.subtitle}</p>
         <p className="text-xs text-slate-400">
@@ -92,7 +99,7 @@ const ResourceFiche: React.FC<{
           </p>
         )}
         {item.legal === 'commercial-ne-pas-telecharger' && (
-          <p className="text-[11px] text-rose-300">Ouvrage / article commercial — ne pas télécharger ni héberger. Accès éditeur / BU uniquement.</p>
+          <p className="text-[11px] text-rose-300">Ouvrage / article / test commercial — ne pas télécharger ni héberger. Accès éditeur / BU uniquement.</p>
         )}
         <div className="flex flex-wrap gap-2 pt-1">
           {item.posterId && (
@@ -122,7 +129,7 @@ const ResourceFiche: React.FC<{
               Boucle SRL
             </button>
           )}
-          {item.collection === 'outils' && (
+          {isOutil && (
             <button
               type="button"
               onClick={() => onNavigate?.('posters')}
@@ -137,22 +144,24 @@ const ResourceFiche: React.FC<{
   );
 };
 
-const RESOURCE_BRANCHES: PsyBranch[] = RESOURCE_COLLECTIONS.map((c) => ({
-  id: c.id,
-  title: c.label,
-  object: c.blurb,
-  color: 'slate',
-  accent: 'from-slate-700 to-slate-900',
-  trees: [
-    {
-      title: 'Documents',
-      children: SAVOIRS_RESOURCES.filter((r) => r.collection === c.id).map((r) => ({
-        id: r.id,
-        label: r.title
-      }))
-    }
-  ]
-}));
+function branchesForLayer(layer: ResourceLayer): PsyBranch[] {
+  return collectionsForLayer(layer).map((c) => ({
+    id: c.id,
+    title: c.label,
+    object: c.blurb,
+    color: layer === 'outils' ? 'teal' : 'slate',
+    accent: layer === 'outils' ? 'from-teal-700 to-slate-900' : 'from-slate-700 to-slate-900',
+    trees: [
+      {
+        title: layer === 'outils' ? 'Outils' : 'Lectures',
+        children: resourcesOf(c.id).map((r) => ({
+          id: r.id,
+          label: r.title
+        }))
+      }
+    ]
+  }));
+}
 
 export const ResourcesView: React.FC<ResourcesViewProps> = ({
   focusId,
@@ -164,22 +173,44 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
   const [picked, setPicked] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [submitted, setSubmitted] = useState('');
+  const [layer, setLayer] = useState<ResourceLayer>('lecture');
+
+  const layerCols = useMemo(() => collectionsForLayer(layer), [layer]);
+  const layerItems = useMemo(
+    () => ALL_SAVOIRS_RESOURCES.filter((r) => layerOfCollection(r.collection) === layer),
+    [layer]
+  );
+  const graphBranches = useMemo(() => branchesForLayer(layer), [layer]);
 
   useEffect(() => {
     if (!focusId) return;
-    const r = SAVOIRS_RESOURCES.find((x) => x.id === focusId);
+    const r = ALL_SAVOIRS_RESOURCES.find((x) => x.id === focusId);
     if (r) {
+      setLayer(layerOfCollection(r.collection));
       setCoverCol(r.collection);
       setPicked(r.id);
     }
   }, [focusId]);
 
   const pickedItem = useMemo(
-    () => SAVOIRS_RESOURCES.find((r) => r.id === picked) || null,
+    () => ALL_SAVOIRS_RESOURCES.find((r) => r.id === picked) || null,
     [picked]
   );
 
   const hits = useMemo(() => searchResources(submitted, 28), [submitted]);
+
+  const openLayer = (next: ResourceLayer) => {
+    setLayer(next);
+    setCoverCol((cur) => (cur && layerOfCollection(cur) === next ? cur : null));
+  };
+
+  const openItem = (id: string) => {
+    const r = ALL_SAVOIRS_RESOURCES.find((x) => x.id === id);
+    if (!r) return;
+    setPicked(r.id);
+    setCoverCol(r.collection);
+    setLayer(layerOfCollection(r.collection));
+  };
 
   const runSearch = (q: string) => {
     const next = q.trim();
@@ -187,9 +218,32 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
     setSubmitted(next);
     if (next.length >= 2) {
       const first = searchResources(next, 1)[0];
-      if (first) setPicked(first.item.id);
+      if (first) openItem(first.item.id);
     }
   };
+
+  const coverItems: CarouselItem[] = coverCol
+    ? resourcesOf(coverCol).map(
+        (r): CarouselItem => ({
+          id: r.id,
+          tag: KIND_LABEL[r.kind],
+          titleLine1: r.title.length > 42 ? r.title.slice(0, 40) + '…' : r.title,
+          desc: `${r.authors} (${r.year})`,
+          img: ART[RESOURCE_COLLECTIONS.findIndex((c) => c.id === r.collection) % ART.length],
+          tone: KIND_TONE[r.kind],
+          ctaText: 'Voir la fiche'
+        })
+      )
+    : layerCols.map(
+        (c, i): CarouselItem => ({
+          id: c.id,
+          tag: layer === 'outils' ? '#Outils' : '#Dossier',
+          titleLine1: c.label,
+          desc: `${resourcesOf(c.id).length} ressources · ${c.blurb}`,
+          img: ART[i % ART.length],
+          ctaText: 'Ouvrir'
+        })
+      );
 
   return (
     <div className="space-y-5 pb-12">
@@ -198,13 +252,62 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
           <span className="px-3 py-1 bg-violet-50 text-violet-700 text-xs font-bold rounded-full border border-violet-200">
             Ressources
           </span>
-          <span className="text-[11px] text-slate-400">OER d’abord · classiques chez l’éditeur</span>
+          <span className="text-[11px] text-slate-400">
+            {layer === 'outils' ? 'Panorama documentaire · pas de cotation' : 'OER d’abord · classiques chez l’éditeur'}
+          </span>
         </div>
-        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Carte de lecture</h1>
+
+        <div
+          className="inline-flex p-1 rounded-2xl bg-slate-100 border border-slate-200"
+          role="tablist"
+          aria-label="Niveau Ressources"
+        >
+          <button
+            id="ressources-layer-lecture"
+            type="button"
+            role="tab"
+            aria-selected={layer === 'lecture'}
+            onClick={() => openLayer('lecture')}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold ${
+              layer === 'lecture' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'
+            }`}
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            Lectures
+          </button>
+          <button
+            id="ressources-layer-outils"
+            type="button"
+            role="tab"
+            aria-selected={layer === 'outils'}
+            onClick={() => openLayer('outils')}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold ${
+              layer === 'outils' ? 'bg-white text-teal-800 shadow-sm' : 'text-slate-500'
+            }`}
+          >
+            <Wrench className="w-3.5 h-3.5" />
+            Outils
+          </button>
+        </div>
+
+        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+          {layer === 'outils' ? 'Outils — évaluation & données' : 'Carte de lecture'}
+        </h1>
         <p className="text-sm text-slate-600 max-w-3xl leading-relaxed">
-          Demande en langage naturel : « un outil pour faire une expérimentation », « test de
-          personnalité », « paradigme Stroop ». Les outils et questionnaires s’ajoutent aux dossiers
-          OER / classiques. Référence reste la hiérarchie des preuves.
+          {layer === 'outils' ? (
+            <>
+              Niveau connecté à Ressources : batteries et tâches d’évaluation cognitive, puis
+              traitement de données (stats, EEG/IRM, physio, psychophysique). Panorama documentaire —
+              pas une liste exhaustive de chaque SKU éditeur, jamais un diagnostic ni une cotation
+              dans Cognitorium.
+            </>
+          ) : (
+            <>
+              Demande en langage naturel : « un outil pour faire une expérimentation », « test de
+              personnalité », « paradigme Stroop ». Passe sur <strong>Outils</strong> pour l’évaluation
+              cognitive et le traitement de données. Référence reste la hiérarchie des preuves.
+            </>
+          )}
         </p>
         <form
           className="flex flex-col sm:flex-row gap-2"
@@ -219,7 +322,7 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
               id="ressources-search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Ex. outil pour une expérimentation, test métacognition, jsPsych…"
+              placeholder="Ex. évaluation cognitive, EEG, MoCA, jsPsych…"
               className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500"
             />
           </div>
@@ -264,17 +367,14 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
             </button>
           </div>
           {hits.length === 0 && (
-            <p className="text-xs text-slate-500">Rien de correspondant. Essaie « outil », « test », « Stroop », « jsPsych ».</p>
+            <p className="text-xs text-slate-500">Rien de correspondant. Essaie « outil », « MoCA », « EEG », « Stroop ».</p>
           )}
           <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {hits.map(({ item, score }) => (
               <li key={item.id}>
                 <button
                   type="button"
-                  onClick={() => {
-                    setPicked(item.id);
-                    setCoverCol(item.collection);
-                  }}
+                  onClick={() => openItem(item.id)}
                   className={`w-full text-left rounded-2xl border px-3 py-2.5 ${
                     picked === item.id ? 'border-violet-500 bg-violet-50' : 'border-slate-200 hover:border-violet-300'
                   }`}
@@ -284,6 +384,9 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
                       {KIND_LABEL[item.kind]}
                     </span>
                     <span className="text-[10px] text-slate-400">{item.collection}</span>
+                    {layerOfCollection(item.collection) === 'outils' && (
+                      <span className="text-[10px] font-bold text-teal-700">outils</span>
+                    )}
                   </div>
                   <p className="text-sm font-bold text-slate-900 mt-0.5">{item.title}</p>
                   <p className="text-[11px] text-slate-500 line-clamp-2">{item.subtitle}</p>
@@ -297,41 +400,24 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
 
       {mode === 'coverflow' && (
         <CoverFlowCarousel
-          items={
+          items={coverItems}
+          sectionLabel={
             coverCol
-              ? SAVOIRS_RESOURCES.filter((r) => r.collection === coverCol).map(
-                  (r): CarouselItem => ({
-                    id: r.id,
-                    tag: KIND_LABEL[r.kind],
-                    titleLine1: r.title.length > 42 ? r.title.slice(0, 40) + '…' : r.title,
-                    desc: `${r.authors} (${r.year})`,
-                    img: ART[RESOURCE_COLLECTIONS.findIndex((c) => c.id === r.collection) % ART.length],
-                    tone: KIND_TONE[r.kind],
-                    ctaText: 'Voir la fiche'
-                  })
-                )
-              : RESOURCE_COLLECTIONS.map(
-                  (c, i): CarouselItem => ({
-                    id: c.id,
-                    tag: '#Dossier',
-                    titleLine1: c.label,
-                    desc: `${SAVOIRS_RESOURCES.filter((r) => r.collection === c.id).length} ressources · ${c.blurb}`,
-                    img: ART[i % ART.length],
-                    ctaText: 'Ouvrir'
-                  })
-                )
+              ? RESOURCE_COLLECTIONS.find((c) => c.id === coverCol)?.label
+              : layer === 'outils'
+                ? 'Choisir une famille d’outils'
+                : 'Choisir un dossier'
           }
-          sectionLabel={coverCol ? RESOURCE_COLLECTIONS.find((c) => c.id === coverCol)?.label : 'Choisir un dossier'}
           autoplay={false}
           onBack={coverCol ? () => setCoverCol(null) : undefined}
-          backLabel="Tous les dossiers"
+          backLabel={layer === 'outils' ? 'Toutes les familles' : 'Tous les dossiers'}
           onCtaClick={(item) => {
             if (!item.id) return;
             if (!coverCol) {
               setCoverCol(item.id);
               return;
             }
-            setPicked(item.id);
+            openItem(item.id);
           }}
         />
       )}
@@ -340,18 +426,23 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
         <div className="bg-white rounded-3xl border border-slate-200 p-6 space-y-5">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-slate-400">Affiche</p>
-            <h2 className="text-3xl font-black tracking-tight text-slate-900">Ressources</h2>
+            <h2 className="text-3xl font-black tracking-tight text-slate-900">
+              {layer === 'outils' ? 'Outils' : 'Ressources'}
+            </h2>
+            <p className="text-[12px] text-slate-500 mt-1">
+              {layerItems.length} entrée{layerItems.length > 1 ? 's' : ''} dans ce niveau
+            </p>
           </div>
-          {RESOURCE_COLLECTIONS.map((c) => (
+          {layerCols.map((c) => (
             <div key={c.id}>
               <h3 className="text-lg font-black">{c.label}</h3>
               <p className="text-[11px] text-slate-500 mb-1">{c.blurb}</p>
               <ul className="space-y-0.5">
-                {SAVOIRS_RESOURCES.filter((r) => r.collection === c.id).map((r) => (
+                {resourcesOf(c.id).map((r) => (
                   <li key={r.id}>
                     <button
                       type="button"
-                      onClick={() => setPicked(r.id)}
+                      onClick={() => openItem(r.id)}
                       className={`text-left text-sm py-0.5 ${
                         picked === r.id ? 'text-violet-800 font-bold' : 'text-slate-700 hover:text-violet-800'
                       }`}
@@ -368,15 +459,19 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
 
       {mode === 'graphe' && (
         <DisciplineGraph
-          branches={RESOURCE_BRANCHES}
+          branches={graphBranches}
           selectedId={picked}
           onSelect={(nid) => {
-            const r = SAVOIRS_RESOURCES.find((x) => x.id === nid);
-            if (r) setPicked(r.id);
+            const r = ALL_SAVOIRS_RESOURCES.find((x) => x.id === nid);
+            if (r) openItem(r.id);
           }}
-          rootId="res-root"
-          rootLabel="Ressources"
-          caption="Graphe des dossiers de lecture — pas le graphe des compétences, pas l’atlas entier"
+          rootId={layer === 'outils' ? 'res-outils' : 'res-root'}
+          rootLabel={layer === 'outils' ? 'Outils' : 'Ressources'}
+          caption={
+            layer === 'outils'
+              ? 'Graphe des familles d’outils — pas le graphe des compétences, pas l’atlas entier'
+              : 'Graphe des dossiers de lecture — pas le graphe des compétences, pas l’atlas entier'
+          }
         />
       )}
 
@@ -387,12 +482,14 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
       <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-950 leading-relaxed flex gap-2">
         <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
         {LEGAL_RULE} Citations ≈ influence. Niveau 5 jamais auto-déduit.
+        {layer === 'outils' && ' Tests cliniques = documentaire, jamais cotés ici.'}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {RESOURCE_COLLECTIONS.map((c) => {
-          const n = SAVOIRS_RESOURCES.filter((r) => r.collection === c.id).length;
-          const oer = SAVOIRS_RESOURCES.filter((r) => r.collection === c.id && r.legal === 'oer').length;
+        {layerCols.map((c) => {
+          const items = resourcesOf(c.id);
+          const n = items.length;
+          const oer = items.filter((r) => r.legal === 'oer').length;
           return (
             <button
               key={c.id}
@@ -404,7 +501,11 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
               className="text-left bg-white border border-slate-200 rounded-2xl p-4 hover:border-violet-400 transition-colors"
             >
               <div className="flex items-center gap-2 mb-1">
-                <BookOpen className="w-3.5 h-3.5 text-violet-600" />
+                {layer === 'outils' ? (
+                  <Wrench className="w-3.5 h-3.5 text-teal-700" />
+                ) : (
+                  <BookOpen className="w-3.5 h-3.5 text-violet-600" />
+                )}
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                   {n} · {oer} OER
                 </span>
