@@ -345,7 +345,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
             ) : (
               <p className="text-[11px] leading-relaxed text-indigo-100">
-                ✅ Aucun écart critique détect�ns prioritaires. Vérifiez la vitalité de vos compétences ou explorez de nouveaux métiers dans « Mes possibilités ».
+                ✅ Aucun écart critique détecté sur tes compétences prioritaires. Vérifie la vitalité de tes compétences ou explore de nouveaux métiers dans « Mes possibilités ».
               </p>
             )}
           </div>

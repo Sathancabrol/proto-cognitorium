@@ -1,0 +1,237 @@
+
+<h2 class="sr-only">Cognitarium — an interactive skill graph where nodes represent skills grouped by type (core, advanced, soft, meta), connected by weighted edges. Click a node to highlight its connections.</h2>
+
+<style>
+#cog-wrap {
+  position: relative;
+  width: 100%;
+  height: 500px;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 0.5px solid var(--border);
+  background: var(--surface-0);
+}
+#cog-top {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  background: var(--surface-1);
+  border-bottom: 0.5px solid var(--border);
+  z-index: 10;
+  border-radius: 12px 12px 0 0;
+}
+#cog-title { font-size: 13px; font-weight: 500; color: var(--text-secondary); letter-spacing: 0.5px; }
+#cog-stats { font-size: 12px; color: var(--text-muted); }
+#cog-svg { position: absolute; top: 44px; left: 0; width: 100%; height: calc(100% - 44px - 120px); }
+#cog-panel {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 120px;
+  padding: 10px 16px;
+  background: var(--surface-1);
+  border-top: 0.5px solid var(--border);
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+#cog-info { flex: 1; min-width: 0; }
+#cog-name { font-size: 14px; font-weight: 500; color: var(--text-primary); margin: 0 0 4px; }
+#cog-connected { font-size: 12px; color: var(--text-muted); }
+#cog-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.cog-tag {
+  font-size: 11px; padding: 2px 8px; border-radius: var(--radius);
+  color: var(--text-accent); background: var(--bg-accent); border: 0.5px solid var(--border-accent);
+}
+.cog-tag.soft { color: var(--text-success); background: var(--bg-success); border-color: var(--border-success); }
+.cog-tag.meta { color: var(--text-warning); background: var(--bg-warning); border-color: var(--border-warning); }
+.cog-tag.adv  { color: var(--text-pro);     background: var(--bg-pro);     border-color: var(--border-pro); }
+#cog-legend { display: flex; flex-direction: column; gap: 5px; font-size: 11px; color: var(--text-secondary); justify-content: center; }
+.leg-row { display: flex; align-items: center; gap: 6px; }
+.leg-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.leg-dot.core { background: #378ADD; }
+.leg-dot.adv  { background: #D4537E; }
+.leg-dot.soft { background: #639922; }
+.leg-dot.meta { background: #BA7517; }
+#cog-reset {
+  font-size: 12px;
+  color: var(--text-accent);
+  background: none;
+  border: 0.5px solid var(--border-accent);
+  border-radius: var(--radius);
+  padding: 4px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  align-self: flex-end;
+}
+#cog-reset:hover { background: var(--bg-accent); }
+</style>
+
+<div id="cog-wrap">
+  <div id="cog-top">
+    <span id="cog-title">COGNITARIUM — Skill graph</span>
+    <span id="cog-stats">10 nodes · 9 edges</span>
+  </div>
+  <svg id="cog-svg"></svg>
+  <div id="cog-panel">
+    <div id="cog-info">
+      <div id="cog-name">Select a skill</div>
+      <div id="cog-connected">Click any node to explore its connections</div>
+      <div id="cog-tags"></div>
+    </div>
+    <div id="cog-legend">
+      <div class="leg-row"><span class="leg-dot core"></span> Core</div>
+      <div class="leg-row"><span class="leg-dot adv"></span> Advanced</div>
+      <div class="leg-row"><span class="leg-dot soft"></span> Soft</div>
+      <div class="leg-row"><span class="leg-dot meta"></span> Meta</div>
+    </div>
+    <button id="cog-reset" onclick="resetCog()">Reset</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script>
+const nodes = [
+  {id:"python", group:"core"},
+  {id:"sql",    group:"core"},
+  {id:"stats",  group:"core"},
+  {id:"analysis",group:"core"},
+  {id:"ml",     group:"advanced"},
+  {id:"math",   group:"core"},
+  {id:"dataviz",group:"advanced"},
+  {id:"comm",   group:"soft"},
+  {id:"pm",     group:"soft"},
+  {id:"logic",  group:"meta"}
+];
+
+const links = [
+  {source:"python",  target:"analysis", w:1},
+  {source:"sql",     target:"analysis", w:1},
+  {source:"stats",   target:"analysis", w:1},
+  {source:"analysis",target:"ml",       w:2},
+  {source:"math",    target:"ml",       w:2},
+  {source:"dataviz", target:"analysis", w:1},
+  {source:"logic",   target:"math",     w:2},
+  {source:"comm",    target:"pm",       w:1},
+  {source:"pm",      target:"analysis", w:1}
+];
+
+const colorMap = {
+  core:     "#378ADD",
+  advanced: "#D4537E",
+  soft:     "#639922",
+  meta:     "#BA7517"
+};
+
+const radiusMap = { core: 18, advanced: 14, soft: 14, meta: 14 };
+
+const descriptions = {
+  python:   "A core programming language powering data workflows.",
+  sql:      "Query language for structured databases.",
+  stats:    "Statistical foundations for inference and modeling.",
+  analysis: "Central hub: turning raw data into insights.",
+  ml:       "Machine learning — building predictive models.",
+  math:     "Mathematical backbone for ML and logic.",
+  dataviz:  "Visual communication of data patterns.",
+  comm:     "Communication skills bridging teams.",
+  pm:       "Project management: planning and coordination.",
+  logic:    "Meta-skill: reasoning and problem structuring.",
+};
+
+const el = document.getElementById('cog-svg');
+const wrap = document.getElementById('cog-wrap');
+
+function getSize() {
+  return { w: wrap.clientWidth, h: wrap.clientHeight - 44 - 120 };
+}
+
+let { w, h } = getSize();
+
+const svg = d3.select(el)
+  .attr("width", w)
+  .attr("height", h);
+
+const sim = d3.forceSimulation(nodes)
+  .force("link", d3.forceLink(links).id(d => d.id).distance(100))
+  .force("charge", d3.forceManyBody().strength(-320))
+  .force("center", d3.forceCenter(w / 2, h / 2))
+  .force("collision", d3.forceCollide(28));
+
+const link = svg.selectAll(".cg-link")
+  .data(links).enter()
+  .append("line")
+  .attr("class","cg-link")
+  .attr("stroke", d => d.w > 1 ? "#378ADD" : "var(--border-strong)")
+  .attr("stroke-width", d => d.w > 1 ? 1.5 : 0.8)
+  .attr("stroke-opacity", d => d.w > 1 ? 0.55 : 0.4);
+
+const node = svg.selectAll(".cg-node")
+  .data(nodes).enter()
+  .append("g")
+  .attr("class","cg-node")
+  .style("cursor","pointer")
+  .on("click", focusNode)
+  .call(d3.drag()
+    .on("start", (e,d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
+    .on("drag",  (e,d) => { d.fx=e.x; d.fy=e.y; })
+    .on("end",   (e,d) => { if (!e.active) sim.alphaTarget(0); d.fx=null; d.fy=null; })
+  );
+
+node.append("circle")
+  .attr("r", d => radiusMap[d.group] || 14)
+  .attr("fill", d => colorMap[d.group])
+  .attr("fill-opacity", 0.85)
+  .attr("stroke", "var(--surface-2)")
+  .attr("stroke-width", 1.5);
+
+node.append("text")
+  .attr("text-anchor","middle")
+  .attr("dy", "0.35em")
+  .attr("font-size","10px")
+  .attr("font-weight","500")
+  .attr("fill","#fff")
+  .text(d => d.id);
+
+sim.on("tick", () => {
+  link.attr("x1",d=>d.source.x).attr("y1",d=>d.source.y)
+      .attr("x2",d=>d.target.x).attr("y2",d=>d.target.y);
+  node.attr("transform",d=>`translate(${d.x},${d.y})`);
+});
+
+function focusNode(event, d) {
+  const neighbors = new Set([d.id]);
+  links.forEach(l => {
+    if (l.source.id === d.id) neighbors.add(l.target.id);
+    if (l.target.id === d.id) neighbors.add(l.source.id);
+  });
+
+  node.attr("opacity", n => neighbors.has(n.id) ? 1 : 0.1);
+  link.attr("opacity", l =>
+    l.source.id === d.id || l.target.id === d.id ? 1 : 0.05
+  );
+
+  document.getElementById("cog-name").textContent = d.id;
+  const connected = links
+    .filter(l => l.source.id === d.id || l.target.id === d.id)
+    .map(l => l.source.id === d.id ? l.target.id : l.source.id);
+
+  document.getElementById("cog-connected").textContent =
+    connected.length ? "Connected to: " + connected.join(", ") : "No connections";
+
+  const tagEl = document.getElementById("cog-tags");
+  const cls = d.group === "soft" ? "soft" : d.group === "meta" ? "meta" : d.group === "advanced" ? "adv" : "";
+  tagEl.innerHTML = `<span class="cog-tag ${cls}">${d.group}</span><span style="font-size:12px;color:var(--text-secondary);align-self:center">${descriptions[d.id] || ""}</span>`;
+}
+
+function resetCog() {
+  node.attr("opacity", 1);
+  link.attr("opacity", 1);
+  document.getElementById("cog-name").textContent = "Select a skill";
+  document.getElementById("cog-connected").textContent = "Click any node to explore its connections";
+  document.getElementById("cog-tags").innerHTML = "";
+}
+window.resetCog = resetCog;
+</script>

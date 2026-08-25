@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognitarium — Votre Jumeau Cognitif</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #111118;
+            --bg-card: rgba(255,255,255,0.03);
+            --bg-glass: rgba(255,255,255,0.05);
+            --text-primary: #f0f0f5;
+            --text-secondary: #8b8b9a;
+            --accent-cyan: #00e5ff;
+            --accent-purple: #7c3aed;
+            --accent-pink: #ec4899;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --border: rgba(255,255,255,0.08);
+            --glow-cyan: 0 0 30px rgba(0,229,255,0.3);
+            --glow-purple: 0 0 30px rgba(124,58,237,0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInScale { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideInLeft { from { opacity: 0; transform: translateX(-50px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes glow { 0%,100% { box-shadow: 0 0 20px rgba(0,229,255,0.2); } 50% { box-shadow: 0 0 40px rgba(0,229,255,0.5); } }
+        @keyframes neuronPulse { 0%,100% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.2); opacity: 1; } }
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes treeGrow { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes synapseFlow { 0% { offset-distance: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { offset-distance: 100%; opacity: 0; } }
+
+        .screen { display: none; min-height: 100vh; }
+        .screen.active { display: flex; flex-direction: column; }
+
+        /* ===== SPLASH / TREE ANIMATION ===== */
+        .splash-screen {
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .neural-bg {
+            position: absolute;
+            inset: 0;
+            opacity: 0.15;
+            pointer-events: none;
+        }
+
+        .neural-bg svg { width: 100%; height: 100%; }
+
+        .tree-container {
+            position: relative;
+            width: 300px;
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tree-svg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .tree-svg path {
+            stroke: var(--accent-cyan);
+            stroke-width: 2;
+            fill: none;
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: treeGrow 3s ease-out forwards;
+        }
+
+        .tree-svg circle {
+            fill: var(--accent-cyan);
+            opacity: 0;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .tree-svg circle:nth-child(2) { animation-delay: 1s; }
+        .tree-svg circle:nth-child(3) { animation-delay: 1.5s; }
+        .tree-svg circle:nth-child(4) { animation-delay: 2s; }
+        .tree-svg circle:nth-child(5) { animation-delay: 2.3s; }
+        .tree-svg circle:nth-child(6) { animation-delay: 2.5s; }
+
+        .logo-core {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 800;
+            color: white;
+            opacity: 0;
+            animation: fadeInScale 1s ease 2.8s forwards, glow 2s ease-in-out 3.5s infinite;
+            z-index: 10;
+            position: relative;
+        }
+
+        .splash-title {
+            margin-top: 40px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 42px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            opacity: 0;
+            animation: fadeInUp 1s ease 3.2s forwards;
+        }
+
+        .splash-subtitle {
+            margin-top: 12px;
+            font-size: 16px;
+            color: var(--text-secondary);
+            opacity: 0;
+            animation: fadeInUp 1s ease 3.5s forwards;
+        }
+
+        .splash-btn {
+            margin-top: 40px;
+            padding: 16px 48px;
+            border: none;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            opacity: 0;
+            animation: fadeInUp 1s ease 4s forwards;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .splash-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--glow-cyan);
+        }
+
+        /* ===== ONBOARDING ===== */
+        .onboarding-screen {
+            padding: 60px 24px;
+            max-width: 600px;
+            margin: 0 auto;
+            justify-content: center;
+        }
+
+        .progress-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 48px;
+        }
+
+        .progress-step {
+            flex: 1;
+            height: 4px;
+            border-radius: 2px;
+            background: var(--border);
+            transition: all 0.5s ease;
+        }
+
+        .progress-step.active { background: var(--accent-cyan); box-shadow: var(--glow-cyan); }
+        .progress-step.completed { background: var(--accent-green); }
+
+        .question-container {
+            animation: fadeInUp 0.6s ease;
+        }
+
+        .question-label {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent-cyan);
+            margin-bottom: 16px;
+        }
+
+        .question-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 32px;
+            line-height: 1.3;
+        }
+
+        .option-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .option-card {
+            padding: 20px 24px;
+            border-radius: 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .option-card:hover {
+            border-color: var(--accent-cyan);
+            background: var(--bg-glass);
+            transform: translateX(4px);
+        }
+
+        .option-card.selected {
+            border-color: var(--accent-cyan);
+            background: rgba(0,229,255,0.08);
+            box-shadow: 0 0 20px rgba(0,229,255,0.1);
+        }
+
+        .option-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .option-text h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .option-text p {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 40px;
+        }
+
+        .btn-secondary {
+            flex: 1;
+            padding: 16px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover { border-color: var(--text-secondary); color: var(--text-primary); }
+
+        .btn-primary {
+            flex: 2;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            color: white;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* ===== CV IMPORT ===== */
+        .cv-upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: 20px;
+            padding: 48px 24px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cv-upload-zone:hover {
+            border-color: var(--accent-cyan);
+            background: rgba(0,229,255,0.03);
+        }
+
+        .cv-upload-zone.uploading {
+            border-color: var(--accent-cyan);
+            background: rgba(0,229,255,0.05);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .upload-progress {
+            width: 100%;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            margin-top: 24px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .upload-progress.active { display: block; }
+
+        .upload-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .extracted-data {
+            margin-top: 24px;
+            padding: 20px;
+            border-radius: 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            display: none;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        .extracted-data.active { display: block; }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-row:last-child { border-bottom: none; }
+
+        .data-label { color: var(--text-secondary); font-size: 14px; }
+        .data-value { font-weight: 600; font-size: 14px; }
+
+        .extraction-animation {
+            position: absolute;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(10,10,15,0.9);
+        }
+
+        .extraction-animation.active { display: flex; }
+
+        .extraction-dots {
+            display: flex;
+            gap: 8px;
+        }
+
+        .extraction-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            animation: neuronPulse 1s ease infinite;
+        }
+
+        .extraction-dot:nth-child(2) { animation-delay: 0.2s; }
+        .extraction-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        /* ===== JOB TREE ===== */
+        .job-tree-screen {
+            padding: 40px 24px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .tree-visualization {
+            position: relative;
+            height: 400px;
+            margin: 40px 0;
+        }
+
+        .tree-node {
+            position: absolute;
+            padding: 12px 20px;
+            border-radius: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.4s ease;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .tree-node:hover {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 20px rgba(0,229,255,0.2);
+            transform: scale(1.05);
+        }
+
+        .tree-node.selected {
+            background: linear-gradient(135deg, rgba(0,229,255,0.15), rgba(124,58,237,0.15));
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 30px rgba(0,229,255,0.3);
+        }
+
+        .tree-node.root {
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px;
+            font-weight: 700;
+            padding: 16px 28px;
+        }
+
+        .tree-node.level1 { top: 120px; }
+        .tree-node.level1:nth-child(2) { left: 15%; }
+        .tree-node.level1:nth-child(3) { left: 50%; transform: translateX(-50%); }
+        .tree-node.level1:nth-child(4) { right: 15%; }
+
+        .tree-node.level2 { top: 240px; }
+        .tree-node.level2:nth-child(5) { left: 8%; }
+        .tree-node.level2:nth-child(6) { left: 30%; }
+        .tree-node.level2:nth-child(7) { left: 52%; }
+        .tree-node.level2:nth-child(8) { right: 8%; }
+
+        .tree-connector {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+            opacity: 0.3;
+            transition: opacity 0.3s ease;
+        }
+
+        /* ===== SKILLS ASSESSMENT ===== */
+        .skills-screen {
+            padding: 40px 24px;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .skill-card {
+            padding: 24px;
+            margin-bottom: 16px;
+            border-radius: 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .skill-card:hover {
+            border-color: rgba(255,255,255,0.15);
+        }
+
+        .skill-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .skill-name {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .skill-score {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        .skill-scale {
+            display: flex;
+            gap: 6px;
+        }
+
+        .scale-dot {
+            flex: 1;
+            height: 8px;
+            border-radius: 4px;
+            background: var(--border);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .scale-dot:hover { background: rgba(255,255,255,0.2); }
+        .scale-dot.active { background: var(--accent-cyan); box-shadow: 0 0 10px rgba(0,229,255,0.5); }
+        .scale-dot.active.level-3 { background: var(--accent-green); }
+        .scale-dot.active.level-5 { background: var(--accent-orange); }
+        .scale-dot.active.level-7 { background: var(--accent-red); }
+
+        .skill-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        /* ===== TWIN GENERATION ===== */
+        .twin-screen {
+            align-items: center;
+            justify-content: center;
+            padding: 40px 24px;
+        }
+
+        .twin-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin-bottom: 40px;
+        }
+
+        .twin-avatar {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple), var(--accent-pink));
+            opacity: 0.2;
+            filter: blur(40px);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        .twin-core {
+            position: absolute;
+            inset: 40px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            border: 2px solid var(--accent-cyan);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 64px;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        .twin-orbit {
+            position: absolute;
+            border: 1px solid rgba(0,229,255,0.2);
+            border-radius: 50%;
+            animation: spin 20s linear infinite;
+        }
+
+        .twin-orbit:nth-child(3) {
+            inset: -20px;
+            animation-duration: 30s;
+            animation-direction: reverse;
+        }
+
+        .twin-orbit:nth-child(4) {
+            inset: -50px;
+            border-color: rgba(124,58,237,0.15);
+            animation-duration: 40s;
+        }
+
+        .orbit-node {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            box-shadow: 0 0 10px var(--accent-cyan);
+        }
+
+        .twin-status {
+            text-align: center;
+        }
+
+        .twin-status h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .twin-status p {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        .generation-steps {
+            margin-top: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .gen-step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            font-size: 14px;
+            transition: all 0.5s ease;
+        }
+
+        .gen-step.completed {
+            border-color: var(--accent-green);
+            background: rgba(16,185,129,0.05);
+        }
+
+        .gen-step-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            background: var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .gen-step.completed .gen-step-icon {
+            background: var(--accent-green);
+            color: white;
+        }
+
+        /* ===== HOME / DASHBOARD ===== */
+        .home-screen {
+            padding: 0;
+        }
+
+        .home-header {
+            padding: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .home-logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .home-avatar-small {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .home-content {
+            padding: 24px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .welcome-banner {
+            padding: 32px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, rgba(0,229,255,0.08), rgba(124,58,237,0.08));
+            border: 1px solid rgba(0,229,255,0.15);
+            margin-bottom: 24px;
+            animation: fadeInUp 0.6s ease;
+        }
+
+        .welcome-banner h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .welcome-banner p {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            padding: 20px;
+            border-radius: 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            border-color: rgba(255,255,255,0.15);
+            transform: translateY(-2px);
+        }
+
+        .stat-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brain-map-container {
+            position: relative;
+            height: 350px;
+            border-radius: 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .brain-node {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            border: 2px solid transparent;
+        }
+
+        .brain-node:hover {
+            transform: scale(1.2);
+            z-index: 10;
+        }
+
+        .brain-node.core {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            font-size: 36px;
+            animation: glow 3s ease-in-out infinite;
+        }
+
+        .brain-node.zone-1 {
+            top: 15%;
+            left: 30%;
+            background: rgba(0,229,255,0.15);
+            border-color: var(--accent-cyan);
+        }
+
+        .brain-node.zone-2 {
+            top: 15%;
+            right: 30%;
+            background: rgba(124,58,237,0.15);
+            border-color: var(--accent-purple);
+        }
+
+        .brain-node.zone-3 {
+            bottom: 20%;
+            left: 25%;
+            background: rgba(16,185,129,0.15);
+            border-color: var(--accent-green);
+        }
+
+        .brain-node.zone-4 {
+            bottom: 20%;
+            right: 25%;
+            background: rgba(245,158,11,0.15);
+            border-color: var(--accent-orange);
+        }
+
+        .brain-node.zone-5 {
+            top: 50%;
+            left: 10%;
+            transform: translateY(-50%);
+            background: rgba(236,72,153,0.15);
+            border-color: var(--accent-pink);
+        }
+
+        .brain-connection {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+            opacity: 0.2;
+            transform-origin: left center;
+        }
+
+        .synapse-particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            box-shadow: 0 0 8px var(--accent-cyan);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .career-paths {
+            display: grid;
+            gap: 12px;
+        }
+
+        .path-card {
+            padding: 20px;
+            border-radius: 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .path-card:hover {
+            border-color: var(--accent-cyan);
+            background: var(--bg-glass);
+        }
+
+        .path-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .path-info h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+        .path-info p { font-size: 13px; color: var(--text-secondary); }
+
+        .path-match {
+            margin-left: auto;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .match-high { background: rgba(16,185,129,0.15); color: var(--accent-green); }
+        .match-medium { background: rgba(245,158,11,0.15); color: var(--accent-orange); }
+        .match-low { background: rgba(239,68,68,0.15); color: var(--accent-red); }
+
+        /* ===== NAVIGATION ===== */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 12px 24px 24px;
+            background: linear-gradient(to top, var(--bg-primary), transparent);
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            z-index: 100;
+        }
+
+        .nav-item {
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            background: transparent;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            color: var(--accent-cyan);
+            background: rgba(0,229,255,0.08);
+        }
+
+        /* ===== TOOLTIP ===== */
+        .tooltip {
+            position: absolute;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 100;
+            white-space: nowrap;
+        }
+
+        .tooltip.visible { opacity: 1; }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 600px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .splash-title { font-size: 32px; }
+            .tree-visualization { height: 300px; }
+            .tree-node { font-size: 12px; padding: 8px 14px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===== SCREEN 0: SPLASH / TREE ANIMATION ===== -->
+<div class="screen splash-screen active" id="screen-splash">
+    <div class="neural-bg">
+        <svg viewBox="0 0 800 600">
+            <defs>
+                <pattern id="neural-pattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+                    <circle cx="50" cy="50" r="1.5" fill="rgba(0,229,255,0.3)"/>
+                    <line x1="50" y1="50" x2="100" y2="0" stroke="rgba(0,229,255,0.1)" stroke-width="0.5"/>
+                    <line x1="50" y1="50" x2="0" y2="100" stroke="rgba(0,229,255,0.1)" stroke-width="0.5"/>
+                </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#neural-pattern)"/>
+        </svg>
+    </div>
+
+    <div class="tree-container">
+        <svg class="tree-svg" viewBox="0 0 300 400">
+            <!-- Roots -->
+            <path d="M150 350 Q120 380 100 400" />
+            <path d="M150 350 Q150 390 150 400" />
+            <path d="M150 350 Q180 380 200 400" />
+            <!-- Trunk -->
+            <path d="M150 350 Q145 280 150 200" />
+            <!-- Branches -->
+            <path d="M150 280 Q110 240 80 200" />
+            <path d="M150 250 Q190 210 220 180" />
+            <path d="M150 220 Q130 170 110 130" />
+            <path d="M150 230 Q170 180 190 140" />
+            <!-- Leaves / Nodes -->
+            <circle cx="80" cy="200" r="6" />
+            <circle cx="220" cy="180" r="6" />
+            <circle cx="110" cy="130" r="6" />
+            <circle cx="190" cy="140" r="6" />
+            <circle cx="150" cy="100" r="8" />
+        </svg>
+        <div class="logo-core">C</div>
+    </div>
+
+    <h1 class="splash-title">Cognitarium</h1>
+    <p class="splash-subtitle">Votre jumeau cognitif professionnel</p>
+    <button class="splash-btn" onclick="goToScreen('screen-onboarding')">Commencer</button>
+</div>
+
+<!-- ===== SCREEN 1: ONBOARDING ===== -->
+<div class="screen onboarding-screen" id="screen-onboarding">
+    <div class="progress-bar" id="progress-bar">
+        <div class="progress-step active"></div>
+        <div class="progress-step"></div>
+        <div class="progress-step"></div>
+        <div class="progress-step"></div>
+    </div>
+
+    <div class="question-container" id="question-container">
+        <!-- Dynamic content -->
+    </div>
+
+    <div class="nav-buttons">
+        <button class="btn-secondary" id="btn-prev" onclick="prevQuestion()" style="display:none">Retour</button>
+        <button class="btn-primary" id="btn-next" onclick="nextQuestion()" disabled>Suivant</button>
+    </div>
+</div>
+
+<!-- ===== SCREEN 2: CV IMPORT ===== -->
+<div class="screen" id="screen-cv" style="padding:40px 24px; max-width:600px; margin:0 auto; justify-content:center;">
+    <div class="question-label">Étape 2/5</div>
+    <h2 class="question-title" style="font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:700; margin-bottom:32px;">
+        Importez votre CV
+    </h2>
+    <p style="color:var(--text-secondary); margin-bottom:32px; font-size:15px;">
+        Notre IA analyse votre parcours pour construire votre jumeau cognitif.
+    </p>
+
+    <div class="cv-upload-zone" id="cv-zone" onclick="uploadCV()">
+        <span class="upload-icon">📄</span>
+        <h3 style="font-size:18px; font-weight:600; margin-bottom:8px;">Glissez votre CV ici</h3>
+        <p style="color:var(--text-secondary); font-size:14px;">PDF, Word, ou TXT — max 10 Mo</p>
+
+        <div class="upload-progress" id="upload-progress">
+            <div class="upload-progress-bar" id="progress-bar-fill"></div>
+        </div>
+
+        <div class="extraction-animation" id="extraction-anim">
+            <div class="extraction-dots">
+                <div class="extraction-dot"></div>
+                <div class="extraction-dot"></div>
+                <div class="extraction-dot"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="extracted-data" id="extracted-data">
+        <h3 style="font-size:16px; font-weight:600; margin-bottom:16px;">📋 Données extraites</h3>
+        <div class="data-row">
+            <span class="data-label">Nom</span>
+            <span class="data-value">Thomas Martin</span>
+        </div>
+        <div class="data-row">
+            <span class="data-label">Âge</span>
+            <span class="data-value">34 ans</span>
+        </div>
+        <div class="data-row">
+            <span class="data-label">Expérience</span>
+            <span class="data-value">10 ans — BTP</span>
+        </div>
+        <div class="data-row">
+            <span class="data-label">Poste actuel</span>
+            <span class="data-value">Conducteur de travaux</span>
+        </div>
+        <div class="data-row">
+            <span class="data-label">Compétences détectées</span>
+            <span class="data-value">Gestion chantier, Plans, Budget</span>
+        </div>
+    </div>
+
+    <div class="nav-buttons" style="margin-top:32px;">
+        <button class="btn-secondary" onclick="goToScreen('screen-onboarding')">Retour</button>
+        <button class="btn-primary" id="btn-cv-next" onclick="goToScreen('screen-jobtree')" disabled>Suivant</button>
+    </div>
+</div>
+
+<!-- ===== SCREEN 3: JOB TREE ===== -->
+<div class="screen job-tree-screen" id="screen-jobtree">
+    <div class="question-label">Étape 3/5</div>
+    <h2 class="question-title" style="font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:700; margin-bottom:8px;">
+        Choisissez votre métier
+    </h2>
+    <p style="color:var(--text-secondary); margin-bottom:24px; font-size:15px;">
+        Explorez l'arbre des métiers et sélectionnez votre position actuelle ou visée.
+    </p>
+
+    <div class="tree-visualization" id="job-tree">
+        <div class="tree-node root" onclick="selectJob(this, 'BTP & Construction')">🏗️ BTP & Construction</div>
+        <div class="tree-node level1" onclick="selectJob(this, 'Maçon')">🧱 Maçon</div>
+        <div class="tree-node level1" onclick="selectJob(this, 'Conducteur de travaux')">👷 Conducteur de travaux</div>
+        <div class="tree-node level1" onclick="selectJob(this, 'Chef de chantier')">🏭 Chef de chantier</div>
+        <div class="tree-node level2" onclick="selectJob(this, 'Ingénieur structure')">📐 Ingénieur structure</div>
+        <div class="tree-node level2" onclick="selectJob(this, 'Data Analyst (BTP)')">📊 Data Analyst BTP</div>
+        <div class="tree-node level2" onclick="selectJob(this, 'BIM Manager')">💻 BIM Manager</div>
+        <div class="tree-node level2" onclick="selectJob(this, 'Directeur de travaux')">⭐ Directeur de travaux</div>
+    </div>
+
+    <div id="selected-job-display" style="text-align:center; margin-bottom:24px; padding:16px; border-radius:12px; background:var(--bg-card); border:1px solid var(--border); display:none;">
+        <span style="color:var(--text-secondary); font-size:14px;">Métier sélectionné :</span>
+        <div id="selected-job-name" style="font-size:18px; font-weight:700; color:var(--accent-cyan); margin-top:4px;"></div>
+    </div>
+
+    <div class="nav-buttons">
+        <button class="btn-secondary" onclick="goToScreen('screen-cv')">Retour</button>
+        <button class="btn-primary" id="btn-job-next" onclick="goToScreen('screen-skills')" disabled>Suivant</button>
+    </div>
+</div>
+
+<!-- ===== SCREEN 4: SKILLS ASSESSMENT ===== -->
+<div class="screen skills-screen" id="screen-skills">
+    <div class="question-label">Étape 4/5</div>
+    <h2 class="question-title" style="font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:700; margin-bottom:8px;">
+        Évaluez vos compétences
+    </h2>
+    <p style="color:var(--text-secondary); margin-bottom:32px; font-size:15px;">
+        Notez chaque compétence de 1 (débutant) à 7 (expert) pour affiner votre jumeau.
+    </p>
+
+    <div id="skills-container">
+        <!-- Dynamic skills -->
+    </div>
+
+    <div class="nav-buttons" style="margin-top:40px;">
+        <button class="btn-secondary" onclick="goToScreen('screen-jobtree')">Retour</button>
+        <button class="btn-primary" id="btn-skills-next" onclick="goToScreen('screen-twin')">Générer mon jumeau</button>
+    </div>
+</div>
+
+<!-- ===== SCREEN 5: TWIN GENERATION ===== -->
+<div class="screen twin-screen" id="screen-twin">
+    <div class="twin-container">
+        <div class="twin-avatar"></div>
+        <div class="twin-orbit" style="inset:-20px;">
+            <div class="orbit-node" style="top:0; left:50%; transform:translateX(-50%);"></div>
+        </div>
+        <div class="twin-orbit" style="inset:-50px;">
+            <div class="orbit-node" style="bottom:0; left:30%;"></div>
+        </div>
+        <div class="twin-core">👷</div>
+    </div>
+
+    <div class="twin-status">
+        <h2 id="twin-status-title">Construction de votre jumeau...</h2>
+        <p id="twin-status-desc">Analyse de votre profil cognitif en cours</p>
+    </div>
+
+    <div class="generation-steps" id="generation-steps">
+        <div class="gen-step" id="step-1">
+            <div class="gen-step-icon">1</div>
+            <span>Analyse du parcours professionnel</span>
+        </div>
+        <div class="gen-step" id="step-2">
+            <div class="gen-step-icon">2</div>
+            <span>Cartographie des compétences</span>
+        </div>
+        <div class="gen-step" id="step-3">
+            <div class="gen-step-icon">3</div>
+            <span>Modélisation des connexions synaptiques</span>
+        </div>
+        <div class="gen-step" id="step-4">
+            <div class="gen-step-icon">4</div>
+            <span>Génération du jumeau cognitif</span>
+        </div>
+    </div>
+</div>
+
+<!-- ===== SCREEN 6: HOME / DASHBOARD ===== -->
+<div class="screen home-screen" id="screen-home">
+    <div class="home-header">
+        <div class="home-logo">Cognitarium</div>
+        <div class="home-avatar-small" onclick="showProfile()">👷</div>
+    </div>
+
+    <div class="home-content">
+        <div class="welcome-banner">
+            <h1>Bonjour, Thomas 👋</h1>
+            <p>Votre jumeau cognitif est actif. Découvrez vos zones de force et vos opportunités de développement.</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" style="color:var(--accent-cyan);">87%</div>
+                <div class="stat-label">Complétude profil</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" style="color:var(--accent-purple);">12</div>
+                <div class="stat-label">Compétences mappées</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" style="color:var(--accent-green);">4</div>
+                <div class="stat-label">Opportunités détectées</div>
+            </div>
+        </div>
+
+        <h3 class="section-title">
+            <span>🧠</span> Votre cerveau professionnel
+        </h3>
+
+        <div class="brain-map-container" id="brain-map">
+            <div class="brain-node core" data-tooltip="Thomas Martin
+Conducteur de travaux">👷</div>
+            <div class="brain-node zone-1" data-tooltip="Gestion de chantier
+Niveau: Expert" style="animation-delay:0s;">🏗️</div>
+            <div class="brain-node zone-2" data-tooltip="Lecture de plans
+Niveau: Avancé" style="animation-delay:0.5s;">📐</div>
+            <div class="brain-node zone-3" data-tooltip="Budget & Finance
+Niveau: Intermédiaire" style="animation-delay:1s;">💰</div>
+            <div class="brain-node zone-4" data-tooltip="Coordination d'équipe
+Niveau: Expert" style="animation-delay:1.5s;">👥</div>
+            <div class="brain-node zone-5" data-tooltip="Data Analysis
+Niveau: Débutant" style="animation-delay:2s;">📊</div>
+
+            <!-- Connections -->
+            <svg style="position:absolute; inset:0; width:100%; height:100%; pointer-events:none;">
+                <line x1="50%" y1="50%" x2="30%" y2="15%" stroke="rgba(0,229,255,0.2)" stroke-width="1.5"/>
+                <line x1="50%" y1="50%" x2="70%" y2="15%" stroke="rgba(124,58,237,0.2)" stroke-width="1.5"/>
+                <line x1="50%" y1="50%" x2="25%" y2="80%" stroke="rgba(16,185,129,0.2)" stroke-width="1.5"/>
+                <line x1="50%" y1="50%" x2="75%" y2="80%" stroke="rgba(245,158,11,0.2)" stroke-width="1.5"/>
+                <line x1="50%" y1="50%" x2="10%" y2="50%" stroke="rgba(236,72,153,0.2)" stroke-width="1.5"/>
+            </svg>
+
+            <!-- Synapse particles -->
+            <div class="synapse-particle" style="top:30%; left:40%;"></div>
+            <div class="synapse-particle" style="top:60%; left:60%; animation-delay:1s;"></div>
+            <div class="synapse-particle" style="top:40%; left:70%; animation-delay:2s;"></div>
+        </div>
+
+        <h3 class="section-title">
+            <span>🚀</span> Opportunités de carrière
+        </h3>
+
+        <div class="career-paths">
+            <div class="path-card" onclick="explorePath('directeur')">
+                <div class="path-icon" style="background:rgba(0,229,255,0.1);">⭐</div>
+                <div class="path-info">
+                    <h3>Directeur de travaux</h3>
+                    <p>Évolution naturelle · +25% de salaire</p>
+                </div>
+                <div class="path-match match-high">94% match</div>
+            </div>
+            <div class="path-card" onclick="explorePath('bim')">
+                <div class="path-icon" style="background:rgba(124,58,237,0.1);">💻</div>
+                <div class="path-info">
+                    <h3>BIM Manager</h3>
+                    <p>Transition digitale · Compétences à acquérir</p>
+                </div>
+                <div class="path-match match-medium">67% match</div>
+            </div>
+            <div class="path-card" onclick="explorePath('data')">
+                <div class="path-icon" style="background:rgba(236,72,153,0.1);">📊</div>
+                <div class="path-info">
+                    <h3>Data Analyst BTP</h3>
+                    <p>Pont digital · Formation recommandée</p>
+                </div>
+                <div class="path-match match-low">45% match</div>
+            </div>
+        </div>
+    </div>
+
+    <div style="height:100px;"></div>
+
+    <div class="bottom-nav">
+        <button class="nav-item active" onclick="switchTab('home')">🏠 Accueil</button>
+        <button class="nav-item" onclick="switchTab('brain')">🧠 Cerveau</button>
+        <button class="nav-item" onclick="switchTab('skills')">📊 Compétences</button>
+        <button class="nav-item" onclick="switchTab('paths')">🚀 Parcours</button>
+    </div>
+</div>
+
+<!-- Tooltip -->
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// ===== STATE =====
+let currentScreen = 'screen-splash';
+let currentQuestion = 0;
+let selectedPath = null;
+let selectedJob = null;
+let skillScores = {};
+
+const questions = [
+    {
+        label: "Question 1/4",
+        title: "Quel est votre parcours actuel ?",
+        options: [
+            { icon: "🎓", title: "Étudiant", desc: "En formation ou en recherche de premier emploi" },
+            { icon: "💼", title: "Professionnel", desc: "En poste et souhaite évoluer" },
+            { icon: "🔄", title: "En reconversion", desc: "Souhaite changer de métier ou de secteur" },
+            { icon: "🌱", title: "Libre", desc: "Freelance, entrepreneur ou indépendant" }
+        ]
+    },
+    {
+        label: "Question 2/4",
+        title: "Dans quel secteur évoluez-vous ?",
+        options: [
+            { icon: "🏗️", title: "BTP & Construction", desc: "Bâtiment, travaux publics, génie civil" },
+            { icon: "💻", title: "Tech & Digital", desc: "Développement, data, product" },
+            { icon: "🏭", title: "Industrie", desc: "Manufacturing, production, supply chain" },
+            { icon: "🏥", title: "Santé & Services", desc: "Médical, social, services aux entreprises" }
+        ]
+    },
+    {
+        label: "Question 3/4",
+        title: "Quel est votre objectif principal ?",
+        options: [
+            { icon: "📈", title: "Évoluer dans mon métier", desc: "Progression en expertise et responsabilités" },
+            { icon: "🔄", title: "Changer de métier", desc: "Transition vers un nouveau rôle" },
+            { icon: "🚀", title: "Me former à de nouvelles compétences", desc: "Développer mon employabilité" },
+            { icon: "🎯", title: "Mieux me connaître", desc: "Comprendre mes forces et opportunités" }
+        ]
+    },
+    {
+        label: "Question 4/4",
+        title: "Avez-vous un CV à importer ?",
+        options: [
+            { icon: "📄", title: "Oui, j'ai mon CV", desc: "Import automatique et analyse IA" },
+            { icon: "✍️", title: "Non, je préfère saisir", desc: "Remplissage manuel de mon parcours" },
+            { icon: "🔗", title: "J'ai un LinkedIn", desc: "Synchronisation avec mon profil" }
+        ]
+    }
+];
+
+const skills = [
+    { name: "Lecture de plans", category: "tech" },
+    { name: "Gestion de chantier", category: "management" },
+    { name: "Budget & Coûts", category: "finance" },
+    { name: "Coordination d'équipe", category: "soft" },
+    { name: "SQL & Bases de données", category: "digital" },
+    { name: "Data Analysis", category: "digital" }
+];
+
+// ===== NAVIGATION =====
+function goToScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+    currentScreen = screenId;
+
+    if (screenId === 'screen-onboarding') renderQuestion();
+    if (screenId === 'screen-skills') renderSkills();
+    if (screenId === 'screen-twin') startTwinGeneration();
+    window.scrollTo(0, 0);
+}
+
+// ===== ONBOARDING =====
+function renderQuestion() {
+    const q = questions[currentQuestion];
+    const container = document.getElementById('question-container');
+
+    container.innerHTML = `
+        <div class="question-label">${q.label}</div>
+        <h2 class="question-title">${q.title}</h2>
+        <div class="option-grid">
+            ${q.options.map((opt, i) => `
+                <div class="option-card" onclick="selectOption(${i}, this)" data-index="${i}">
+                    <div class="option-icon">${opt.icon}</div>
+                    <div class="option-text">
+                        <h3>${opt.title}</h3>
+                        <p>${opt.desc}</p>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+
+    // Update progress
+    document.querySelectorAll('.progress-step').forEach((step, i) => {
+        step.classList.remove('active', 'completed');
+        if (i < currentQuestion) step.classList.add('completed');
+        if (i === currentQuestion) step.classList.add('active');
+    });
+
+    document.getElementById('btn-prev').style.display = currentQuestion > 0 ? 'block' : 'none';
+    document.getElementById('btn-next').disabled = !selectedPath;
+}
+
+function selectOption(index, el) {
+    document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedPath = index;
+    document.getElementById('btn-next').disabled = false;
+}
+
+function nextQuestion() {
+    if (currentQuestion < questions.length - 1) {
+        currentQuestion++;
+        selectedPath = null;
+        renderQuestion();
+    } else {
+        goToScreen('screen-cv');
+    }
+}
+
+function prevQuestion() {
+    if (currentQuestion > 0) {
+        currentQuestion--;
+        selectedPath = null;
+        renderQuestion();
+    }
+}
+
+// ===== CV UPLOAD =====
+function uploadCV() {
+    const zone = document.getElementById('cv-zone');
+    const progress = document.getElementById('upload-progress');
+    const bar = document.getElementById('progress-bar-fill');
+    const anim = document.getElementById('extraction-anim');
+    const data = document.getElementById('extracted-data');
+    const btn = document.getElementById('btn-cv-next');
+
+    zone.classList.add('uploading');
+    progress.classList.add('active');
+
+    let width = 0;
+    const interval = setInterval(() => {
+        width += Math.random() * 15;
+        if (width >= 100) {
+            width = 100;
+            clearInterval(interval);
+
+            setTimeout(() => {
+                progress.classList.remove('active');
+                anim.classList.add('active');
+
+                setTimeout(() => {
+                    anim.classList.remove('active');
+                    data.classList.add('active');
+                    btn.disabled = false;
+                    zone.style.cursor = 'default';
+                }, 2000);
+            }, 500);
+        }
+        bar.style.width = width + '%';
+    }, 200);
+}
+
+// ===== JOB TREE =====
+function selectJob(el, jobName) {
+    document.querySelectorAll('.tree-node').forEach(n => n.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedJob = jobName;
+
+    const display = document.getElementById('selected-job-display');
+    const name = document.getElementById('selected-job-name');
+    display.style.display = 'block';
+    name.textContent = jobName;
+    document.getElementById('btn-job-next').disabled = false;
+}
+
+// ===== SKILLS =====
+function renderSkills() {
+    const container = document.getElementById('skills-container');
+    container.innerHTML = skills.map((skill, i) => `
+        <div class="skill-card" style="animation: fadeInUp 0.4s ease ${i * 0.1}s both;">
+            <div class="skill-header">
+                <span class="skill-name">${skill.name}</span>
+                <span class="skill-score" id="score-${i}">—</span>
+            </div>
+            <div class="skill-scale" id="scale-${i}">
+                ${[1,2,3,4,5,6,7].map(n => `
+                    <div class="scale-dot" onclick="setSkillScore(${i}, ${n})"></div>
+                `).join('')}
+            </div>
+            <div class="skill-labels">
+                <span>Débutant</span>
+                <span>Intermédiaire</span>
+                <span>Expert</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+function setSkillScore(skillIndex, score) {
+    skillScores[skillIndex] = score;
+
+    const dots = document.querySelectorAll(`#scale-${skillIndex} .scale-dot`);
+    dots.forEach((dot, i) => {
+        dot.classList.remove('active', 'level-3', 'level-5', 'level-7');
+        if (i < score) {
+            dot.classList.add('active');
+            if (score <= 3) dot.classList.add('level-3');
+            else if (score <= 5) dot.classList.add('level-5');
+            else dot.classList.add('level-7');
+        }
+    });
+
+    document.getElementById(`score-${skillIndex}`).textContent = score;
+}
+
+// ===== TWIN GENERATION =====
+function startTwinGeneration() {
+    const steps = [
+        { id: 'step-1', delay: 1000, title: 'Analyse du parcours...' },
+        { id: 'step-2', delay: 2500, title: 'Cartographie des compétences...' },
+        { id: 'step-3', delay: 4000, title: 'Modélisation synaptique...' },
+        { id: 'step-4', delay: 5500, title: 'Finalisation...' }
+    ];
+
+    steps.forEach(step => {
+        setTimeout(() => {
+            document.getElementById(step.id).classList.add('completed');
+            document.getElementById('twin-status-title').textContent = step.title;
+        }, step.delay);
+    });
+
+    setTimeout(() => {
+        document.getElementById('twin-status-title').textContent = 'Votre jumeau est prêt !';
+        document.getElementById('twin-status-desc').textContent = 'Thomas Martin · Conducteur de travaux · 87% complété';
+
+        setTimeout(() => {
+            goToScreen('screen-home');
+        }, 1500);
+    }, 7000);
+}
+
+// ===== HOME =====
+function switchTab(tab) {
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+function showProfile() {
+    alert('Profil complet de Thomas Martin\n\nMétier: Conducteur de travaux\nExpérience: 10 ans\nCompétences: 12 mappées\nOpportunités: 4 détectées');
+}
+
+function explorePath(path) {
+    const messages = {
+        directeur: 'Directeur de travaux: 94% de correspondance avec votre profil. Formation recommandée: Management avancé, Droit du travail.',
+        bim: 'BIM Manager: 67% de correspondance. Compétences à acquérir: Revit, Coordination 3D, Gestion de maquette numérique.',
+        data: 'Data Analyst BTP: 45% de correspondance. Pont digital intéressant. Formation: Python, SQL, Power BI, Analyse de données construction.'
+    };
+    alert(messages[path]);
+}
+
+// ===== TOOLTIPS =====
+document.addEventListener('mouseover', (e) => {
+    if (e.target.dataset.tooltip) {
+        const tooltip = document.getElementById('tooltip');
+        tooltip.textContent = e.target.dataset.tooltip;
+        tooltip.classList.add('visible');
+        const rect = e.target.getBoundingClientRect();
+        tooltip.style.left = rect.left + rect.width/2 - tooltip.offsetWidth/2 + 'px';
+        tooltip.style.top = rect.top - tooltip.offsetHeight - 8 + 'px';
+    }
+});
+
+document.addEventListener('mouseout', (e) => {
+    if (e.target.dataset.tooltip) {
+        document.getElementById('tooltip').classList.remove('visible');
+    }
+});
+</script>
+</body>
+</html>

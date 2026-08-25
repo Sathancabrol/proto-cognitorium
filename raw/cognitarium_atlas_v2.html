@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Cognitarium — Atlas UI v2</title>
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<style>
+body {
+  margin: 0;
+  font-family: Inter, Arial, sans-serif;
+  background: #0a0f18;
+  color: white;
+  overflow: hidden;
+}
+
+body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+}
+
+#app {
+  display: flex;
+  height: 100vh;
+}
+
+/* LEFT SIDEBAR */
+#sidebar {
+  width: 260px;
+  background: rgba(10,15,25,0.85);
+  backdrop-filter: blur(14px);
+  border-right: 1px solid rgba(255,255,255,0.08);
+  padding: 14px;
+  overflow-y: auto;
+}
+
+#sidebar b {
+  font-size: 16px;
+  display: block;
+  margin-bottom: 16px;
+}
+
+input {
+  width: 100%;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: white;
+  box-sizing: border-box;
+  margin-bottom: 12px;
+}
+
+/* COLLAPSIBLE SECTIONS */
+.collapsible-section {
+  margin-bottom: 8px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: background 0.2s;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.section-header:hover {
+  background: rgba(255,255,255,0.12);
+}
+
+.section-header .arrow {
+  transition: transform 0.3s ease;
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.section-header.expanded .arrow {
+  transform: rotate(90deg);
+}
+
+.section-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+  padding: 0 8px;
+}
+
+.section-content.open {
+  max-height: 500px;
+  padding: 8px;
+}
+
+.section-content button {
+  margin-top: 4px;
+  width: 100%;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.06);
+  color: white;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.2s;
+}
+
+.section-content button:hover {
+  background: rgba(255,255,255,0.12);
+}
+
+.section-content button.active {
+  background: rgba(122,176,255,0.25);
+  border-color: rgba(122,176,255,0.4);
+}
+
+/* CENTER GRAPH */
+#graph {
+  flex: 1;
+  position: relative;
+}
+
+/* RIGHT PANEL */
+#panel {
+  width: 320px;
+  background: rgba(10,15,25,0.85);
+  backdrop-filter: blur(14px);
+  border-left: 1px solid rgba(255,255,255,0.08);
+  padding: 14px;
+}
+
+#panel h2 {
+  margin-top: 0;
+  font-size: 18px;
+}
+
+#panel #type {
+  opacity: 0.6;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  margin-top: 14px;
+  font-size: 12px;
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+#panel button {
+  margin-top: 6px;
+  width: 100%;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.06);
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#panel button:hover {
+  background: rgba(255,255,255,0.12);
+}
+
+/* NODES */
+.node circle {
+  stroke: rgba(255,255,255,0.2);
+  stroke-width: 1px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.node:hover circle {
+  stroke: #7ab0ff;
+  stroke-width: 2px;
+  filter: drop-shadow(0 0 6px rgba(122,176,255,0.5));
+}
+
+.node text {
+  font-size: 11px;
+  fill: white;
+  pointer-events: none;
+}
+
+/* LINKS */
+.link {
+  stroke: rgba(255,255,255,0.15);
+  stroke-width: 1px;
+}
+
+.link.highlight {
+  stroke: #7ab0ff;
+  stroke-width: 2px;
+}
+
+/* COLORS BY DOMAIN */
+.core { fill: #7ab0ff; }
+.job { fill: #ffb86b; }
+.meta { fill: #a78bfa; }
+.earth { fill: #4ade80; }
+.industry { fill: #f87171; }
+.btp { fill: #fbbf24; }
+.service { fill: #a78bfa; }
+
+.hidden {
+  opacity: 0.05;
+}
+
+/* EARTH CENTER */
+.earth-center {
+  filter: drop-shadow(0 0 20px rgba(74, 222, 128, 0.4));
+}
+
+/* ORBIT RINGS */
+.orbit-ring {
+  fill: none;
+  stroke: rgba(255,255,255,0.05);
+  stroke-dasharray: 4,4;
+}
+
+/* LEVEL LABELS */
+.level-label {
+  font-size: 10px;
+  fill: rgba(255,255,255,0.3);
+  text-anchor: middle;
+}
+</style>
+</head>
+
+<body>
+
+<div id="app">
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <b>🌍 Cognitarium Atlas</b>
+
+  <input placeholder="Rechercher un skill, métier, domaine..." id="searchInput" oninput="handleSearch()"/>
+
+  <!-- Section Recherche / Filtres -->
+  <div class="collapsible-section">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span>🔍 Filtres</span>
+      <span class="arrow">▶</span>
+    </div>
+    <div class="section-content">
+      <button onclick="filter('all')" id="btn-all" class="active">Tout</button>
+      <button onclick="filter('core')" id="btn-core">Skills</button>
+      <button onclick="filter('job')" id="btn-job">Métiers</button>
+      <button onclick="filter('industry')" id="btn-industry">Industries</button>
+      <button onclick="filter('btp')" id="btn-btp">BTP</button>
+    </div>
+  </div>
+
+  <!-- Section Vue -->
+  <div class="collapsible-section">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span>👁️ Vues</span>
+      <span class="arrow">▶</span>
+    </div>
+    <div class="section-content">
+      <button onclick="setView('global')" id="btn-global" class="active">Vue Globale</button>
+      <button onclick="setView('intermediate')" id="btn-intermediate">Vue Intermédiaire</button>
+      <button onclick="setView('detail')" id="btn-detail">Vue Détaillée</button>
+    </div>
+  </div>
+
+  <!-- Section Focus -->
+  <div class="collapsible-section">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span>🎯 Focus</span>
+      <span class="arrow">▶</span>
+    </div>
+    <div class="section-content">
+      <button onclick="focusOn('earth')">🌍 Terre (Centre)</button>
+      <button onclick="focusOn('industry')">🏭 Industrie</button>
+      <button onclick="focusOn('btp')">🏗️ BTP</button>
+      <button onclick="focusOn('service')">💼 Services</button>
+      <button onclick="focusOn('tech')">💻 Tech</button>
+    </div>
+  </div>
+
+  <!-- Section Outils -->
+  <div class="collapsible-section">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span>🛠️ Outils</span>
+      <span class="arrow">▶</span>
+    </div>
+    <div class="section-content">
+      <button onclick="fakeAI()">🤖 Analyse IA</button>
+      <button onclick="fakePath()">🛤️ Chemin d'apprentissage</button>
+      <button onclick="resetView()">🔄 Réinitialiser</button>
+    </div>
+  </div>
+</div>
+
+<!-- GRAPH -->
+<svg id="graph"></svg>
+
+<!-- PANEL -->
+<div id="panel">
+  <h2 id="title">Sélectionner un nœud</h2>
+  <div id="type">---</div>
+
+  <div class="section-title">Progression</div>
+  <div id="progress">--</div>
+
+  <div class="section-title">Compétences Connectées</div>
+  <ul id="list"></ul>
+
+  <div class="section-title">Insight IA (simulé)</div>
+  <div id="ai">Aucune analyse pour le moment.</div>
+
+  <button onclick="fakeAI()">Lancer Analyse IA</button>
+  <button onclick="fakePath()">Trouver un Chemin</button>
+  <button onclick="resetView()">Réinitialiser</button>
+</div>
+
+</div>
+
+<script>
+// ---------------- DATA : HIERARCHICAL EARTH -> INDUSTRY -> BTP -> etc. ----------------
+const nodes = [
+  // NIVEAU 0 : Centre (Terre)
+  {id:"terre", type:"earth", level:0, label:"🌍 Terre"},
+
+  // NIVEAU 1 : Secteurs principaux
+  {id:"industrie", type:"industry", level:1, label:"🏭 Industrie"},
+  {id:"services", type:"service", level:1, label:"💼 Services"},
+  {id:"tech", type:"core", level:1, label:"💻 Tech"},
+  {id:"agriculture", type:"industry", level:1, label:"🌾 Agriculture"},
+
+  // NIVEAU 2 : Sous-secteurs
+  {id:"btp", type:"btp", level:2, label:"🏗️ BTP"},
+  {id:"manufacture", type:"industry", level:2, label:"🏭 Manufacture"},
+  {id:"energie", type:"industry", level:2, label:"⚡ Énergie"},
+  {id:"finance", type:"service", level:2, label:"🏦 Finance"},
+  {id:"sante", type:"service", level:2, label:"🏥 Santé"},
+  {id:"education", type:"service", level:2, label:"📚 Éducation"},
+  {id:"dev", type:"core", level:2, label:"💻 Développement"},
+  {id:"data", type:"core", level:2, label:"📊 Data"},
+  {id:"design", type:"core", level:2, label:"🎨 Design"},
+
+  // NIVEAU 3 : Métiers / Skills
+  {id:"architecte", type:"job", level:3, label:"🏛️ Architecte"},
+  {id:"ingenieur_btp", type:"job", level:3, label:"👷 Ingénieur BTP"},
+  {id:"chef_chantier", type:"job", level:3, label:"👷‍♂️ Chef de chantier"},
+  {id:"python", type:"core", level:3, label:"🐍 Python"},
+  {id:"sql", type:"core", level:3, label:"🗄️ SQL"},
+  {id:"ml", type:"core", level:3, label:"🤖 ML"},
+  {id:"dataviz", type:"core", level:3, label:"📈 DataViz"},
+  {id:"analyste", type:"job", level:3, label:"📊 Analyste"},
+  {id:"data_scientist", type:"job", level:3, label:"🔬 Data Scientist"},
+  {id:"dev_fullstack", type:"job", level:3, label:"🌐 Dev Fullstack"},
+  {id:"ux_designer", type:"job", level:3, label:"✨ UX Designer"},
+  {id:"banquier", type:"job", level:3, label:"💰 Banquier"},
+  {id:"medecin", type:"job", level:3, label:"🩺 Médecin"},
+  {id:"professeur", type:"job", level:3, label:"👨‍🏫 Professeur"},
+];
+
+const links = [
+  // Terre -> Niveau 1
+  {source:"terre", target:"industrie"},
+  {source:"terre", target:"services"},
+  {source:"terre", target:"tech"},
+  {source:"terre", target:"agriculture"},
+
+  // Industrie -> Niveau 2
+  {source:"industrie", target:"btp"},
+  {source:"industrie", target:"manufacture"},
+  {source:"industrie", target:"energie"},
+
+  // Services -> Niveau 2
+  {source:"services", target:"finance"},
+  {source:"services", target:"sante"},
+  {source:"services", target:"education"},
+
+  // Tech -> Niveau 2
+  {source:"tech", target:"dev"},
+  {source:"tech", target:"data"},
+  {source:"tech", target:"design"},
+
+  // BTP -> Niveau 3
+  {source:"btp", target:"architecte"},
+  {source:"btp", target:"ingenieur_btp"},
+  {source:"btp", target:"chef_chantier"},
+
+  // Data -> Niveau 3
+  {source:"data", target:"python"},
+  {source:"data", target:"sql"},
+  {source:"data", target:"ml"},
+  {source:"data", target:"dataviz"},
+  {source:"data", target:"analyste"},
+  {source:"data", target:"data_scientist"},
+
+  // Dev -> Niveau 3
+  {source:"dev", target:"dev_fullstack"},
+  {source:"dev", target:"python"},
+
+  // Design -> Niveau 3
+  {source:"design", target:"ux_designer"},
+  {source:"design", target:"dataviz"},
+
+  // Finance -> Niveau 3
+  {source:"finance", target:"banquier"},
+  {source:"finance", target:"analyste"},
+
+  // Santé -> Niveau 3
+  {source:"sante", target:"medecin"},
+
+  // Éducation -> Niveau 3
+  {source:"education", target:"professeur"},
+
+  // Cross-links
+  {source:"python", target:"ml"},
+  {source:"sql", target:"analyste"},
+  {source:"dataviz", target:"ux_designer"},
+];
+
+// ---------------- SVG SETUP ----------------
+const svg = d3.select("#graph");
+let width = window.innerWidth - 260 - 320;
+let height = window.innerHeight;
+
+svg.attr("width", width).attr("height", height);
+
+const centerX = width / 2;
+const centerY = height / 2;
+
+// ---------------- ORBITAL POSITIONS (CIRCLES AROUND EARTH) ----------------
+const levelRadii = {
+  0: 0,      // Terre au centre
+  1: 120,    // Secteurs principaux
+  2: 220,    // Sous-secteurs
+  3: 340     // Métiers / Skills
+};
+
+const levelColors = {
+  0: "#4ade80",
+  1: "#f87171", 
+  2: "#fbbf24",
+  3: "#7ab0ff"
+};
+
+function getOrbitalPositions() {
+  const positions = {};
+
+  // Grouper par niveau
+  const levels = {};
+  nodes.forEach(n => {
+    if (!levels[n.level]) levels[n.level] = [];
+    levels[n.level].push(n);
+  });
+
+  // Positionner chaque niveau en cercle
+  Object.keys(levels).forEach(lvl => {
+    const levelNodes = levels[lvl];
+    const radius = levelRadii[lvl];
+    const angleStep = (2 * Math.PI) / levelNodes.length;
+
+    levelNodes.forEach((n, i) => {
+      const angle = i * angleStep - Math.PI / 2; // Commencer en haut
+      positions[n.id] = {
+        x: centerX + radius * Math.cos(angle),
+        y: centerY + radius * Math.sin(angle),
+        angle: angle,
+        radius: radius
+      };
+    });
+  });
+
+  return positions;
+}
+
+const positions = getOrbitalPositions();
+
+// ---------------- DRAW ORBIT RINGS ----------------
+const orbitGroup = svg.append("g").attr("class", "orbits");
+
+Object.values(levelRadii).forEach(r => {
+  if (r > 0) {
+    orbitGroup.append("circle")
+      .attr("class", "orbit-ring")
+      .attr("cx", centerX)
+      .attr("cy", centerY)
+      .attr("r", r);
+  }
+});
+
+// ---------------- DRAW LINKS ----------------
+const linkGroup = svg.append("g").attr("class", "links");
+
+const link = linkGroup.selectAll("line")
+  .data(links)
+  .enter()
+  .append("line")
+  .attr("class", "link");
+
+// ---------------- DRAW NODES ----------------
+const nodeGroup = svg.append("g").attr("class", "nodes");
+
+const node = nodeGroup.selectAll("g")
+  .data(nodes)
+  .enter()
+  .append("g")
+  .attr("class", "node")
+  .on("click", select)
+  .on("mouseover", function(e, d) {
+    d3.select(this).select("circle").transition().duration(200)
+      .attr("r", d.level === 0 ? 35 : (d.type === "job" ? 22 : 18));
+  })
+  .on("mouseout", function(e, d) {
+    d3.select(this).select("circle").transition().duration(200)
+      .attr("r", d.level === 0 ? 28 : (d.type === "job" ? 16 : 12));
+  });
+
+// Cercles (pas de carrés !)
+node.append("circle")
+  .attr("r", d => d.level === 0 ? 28 : (d.type === "job" ? 16 : 12))
+  .attr("class", d => d.type)
+  .attr("fill", d => {
+    if (d.level === 0) return "url(#earthGradient)";
+    return levelColors[d.level] || "#7ab0ff";
+  });
+
+// Terre spéciale - gradient
+const defs = svg.append("defs");
+const earthGradient = defs.append("radialGradient")
+  .attr("id", "earthGradient")
+  .attr("cx", "30%")
+  .attr("cy", "30%");
+earthGradient.append("stop").attr("offset", "0%").attr("stop-color", "#4ade80");
+earthGradient.append("stop").attr("offset", "100%").attr("stop-color", "#166534");
+
+// Glow filter
+const glowFilter = defs.append("filter").attr("id", "glow");
+glowFilter.append("feGaussianBlur").attr("stdDeviation", "3").attr("result", "coloredBlur");
+const feMerge = glowFilter.append("feMerge");
+feMerge.append("feMergeNode").attr("in", "coloredBlur");
+feMerge.append("feMergeNode").attr("in", "SourceGraphic");
+
+// Labels
+node.append("text")
+  .attr("text-anchor", "middle")
+  .attr("dy", d => d.level === 0 ? 5 : 4)
+  .text(d => d.level === 0 ? "🌍" : d.id)
+  .style("font-size", d => d.level === 0 ? "24px" : "10px")
+  .style("pointer-events", "none");
+
+// Labels externes pour les niveaux > 0
+node.append("text")
+  .attr("text-anchor", "middle")
+  .attr("dy", d => d.level === 0 ? 45 : 22)
+  .text(d => d.level === 0 ? "" : d.label)
+  .style("font-size", "9px")
+  .style("fill", "rgba(255,255,255,0.6)")
+  .style("pointer-events", "none");
+
+// ---------------- UPDATE POSITIONS ----------------
+function update() {
+  node.attr("transform", d => {
+    const p = positions[d.id];
+    return `translate(${p.x},${p.y})`;
+  });
+
+  link
+    .attr("x1", d => positions[d.source].x)
+    .attr("y1", d => positions[d.source].y)
+    .attr("x2", d => positions[d.target].x)
+    .attr("y2", d => positions[d.target].y);
+}
+update();
+
+// ---------------- INTERACTION ----------------
+let selected = null;
+let currentFilter = "all";
+let currentView = "global";
+
+function select(e, d) {
+  selected = d;
+
+  document.getElementById("title").innerText = d.label || d.id;
+  document.getElementById("type").innerText = `Niveau ${d.level} — ${d.type}`;
+
+  const connected = links.filter(l => l.source === d.id || l.target === d.id);
+
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+
+  connected.forEach(l => {
+    const other = l.source === d.id ? l.target : l.source;
+    const otherNode = nodes.find(n => n.id === other);
+    const li = document.createElement("li");
+    li.innerText = otherNode ? (otherNode.label || other) : other;
+    li.style.cursor = "pointer";
+    li.style.opacity = "0.8";
+    li.style.marginBottom = "4px";
+    li.onmouseenter = () => li.style.opacity = "1";
+    li.onmouseleave = () => li.style.opacity = "0.8";
+    list.appendChild(li);
+  });
+
+  document.getElementById("progress").innerText = 
+    Math.floor(Math.random() * 100) + "% (simulé)";
+
+  // Highlight connected links
+  d3.selectAll(".link").classed("highlight", false);
+  d3.selectAll(".link").filter(l => l.source === d.id || l.target === d.id)
+    .classed("highlight", true);
+}
+
+// ---------------- COLLAPSIBLE SIDEBAR ----------------
+function toggleSection(header) {
+  header.classList.toggle("expanded");
+  const content = header.nextElementSibling;
+  content.classList.toggle("open");
+}
+
+// Ouvrir la première section par défaut
+document.querySelectorAll(".section-header")[0].classList.add("expanded");
+document.querySelectorAll(".section-content")[0].classList.add("open");
+
+// ---------------- FILTER ----------------
+function filter(type) {
+  currentFilter = type;
+
+  // Update active button
+  document.querySelectorAll("#sidebar .section-content button").forEach(btn => {
+    btn.classList.remove("active");
+  });
+  if (document.getElementById(`btn-${type}`)) {
+    document.getElementById(`btn-${type}`).classList.add("active");
+  }
+
+  node.transition().duration(400)
+    .style("opacity", d => {
+      if (type === "all") return 1;
+      if (type === "industry" && (d.type === "industry" || d.id === "terre")) return 1;
+      if (type === "btp" && (d.type === "btp" || d.id === "terre" || d.id === "industrie")) return 1;
+      return d.type === type || d.id === "terre" ? 1 : 0.1;
+    });
+
+  link.transition().duration(400)
+    .style("opacity", d => {
+      if (type === "all") return 1;
+      const sourceNode = nodes.find(n => n.id === d.source);
+      const targetNode = nodes.find(n => n.id === d.target);
+      if (type === "industry") {
+        return (sourceNode.type === "industry" || targetNode.type === "industry") ? 1 : 0.05;
+      }
+      if (type === "btp") {
+        return (sourceNode.type === "btp" || targetNode.type === "btp" || 
+                sourceNode.id === "industrie" || targetNode.id === "industrie") ? 1 : 0.05;
+      }
+      return (sourceNode.type === type || targetNode.type === type) ? 1 : 0.05;
+    });
+}
+
+// ---------------- VIEW MODES ----------------
+function setView(view) {
+  currentView = view;
+
+  document.querySelectorAll("#sidebar .section-content button").forEach(btn => {
+    if (btn.id && btn.id.startsWith("btn-")) btn.classList.remove("active");
+  });
+  if (document.getElementById(`btn-${view}`)) {
+    document.getElementById(`btn-${view}`).classList.add("active");
+  }
+
+  if (view === "global") {
+    // Show all levels
+    node.transition().duration(600).style("opacity", 1);
+    link.transition().duration(600).style("opacity", 1);
+    orbitGroup.transition().duration(600).style("opacity", 1);
+  } else if (view === "intermediate") {
+    // Hide level 3, show 0-2
+    node.transition().duration(600)
+      .style("opacity", d => d.level <= 2 ? 1 : 0.1);
+    link.transition().duration(600)
+      .style("opacity", d => {
+        const s = nodes.find(n => n.id === d.source);
+        const t = nodes.find(n => n.id === d.target);
+        return (s.level <= 2 && t.level <= 2) ? 1 : 0.05;
+      });
+  } else if (view === "detail") {
+    // Focus on level 3 with context
+    node.transition().duration(600)
+      .style("opacity", d => d.level >= 2 ? 1 : 0.4);
+    link.transition().duration(600)
+      .style("opacity", d => {
+        const s = nodes.find(n => n.id === d.source);
+        const t = nodes.find(n => n.id === d.target);
+        return (s.level >= 2 || t.level >= 2) ? 1 : 0.05;
+      });
+  }
+}
+
+// ---------------- FOCUS ON SECTOR ----------------
+function focusOn(sector) {
+  const sectorMap = {
+    "earth": ["terre"],
+    "industry": ["industrie", "btp", "manufacture", "energie", "agriculture"],
+    "btp": ["btp", "architecte", "ingenieur_btp", "chef_chantier"],
+    "service": ["services", "finance", "sante", "education"],
+    "tech": ["tech", "dev", "data", "design", "python", "sql", "ml", "dataviz", "dev_fullstack", "ux_designer"]
+  };
+
+  const focusIds = sectorMap[sector] || [];
+
+  node.transition().duration(600)
+    .style("opacity", d => focusIds.includes(d.id) || d.id === "terre" ? 1 : 0.1);
+
+  link.transition().duration(600)
+    .style("opacity", d => {
+      return (focusIds.includes(d.source) || focusIds.includes(d.target) || 
+              d.source === "terre" || d.target === "terre") ? 1 : 0.05;
+    });
+}
+
+// ---------------- SEARCH ----------------
+function handleSearch() {
+  const query = document.getElementById("searchInput").value.toLowerCase();
+  if (!query) {
+    node.transition().duration(300).style("opacity", 1);
+    link.transition().duration(300).style("opacity", 1);
+    return;
+  }
+
+  node.transition().duration(300)
+    .style("opacity", d => {
+      const match = (d.id.includes(query) || (d.label && d.label.toLowerCase().includes(query)));
+      return match ? 1 : 0.1;
+    });
+}
+
+// ---------------- FAKE FEATURES ----------------
+function fakeAI() {
+  if (!selected) {
+    document.getElementById("ai").innerText = "Sélectionnez un nœud d'abord.";
+    return;
+  }
+  const msgs = [
+    "Cluster de compétences à fort potentiel détecté.",
+    "Recommandé : renforcer les skills analytiques adjacents.",
+    "Alignement avec la trajectoire de carrière confirmé.",
+    "Ce nœud est une dépendance structurelle du réseau.",
+    "Opportunité de croisement inter-sectoriel identifiée."
+  ];
+  document.getElementById("ai").innerText = 
+    msgs[Math.floor(Math.random() * msgs.length)];
+}
+
+function fakePath() {
+  if (!selected) {
+    document.getElementById("ai").innerText = "Sélectionnez un nœud pour trouver un chemin.";
+    return;
+  }
+
+  // Highlight path from earth to selected
+  const path = findPathToEarth(selected.id);
+
+  d3.selectAll(".link").classed("highlight", false);
+  d3.selectAll(".link").style("stroke", "rgba(255,255,255,0.15)");
+
+  path.forEach((nodeId, i) => {
+    if (i < path.length - 1) {
+      d3.selectAll(".link").filter(l => 
+        (l.source === nodeId && l.target === path[i+1]) ||
+        (l.source === path[i+1] && l.target === nodeId)
+      )
+      .style("stroke", "#7ab0ff")
+      .style("stroke-width", "3px");
+    }
+  });
+
+  document.getElementById("ai").innerText = 
+    `Chemin trouvé : ${path.map(id => nodes.find(n => n.id === id)?.label || id).join(" → ")}`;
+}
+
+function findPathToEarth(startId) {
+  const visited = new Set();
+  const queue = [[startId]];
+
+  while (queue.length > 0) {
+    const path = queue.shift();
+    const current = path[path.length - 1];
+
+    if (current === "terre") return path;
+
+    if (!visited.has(current)) {
+      visited.add(current);
+
+      const neighbors = links
+        .filter(l => l.source === current || l.target === current)
+        .map(l => l.source === current ? l.target : l.source);
+
+      neighbors.forEach(n => {
+        if (!visited.has(n)) {
+          queue.push([...path, n]);
+        }
+      });
+    }
+  }
+
+  return [startId];
+}
+
+function resetView() {
+  selected = null;
+  document.getElementById("title").innerText = "Sélectionner un nœud";
+  document.getElementById("type").innerText = "---";
+  document.getElementById("progress").innerText = "--";
+  document.getElementById("list").innerHTML = "";
+  document.getElementById("ai").innerText = "Aucune analyse pour le moment.";
+
+  d3.selectAll(".link")
+    .classed("highlight", false)
+    .style("stroke", "rgba(255,255,255,0.15)")
+    .style("stroke-width", "1px");
+
+  node.transition().duration(600).style("opacity", 1);
+  link.transition().duration(600).style("opacity", 1);
+}
+
+// ---------------- RESIZE ----------------
+window.addEventListener("resize", () => {
+  width = window.innerWidth - 260 - 320;
+  height = window.innerHeight;
+  svg.attr("width", width).attr("height", height);
+
+  // Recalculate positions
+  const newCenterX = width / 2;
+  const newCenterY = height / 2;
+
+  Object.keys(positions).forEach(id => {
+    const p = positions[id];
+    positions[id].x = newCenterX + p.radius * Math.cos(p.angle);
+    positions[id].y = newCenterY + p.radius * Math.sin(p.angle);
+  });
+
+  orbitGroup.selectAll("circle")
+    .attr("cx", newCenterX)
+    .attr("cy", newCenterY);
+
+  update();
+});
+
+// Animation d'entrée
+node.style("opacity", 0)
+  .transition()
+  .duration(800)
+  .delay((d, i) => i * 50)
+  .style("opacity", 1);
+
+link.style("opacity", 0)
+  .transition()
+  .duration(800)
+  .delay(500)
+  .style("opacity", 1);
+
+</script>
+
+</body>
+</html>
