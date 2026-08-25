@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { LogoImg, ShotImg } from './ToolVisual';
 
 const ChevronLeftIcon = () => (
   <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -25,6 +26,10 @@ export interface CarouselItem {
   titleLine2?: string;
   desc?: string;
   img?: string;
+  logo?: string;
+  host?: string;
+  href?: string;
+  layout?: 'poster' | 'tool';
   tone?: string;
   ctaText?: string;
   ctaUrl?: string;
@@ -226,6 +231,9 @@ export function CoverFlowCarousel({
               filter = 'brightness(0.55) blur(1px)';
             }
 
+            const nearby = offset === 0 || offset === 1 || offset === 2 || offset === total - 1 || offset === total - 2;
+            const isTool = item.layout === 'tool';
+
             return (
               <div
                 key={item.id || idx}
@@ -250,7 +258,48 @@ export function CoverFlowCarousel({
                   cursor: isCenter ? 'default' : 'pointer'
                 }}
               >
-                {item.img ? (
+                {isTool ? (
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#0b1220' }}>
+                    <div
+                      style={{
+                        height: 28,
+                        flexShrink: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '0 10px',
+                        background: '#111827',
+                        borderBottom: '1px solid rgba(255,255,255,0.08)'
+                      }}
+                    >
+                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#f87171' }} />
+                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#fbbf24' }} />
+                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#34d399' }} />
+                      <span
+                        style={{
+                          marginLeft: 6,
+                          flex: 1,
+                          fontSize: 9,
+                          color: 'rgba(226,232,240,0.7)',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {item.host || 'page officielle'}
+                      </span>
+                    </div>
+                    <div style={{ height: 228, flexShrink: 0, position: 'relative', background: '#0f172a' }}>
+                      {nearby && (
+                        <ShotImg
+                          src={item.img}
+                          alt={`${item.titleLine1} — page d’accueil`}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                ) : item.img && nearby ? (
                   <img
                     src={item.img}
                     alt={item.titleLine1}
@@ -269,8 +318,9 @@ export function CoverFlowCarousel({
                   style={{
                     position: 'absolute',
                     inset: 0,
-                    background:
-                      'linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.1) 25%, rgba(0,0,0,0.68) 60%, rgba(0,0,0,0.96) 100%)',
+                    background: isTool
+                      ? 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 48%, rgba(11,18,32,0.92) 68%, #0b1220 100%)'
+                      : 'linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.1) 25%, rgba(0,0,0,0.68) 60%, rgba(0,0,0,0.96) 100%)',
                     pointerEvents: 'none',
                     zIndex: 10
                   }}
@@ -298,6 +348,21 @@ export function CoverFlowCarousel({
                     </span>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, marginTop: 'auto' }}>
+                    {isTool && item.href && nearby && (
+                      <div
+                        style={{
+                          width: 52,
+                          height: 52,
+                          borderRadius: 14,
+                          padding: 4,
+                          background: '#fff',
+                          boxShadow: '0 8px 20px rgba(0,0,0,0.35)',
+                          marginBottom: 6
+                        }}
+                      >
+                        <LogoImg url={item.href} title={item.titleLine1} size={44} />
+                      </div>
+                    )}
                     <h2
                       style={{
                         fontSize: '1.35rem',

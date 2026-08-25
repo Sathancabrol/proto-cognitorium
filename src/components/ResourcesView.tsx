@@ -17,14 +17,25 @@ import {
 } from '../data/savoirsResources';
 import { LEGAL_RULE } from '../data/psyRefLibrary';
 import { SEARCH_EXAMPLES, searchResources } from '../utils/resourceSearch';
+import { hostOf, homepageOf, shotUrl } from '../utils/toolVisuals';
+import { LogoImg, ShotImg } from './ui/ToolVisual';
 import coverPsyref from '../assets/images/cover-psyref.jpg';
 import coverAtlas from '../assets/images/cover-atlas.jpg';
 import coverSrl from '../assets/images/cover-srl.jpg';
 import coverLab from '../assets/images/cover-lab.jpg';
 import coverMetacog from '../assets/images/cover-metacog.jpg';
 import coverIcd from '../assets/images/cover-icd.jpg';
+import coverOutilsLab from '../assets/images/cover-outils-lab.jpg';
+import coverOutilsEval from '../assets/images/cover-outils-eval.jpg';
+import coverOutilsData from '../assets/images/cover-outils-data.jpg';
 
 const ART = [coverPsyref, coverAtlas, coverSrl, coverLab, coverMetacog, coverIcd];
+
+const FAMILY_ART: Record<string, string> = {
+  outils: coverOutilsLab,
+  'outils-eval': coverOutilsEval,
+  'outils-data': coverOutilsData
+};
 
 const KIND_TONE: Record<string, string> = {
   oer: 'linear-gradient(160deg,#0f766e,#134e4a)',
@@ -53,7 +64,21 @@ const ResourceFiche: React.FC<{
   const isOutil = layerOfCollection(item.collection) === 'outils';
   return (
     <article id="ressources-fiche" className="rounded-3xl overflow-hidden border border-slate-800 bg-[#0f172a] text-slate-100 shadow-xl">
-      <header className="px-5 sm:px-8 pt-6 pb-4 border-b border-white/10 space-y-2">
+      {isOutil && (
+        <div className="relative border-b border-white/10">
+          <div className="h-44 overflow-hidden bg-slate-900">
+            <ShotImg
+              src={shotUrl(item.url)}
+              alt={`${item.title} — page d’accueil`}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
+            />
+          </div>
+          <div className="absolute left-5 -bottom-6 w-14 h-14 rounded-2xl bg-white p-1.5 shadow-lg">
+            <LogoImg url={item.url} title={item.title} size={44} />
+          </div>
+        </div>
+      )}
+      <header className={`px-5 sm:px-8 pt-6 pb-4 border-b border-white/10 space-y-2 ${isOutil ? 'pt-10' : ''}`}>
         <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-300">
           {isOutil ? 'Fiche outil' : 'Fiche ressource'}
         </p>
@@ -223,24 +248,28 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
   };
 
   const coverItems: CarouselItem[] = coverCol
-    ? resourcesOf(coverCol).map(
-        (r): CarouselItem => ({
+    ? resourcesOf(coverCol).map((r): CarouselItem => {
+        const tool = layerOfCollection(r.collection) === 'outils';
+        return {
           id: r.id,
           tag: KIND_LABEL[r.kind],
           titleLine1: r.title.length > 42 ? r.title.slice(0, 40) + '…' : r.title,
-          desc: `${r.authors} (${r.year})`,
-          img: ART[RESOURCE_COLLECTIONS.findIndex((c) => c.id === r.collection) % ART.length],
+          desc: tool ? `${hostOf(r.url) || r.authors} · page d’accueil` : `${r.authors} (${r.year})`,
+          img: tool ? shotUrl(r.url) : ART[RESOURCE_COLLECTIONS.findIndex((c) => c.id === r.collection) % ART.length],
+          href: r.url,
+          host: homepageOf(r.url) ? hostOf(r.url) : undefined,
+          layout: tool ? 'tool' : 'poster',
           tone: KIND_TONE[r.kind],
           ctaText: 'Voir la fiche'
-        })
-      )
+        };
+      })
     : layerCols.map(
         (c, i): CarouselItem => ({
           id: c.id,
           tag: layer === 'outils' ? '#Outils' : '#Dossier',
           titleLine1: c.label,
           desc: `${resourcesOf(c.id).length} ressources · ${c.blurb}`,
-          img: ART[i % ART.length],
+          img: FAMILY_ART[c.id] || ART[i % ART.length],
           ctaText: 'Ouvrir'
         })
       );
@@ -297,9 +326,9 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
           {layer === 'outils' ? (
             <>
               Niveau connecté à Ressources : batteries et tâches d’évaluation cognitive, puis
-              traitement de données (stats, EEG/IRM, physio, psychophysique). Panorama documentaire —
-              pas une liste exhaustive de chaque SKU éditeur, jamais un diagnostic ni une cotation
-              dans Cognitorium.
+              traitement de données (stats, EEG/IRM, physio, psychophysique). Chaque carte montre le
+              <strong> logo du site officiel</strong> et un <strong>aperçu live de la page d’accueil</strong>
+              (en cours d’utilisation). Panorama documentaire — jamais un diagnostic ni une cotation.
             </>
           ) : (
             <>
@@ -388,7 +417,12 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
                       <span className="text-[10px] font-bold text-teal-700">outils</span>
                     )}
                   </div>
-                  <p className="text-sm font-bold text-slate-900 mt-0.5">{item.title}</p>
+                  <p className="text-sm font-bold text-slate-900 mt-0.5 inline-flex items-center gap-2">
+                    {layerOfCollection(item.collection) === 'outils' && (
+                      <LogoImg url={item.url} title={item.title} size={18} />
+                    )}
+                    {item.title}
+                  </p>
                   <p className="text-[11px] text-slate-500 line-clamp-2">{item.subtitle}</p>
                   <span className="sr-only">score {score}</span>
                 </button>
@@ -443,10 +477,11 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
                     <button
                       type="button"
                       onClick={() => openItem(r.id)}
-                      className={`text-left text-sm py-0.5 ${
+                      className={`text-left text-sm py-0.5 inline-flex items-center gap-2 ${
                         picked === r.id ? 'text-violet-800 font-bold' : 'text-slate-700 hover:text-violet-800'
                       }`}
                     >
+                      {layer === 'outils' && <LogoImg url={r.url} title={r.title} size={16} />}
                       {r.title}
                     </button>
                   </li>
@@ -498,8 +533,12 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
                 setCoverCol(c.id);
                 setMode('coverflow');
               }}
-              className="text-left bg-white border border-slate-200 rounded-2xl p-4 hover:border-violet-400 transition-colors"
+              className="text-left bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-violet-400 transition-colors"
             >
+              {FAMILY_ART[c.id] && (
+                <img src={FAMILY_ART[c.id]} alt="" className="w-full h-28 object-cover" />
+              )}
+              <div className="p-4">
               <div className="flex items-center gap-2 mb-1">
                 {layer === 'outils' ? (
                   <Wrench className="w-3.5 h-3.5 text-teal-700" />
@@ -512,6 +551,7 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
               </div>
               <h3 className="text-sm font-bold text-slate-900">{c.label}</h3>
               <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{c.blurb}</p>
+              </div>
             </button>
           );
         })}
