@@ -8,6 +8,13 @@ import {
   PSYREF_SOURCES,
   SourceLayer
 } from '../data/psyRefSources';
+import {
+  DOWNLOAD_ORDER,
+  EVIDENCE_MARKS,
+  LEGAL_RULE,
+  LIBRARY_FOLDERS,
+  PSYREF_LIBRARY
+} from '../data/psyRefLibrary';
 
 const LAYER_STYLE: Record<SourceLayer, string> = {
   normative: 'bg-slate-900 text-amber-200 border-slate-700',
@@ -19,7 +26,9 @@ const LAYER_STYLE: Record<SourceLayer, string> = {
 };
 
 export const PsyRefView: React.FC = () => {
+  const [pane, setPane] = useState<'sources' | 'library'>('library');
   const [layer, setLayer] = useState<SourceLayer | 'all'>('all');
+  const [folder, setFolder] = useState<string>('all');
   const [q, setQ] = useState('');
 
   const list = useMemo(() => {
@@ -30,6 +39,15 @@ export const PsyRefView: React.FC = () => {
       return `${s.name} ${s.role} ${s.tags.join(' ')}`.toLowerCase().includes(query);
     });
   }, [layer, q]);
+
+  const books = useMemo(() => {
+    const query = q.trim().toLowerCase();
+    return PSYREF_LIBRARY.filter((w) => {
+      if (folder !== 'all' && w.folder !== folder) return false;
+      if (!query) return true;
+      return `${w.titre} ${w.auteurs} ${w.domaine}`.toLowerCase().includes(query);
+    });
+  }, [folder, q]);
 
   return (
     <div className="space-y-5 pb-12">
@@ -44,8 +62,76 @@ export const PsyRefView: React.FC = () => {
           Référentiel des sources
         </h1>
         <p className="text-sm text-slate-600 max-w-3xl mt-2 leading-relaxed">{PSYREF_NOTES.principle}</p>
+        <div className="flex gap-1 mt-4">
+          <button type="button" onClick={() => setPane('library')} className={`px-3 py-1.5 rounded-xl text-xs font-bold ${pane === 'library' ? 'bg-slate-900 text-white' : 'bg-slate-100'}`}>
+            Bibliothèque OER
+          </button>
+          <button type="button" onClick={() => setPane('sources')} className={`px-3 py-1.5 rounded-xl text-xs font-bold ${pane === 'sources' ? 'bg-slate-900 text-white' : 'bg-slate-100'}`}>
+            Institutions & index
+          </button>
+        </div>
       </div>
 
+      {pane === 'library' && (
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-950 leading-relaxed flex gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+            {LEGAL_RULE} Les PDF ne sont pas dans Git. Clinique = <code>information_documentaire_non_diagnostique</code>.
+          </div>
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Ordre de démarrage (10)</h2>
+            <ol className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              {DOWNLOAD_ORDER.map((id, i) => {
+                const w = PSYREF_LIBRARY.find((x) => x.id === id);
+                if (!w) return null;
+                return (
+                  <li key={id} className="text-xs text-slate-700">
+                    <span className="font-black text-slate-400 mr-2">{i + 1}.</span>
+                    {w.titre}
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto pb-1">
+            <button type="button" onClick={() => setFolder('all')} className={`px-2.5 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap border ${folder === 'all' ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-200'}`}>
+              Tous
+            </button>
+            {LIBRARY_FOLDERS.map((f) => (
+              <button key={f.id} type="button" onClick={() => setFolder(f.id)} className={`px-2.5 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap border ${folder === f.id ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-200'}`}>
+                {f.label}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {books.map((w) => (
+              <article key={w.id} className={`rounded-2xl border p-4 space-y-2 ${w.legal === 'commercial-ne-pas-telecharger' ? 'border-rose-200 bg-rose-50/40' : 'border-slate-200 bg-white'}`}>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-900 text-amber-200">
+                    {w.niveauPreuve} · {EVIDENCE_MARKS[w.niveauPreuve]}
+                  </span>
+                  <span className="text-[10px] font-bold text-slate-500">{w.licence}</span>
+                </div>
+                <h3 className="text-sm font-bold text-slate-900">{w.titre}</h3>
+                <p className="text-[11px] text-slate-500">
+                  {w.auteurs} ({w.annee})
+                </p>
+                <p className="text-xs text-slate-600 leading-relaxed">{w.role}</p>
+                {w.note && <p className="text-[11px] text-amber-800 leading-relaxed">{w.note}</p>}
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-slate-400">{w.folder}</span>
+                  <a href={w.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600">
+                    Éditeur officiel <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {pane === 'sources' && (
+      <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {EVIDENCE_HIERARCHY.map((h) => (
           <button
@@ -194,6 +280,8 @@ export const PsyRefView: React.FC = () => {
           ))}
         </div>
       </section>
+      </>
+      )}
     </div>
   );
 };
