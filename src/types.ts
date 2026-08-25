@@ -234,12 +234,13 @@ export type AppActiveTab =
   | 'tree'        // Vue Arbre & Décomposition Hiérarchique
   | 'table'       // Vue Tableau & Matrice de Maîtrise
   | 'horizons'    // Passerelles ROME & Horizons Métiers
+  | 'metiers'     // Graphe métiers (données & filtres ROME)
   | 'decay'       // Vitalité & Temporalité (Decay Engine)
   | 'signature'   // Signature Cognitive & Passeport
   | 'atlas'       // Arborescence des savoirs psychologiques
   | 'posters'     // Atlas expérimental (posters / infographies)
   | 'metacog'     // Boucle métacognitive & SRL
-  | 'psyref';     // Référentiel de sources (PsyRef)
+  | 'psyref';     // Référence — bibliothèque de sources
 
 // ============================================================================
 // STRUCTURE DU PRODUIT : MON COGNITORIUM est organisé en 5 sections orientées
@@ -266,6 +267,7 @@ export const SECTION_OF_TAB: Record<AppActiveTab, CognitoriumSection> = {
   temporal: 'experiences',
   table: 'competences',
   horizons: 'possibilites',
+  metiers: 'possibilites',
   decay: 'evolution',
   atlas: 'savoirs',
   posters: 'savoirs',

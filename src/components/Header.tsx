@@ -41,7 +41,8 @@ const SECTION_VIEWS: Record<CognitoriumSection, { tab: AppActiveTab; label: stri
     { tab: 'tree', label: 'Arbre', testId: 'tab-btn-tree-competences' }
   ],
   possibilites: [
-    { tab: 'horizons', label: 'Horizons ROME', testId: 'tab-btn-horizons' }
+    { tab: 'horizons', label: 'Horizons ROME', testId: 'tab-btn-horizons' },
+    { tab: 'metiers', label: 'Graphe métiers', testId: 'tab-btn-metiers-graph' }
   ],
   evolution: [
     { tab: 'decay', label: 'Vitalité & Temps', testId: 'tab-btn-decay' },
@@ -51,7 +52,7 @@ const SECTION_VIEWS: Record<CognitoriumSection, { tab: AppActiveTab; label: stri
     { tab: 'atlas', label: 'Arborescence', testId: 'tab-btn-atlas' },
     { tab: 'posters', label: 'Posters', testId: 'tab-btn-posters' },
     { tab: 'metacog', label: 'Boucle SRL', testId: 'tab-btn-metacog' },
-    { tab: 'psyref', label: 'PsyRef', testId: 'tab-btn-psyref' }
+    { tab: 'psyref', label: 'Référence', testId: 'tab-btn-psyref' }
   ]
 };
 
@@ -72,6 +73,7 @@ const VIEW_ACTIVE_COLORS: Record<AppActiveTab, string> = {
   temporal: 'bg-cyan-600 text-white',
   table: 'bg-cyan-600 text-white',
   horizons: 'bg-orange-600 text-white',
+  metiers: 'bg-amber-600 text-white',
   decay: 'bg-indigo-600 text-white',
   atlas: 'bg-violet-600 text-white',
   posters: 'bg-amber-600 text-white',
