@@ -230,6 +230,7 @@ export interface CognitiveProfile {
 export type AppActiveTab = 
   | 'dashboard'   // Mon Cognitorium (Accueil & Synthèse)
   | 'network'     // Graphe Réseau Dynamique (Canvas interactif)
+  | 'temporal'    // Graphe réseau animé dans le temps
   | 'tree'        // Vue Arbre & Décomposition Hiérarchique
   | 'table'       // Vue Tableau & Matrice de Maîtrise
   | 'horizons'    // Passerelles ROME & Horizons Métiers
@@ -257,6 +258,7 @@ export const SECTION_OF_TAB: Record<AppActiveTab, CognitoriumSection> = {
   signature: 'profil',
   tree: 'experiences',
   network: 'experiences',
+  temporal: 'experiences',
   table: 'competences',
   horizons: 'possibilites',
   decay: 'evolution'

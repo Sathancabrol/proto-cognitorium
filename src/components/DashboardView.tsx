@@ -460,6 +460,29 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
+          {/* Card 1b: Graphe Temporel */}
+          <div
+            id="entry-card-temporal"
+            onClick={() => onNavigateTab('temporal')}
+            className="p-5 bg-white rounded-3xl border border-slate-200 hover:border-cyan-400 hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between space-y-4"
+          >
+            <div className="space-y-2">
+              <div className="w-10 h-10 rounded-2xl bg-cyan-50 text-cyan-600 flex items-center justify-center font-bold">
+                <Clock className="w-5 h-5" />
+              </div>
+              <h3 className="font-bold text-sm text-slate-900 group-hover:text-cyan-600">
+                Graphe Temporel
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Voyez le réseau se construire dans le temps : les ronds s'activent progressivement, les liens se tissent au même rythme.
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-bold text-cyan-600">
+              <span>Lire la construction</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+
           {/* Card 2: Vue Arbre & Décomposition */}
           <div
             id="entry-card-tree"

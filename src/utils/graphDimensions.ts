@@ -1,4 +1,4 @@
-import { AnyCognitiveNode, NodeCategory } from '../types';
+import { AnyCognitiveNode, CapacityNode, HorizonJobNode, NodeCategory, TaskNode } from '../types';
 
 export type DimensionMode = '2d' | 'timeline';
 
@@ -102,6 +102,73 @@ export function extractNodeYear(node: AnyCognitiveNode): number {
     default:
       return 2020;
   }
+}
+
+/**
+ * Année d'apparition dans le graphe temporel.
+ * Cascade : vécu → tâches → compétences → capacités → horizons.
+ * Un léger décalage intra-année évite que tous les ronds d'une même année explosent d'un coup.
+ */
+export function computeAppearYears(nodes: AnyCognitiveNode[]): Map<string, number> {
+  const years = new Map<string, number>();
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+
+  for (const node of nodes) {
+    if (
+      node.category === 'task' ||
+      node.category === 'capacity_cognitive' ||
+      node.category === 'horizon_job'
+    ) {
+      continue;
+    }
+    years.set(node.id, extractNodeYear(node));
+  }
+
+  for (const node of nodes) {
+    if (node.category !== 'task') continue;
+    const task = node as TaskNode;
+    const parent = byId.get(task.experienceId);
+    const parentYear = parent
+      ? (years.get(parent.id) ?? extractNodeYear(parent))
+      : extractNodeYear(node);
+    years.set(node.id, parentYear + 0.16);
+  }
+
+  for (const node of nodes) {
+    if (node.category !== 'capacity_cognitive') continue;
+    const cap = node as CapacityNode;
+    const skillYears = (cap.underlyingSkills || [])
+      .map((id) => years.get(id))
+      .filter((y): y is number => typeof y === 'number');
+    years.set(node.id, skillYears.length > 0 ? Math.max(...skillYears) + 0.28 : extractNodeYear(node));
+  }
+
+  const knownYears = Array.from(years.values());
+  const fallbackHorizon = knownYears.length > 0 ? Math.max(...knownYears) + 0.35 : extractNodeYear(nodes[0] || ({ category: 'horizon_job' } as AnyCognitiveNode));
+
+  for (const node of nodes) {
+    if (node.category !== 'horizon_job') continue;
+    const job = node as HorizonJobNode;
+    const related = (job.matchingSkillIds || [])
+      .map((id) => years.get(id))
+      .filter((y): y is number => typeof y === 'number');
+    years.set(node.id, related.length > 0 ? Math.max(...related) + 0.42 : fallbackHorizon);
+  }
+
+  const buckets = new Map<number, string[]>();
+  for (const [id, year] of years) {
+    const key = Math.round(year);
+    const list = buckets.get(key) || [];
+    list.push(id);
+    buckets.set(key, list);
+  }
+  for (const ids of buckets.values()) {
+    ids.forEach((id, index) => {
+      years.set(id, (years.get(id) || 0) + index * 0.032);
+    });
+  }
+
+  return years;
 }
 
 /**
