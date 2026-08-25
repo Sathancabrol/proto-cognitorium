@@ -4,8 +4,37 @@ import { KEY_CITATIONS, PSYCHOLOGY_BRANCHES, PsyNode } from '../data/psychologyA
 import { AppActiveTab } from '../types';
 import { DisciplineGraph, findNode } from './atlas/DisciplineGraph';
 import { ConstellationAtlas } from './atlas/ConstellationAtlas';
+import { CoverFlowCarousel, CarouselItem } from './ui/CoverFlowCarousel';
+import coverMetacog from '../assets/images/cover-metacog.jpg';
+import coverAtlas from '../assets/images/cover-atlas.jpg';
+import coverLab from '../assets/images/cover-lab.jpg';
+import coverPsyref from '../assets/images/cover-psyref.jpg';
+import coverIcd from '../assets/images/cover-icd.jpg';
+import coverSrl from '../assets/images/cover-srl.jpg';
 
 type AtlasMode = 'titres' | 'graphe' | 'coverflow';
+
+const BRANCH_ART: Record<string, string> = {
+  cognitive: coverMetacog,
+  clinical: coverIcd,
+  dev: coverSrl,
+  social: coverLab,
+  personality: coverAtlas,
+  bio: coverMetacog,
+  education: coverSrl,
+  io: coverPsyref
+};
+
+const BRANCH_TONE: Record<string, string> = {
+  blue: 'linear-gradient(160deg,#1d4ed8,#0f172a)',
+  rose: 'linear-gradient(160deg,#be123c,#0f172a)',
+  emerald: 'linear-gradient(160deg,#047857,#0f172a)',
+  amber: 'linear-gradient(160deg,#b45309,#0f172a)',
+  violet: 'linear-gradient(160deg,#6d28d9,#0f172a)',
+  teal: 'linear-gradient(160deg,#0f766e,#0f172a)',
+  indigo: 'linear-gradient(160deg,#4338ca,#0f172a)',
+  slate: 'linear-gradient(160deg,#334155,#0c0a09)'
+};
 
 const COLOR: Record<string, { chip: string; bar: string; ring: string }> = {
   blue: { chip: 'bg-blue-50 text-blue-700 border-blue-200', bar: 'bg-blue-600', ring: 'hover:border-blue-400' },
@@ -140,10 +169,21 @@ const CitationsPanel: React.FC = () => {
 export const PsychologyAtlasView: React.FC<{ onNavigate?: (tab: AppActiveTab) => void }> = () => {
   const [mode, setMode] = useState<AtlasMode>('coverflow');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [nebulaBranch, setNebulaBranch] = useState<string | null>(null);
 
   const hit = selectedId ? findNode(PSYCHOLOGY_BRANCHES, selectedId) : null;
   const selectedBranch = hit?.branch ?? PSYCHOLOGY_BRANCHES.find((b) => b.id === selectedId);
   const colors = COLOR[selectedBranch?.color || 'slate'];
+
+  const branchCards: CarouselItem[] = PSYCHOLOGY_BRANCHES.map((b) => ({
+    id: b.id,
+    tag: '#Branche',
+    titleLine1: b.title,
+    desc: b.object,
+    img: BRANCH_ART[b.id],
+    tone: BRANCH_TONE[b.color],
+    ctaText: 'Entrer dans la nébuleuse'
+  }));
 
   return (
     <div className="space-y-5 pb-12">
@@ -153,8 +193,8 @@ export const PsychologyAtlasView: React.FC<{ onNavigate?: (tab: AppActiveTab) =>
         </span>
         <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight mt-3">Arborescence de la psychologie</h1>
         <p className="text-sm text-slate-600 max-w-3xl mt-2 leading-relaxed">
-          Même contenu, trois affichages. La constellation est un plan unique (style arbre de compétences) :
-          clic = la caméra vole vers la carte ; retour = domaine précédent.
+          Coverflow des branches (le nom d’abord). Un clic t’envoie dans la nébuleuse de cette branche seule —
+          fil d’Ariane et prochaines étapes, pour ne pas se perdre.
         </p>
         <div className="flex flex-wrap gap-1.5 mt-4">
           {(
@@ -167,7 +207,10 @@ export const PsychologyAtlasView: React.FC<{ onNavigate?: (tab: AppActiveTab) =>
             <button
               key={m.id}
               type="button"
-              onClick={() => setMode(m.id)}
+              onClick={() => {
+                setMode(m.id);
+                if (m.id !== 'coverflow') setNebulaBranch(null);
+              }}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${
                 mode === m.id ? 'bg-slate-900 text-white border-slate-900' : 'bg-white border-slate-200'
               }`}
@@ -179,7 +222,28 @@ export const PsychologyAtlasView: React.FC<{ onNavigate?: (tab: AppActiveTab) =>
         </div>
       </div>
 
-      {mode === 'coverflow' && <ConstellationAtlas selectedId={selectedId} onSelect={setSelectedId} />}
+      {mode === 'coverflow' && !nebulaBranch && (
+        <CoverFlowCarousel
+          items={branchCards}
+          sectionLabel="Choisir une branche"
+          autoplay={false}
+          onCtaClick={(item) => {
+            if (!item.id) return;
+            setNebulaBranch(item.id);
+            setSelectedId(item.id);
+          }}
+        />
+      )}
+      {mode === 'coverflow' && nebulaBranch && (
+        <ConstellationAtlas
+          branchId={nebulaBranch}
+          onSelect={setSelectedId}
+          onExit={() => {
+            setNebulaBranch(null);
+            setSelectedId(null);
+          }}
+        />
+      )}
       {mode === 'titres' && <TitleOutline selectedId={selectedId} onSelect={setSelectedId} />}
       {mode === 'graphe' && (
         <DisciplineGraph branches={PSYCHOLOGY_BRANCHES} selectedId={selectedId} onSelect={setSelectedId} />
