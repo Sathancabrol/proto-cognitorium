@@ -240,7 +240,8 @@ export type AppActiveTab =
   | 'atlas'       // Arborescence des savoirs psychologiques
   | 'posters'     // Atlas expérimental (posters / infographies)
   | 'metacog'     // Boucle métacognitive & SRL
-  | 'psyref';     // Référence — bibliothèque de sources
+  | 'psyref'      // Référence — bibliothèque de sources
+  | 'ressources'; // Carte de lecture OER + classiques
 
 // ============================================================================
 // STRUCTURE DU PRODUIT : MON COGNITORIUM est organisé en 5 sections orientées
@@ -272,7 +273,8 @@ export const SECTION_OF_TAB: Record<AppActiveTab, CognitoriumSection> = {
   atlas: 'savoirs',
   posters: 'savoirs',
   metacog: 'savoirs',
-  psyref: 'savoirs'
+  psyref: 'savoirs',
+  ressources: 'savoirs'
 };
 
 /** Vues par défaut de chaque section. */

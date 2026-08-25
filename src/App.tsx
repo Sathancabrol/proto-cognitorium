@@ -17,6 +17,7 @@ import { PsychologyAtlasView } from './components/PsychologyAtlasView';
 import { ExperimentStudio } from './components/ExperimentStudio';
 import { MetacogLoopView } from './components/MetacogLoopView';
 import { PsyRefView } from './components/PsyRefView';
+import { ResourcesView } from './components/ResourcesView';
 import { INITIAL_COGNITORIUM_PROFILE, PROFILES_PRESETS } from './data/initialData';
 import { 
   CognitiveProfile, 
@@ -410,6 +411,15 @@ export default function App() {
         )}
         {activeTab === 'metacog' && <MetacogLoopView />}
         {activeTab === 'psyref' && <PsyRefView focusId={refFocus} />}
+        {activeTab === 'ressources' && (
+          <ResourcesView
+            onOpenPoster={(id) => {
+              setPosterFocus(id);
+              setActiveTab('posters');
+            }}
+            onNavigate={setActiveTab}
+          />
+        )}
       </main>
 
       {/* Slide-out Node Inspector Drawer */}
