@@ -1250,6 +1250,78 @@ export const NATHAN_PROFILE: CognitiveProfile = {
     },
 
     // ========================================================================
+    // 5b. SAVOIRS THÉORIQUES & CADRES NORMATIFS (PILIERS DE CONNAISSANCE)
+    // ========================================================================
+    {
+      id: 'know-psychologie-cognitive',
+      name: 'Modèles de la Mémoire, Attention & Charge Cognitive (Sweller, Kahneman)',
+      category: 'knowledge',
+      domain: 'Sciences Cognitives & Neuroergonomie',
+      acquiredYear: 2016,
+      decayRate: 'lent',
+      description: 'Corpus théorique fondamental des architectures cognitives : modèles attentionnels (Kahneman), mémoire de travail (Baddeley), théorie de la charge cognitive (Sweller) et modèles de prise de décision heuristique (Tversky).',
+      verificationStatus: 'verified',
+      confidenceScore: 99,
+      inferenceType: 'explicite',
+      evidence: [
+        { id: 'ev-kn-cog', source: 'diploma', label: 'Diplômes Licence & Master Sciences Cognitives UM3', confidenceScore: 100, date: '2019' }
+      ],
+      x: 300,
+      y: 80
+    },
+    {
+      id: 'know-statistiques-inferentielles',
+      name: 'Fondements Mathématiques de l\'Inférence & Modélisation Bayésienne',
+      category: 'knowledge',
+      domain: 'Méthodologie & Modélisation',
+      acquiredYear: 2017,
+      decayRate: 'lent',
+      description: 'Théorie de l\'estimation statistique, tests paramétriques/non-paramétriques, théorie de la décision bayésienne et calcul des tailles d\'effet.',
+      verificationStatus: 'verified',
+      confidenceScore: 98,
+      inferenceType: 'explicite',
+      evidence: [
+        { id: 'ev-kn-stat', source: 'diploma', label: 'Unités d\'enseignement Statistiques Avancées Master 1 & 2', confidenceScore: 98, date: '2019' }
+      ],
+      x: 300,
+      y: 260
+    },
+    {
+      id: 'know-normes-aipr-dict',
+      name: 'Cadre Réglementaire DT-DICT & Réglementation Anti-Endommagement',
+      category: 'knowledge',
+      domain: 'Génie Civil & Droit de la Voirie',
+      acquiredYear: 2023,
+      decayRate: 'lent',
+      description: 'Réglementation relative aux travaux à proximité des réseaux (décret DT-DICT, fascicule 3, normes NF P98-032 et sécurité des tiers).',
+      verificationStatus: 'verified',
+      confidenceScore: 100,
+      inferenceType: 'explicite',
+      evidence: [
+        { id: 'ev-kn-dict', source: 'diploma', label: 'Habilitation AIPR Encadrant & Titre Professionnel Conducteur de Travaux', confidenceScore: 100, date: '2024' }
+      ],
+      x: 300,
+      y: 1100
+    },
+    {
+      id: 'know-normes-ergonomie-iso',
+      name: 'Normes ISO 9241 & Principes de Conception Centrée Humain (UCD)',
+      category: 'knowledge',
+      domain: 'Ergonomie & Facteurs Humains',
+      acquiredYear: 2018,
+      decayRate: 'lent',
+      description: 'Normes ergonomiques internationales de l\'interaction homme-système (ISO 9241-210), utilisabilité, accessibilité universelle et critères de Bastien & Scapin.',
+      verificationStatus: 'verified',
+      confidenceScore: 97,
+      inferenceType: 'explicite',
+      evidence: [
+        { id: 'ev-kn-iso', source: 'project', label: 'Application sur les livrables SNCF Direction Innovation', confidenceScore: 97, date: '2019' }
+      ],
+      x: 300,
+      y: 620
+    },
+
+    // ========================================================================
     // 6. HORIZONS ROME & MÉTIERS (Nuancés : Preuves convergentes & Passerelles)
     // ========================================================================
     {
@@ -1535,6 +1607,19 @@ export const NATHAN_PROFILE: CognitiveProfile = {
     { id: 'e-f5', source: 'form-m2-cognition', target: 'skill-biais-cognitifs', type: 'acquired_in', strength: 0.98, label: 'Modèles cognitifs' },
     { id: 'e-f6', source: 'form-conducteur-afpa', target: 'skill-gestion-financiere-contrat', type: 'acquired_in', strength: 0.9, label: 'Métrés & Gestion TP' },
     { id: 'e-f7', source: 'form-conducteur-afpa', target: 'skill-securite-sst', type: 'acquired_in', strength: 0.98, label: 'AIPR & SST' },
+
+    // Formations & Expériences -> Savoirs Fondamentaux (acquired_in)
+    { id: 'e-fk1', source: 'form-m2-cognition', target: 'know-psychologie-cognitive', type: 'acquired_in', strength: 1.0, label: 'Corpus académique M2' },
+    { id: 'e-fk2', source: 'form-m2-cognition', target: 'know-statistiques-inferentielles', type: 'acquired_in', strength: 0.98, label: 'Inférence & Bayes' },
+    { id: 'e-fk3', source: 'form-conducteur-afpa', target: 'know-normes-aipr-dict', type: 'acquired_in', strength: 1.0, label: 'Normes réglementaires TP' },
+    { id: 'e-fk4', source: 'exp-sncf', target: 'know-normes-ergonomie-iso', type: 'acquired_in', strength: 0.95, label: 'Normes ISO 9241 appliquées' },
+
+    // Compétences -> Savoirs Requis (requires_knowledge)
+    { id: 'e-sk-kn1', source: 'skill-biais-cognitifs', target: 'know-psychologie-cognitive', type: 'requires_knowledge', strength: 0.98, label: 'Appui théorique' },
+    { id: 'e-sk-kn2', source: 'skill-cognition-spatiale', target: 'know-psychologie-cognitive', type: 'requires_knowledge', strength: 0.95, label: 'Modèles attentionnels' },
+    { id: 'e-sk-kn3', source: 'skill-stats-r-jasp', target: 'know-statistiques-inferentielles', type: 'requires_knowledge', strength: 0.98, label: 'Fondement mathématique' },
+    { id: 'e-sk-kn4', source: 'skill-securite-sst', target: 'know-normes-aipr-dict', type: 'requires_knowledge', strength: 0.98, label: 'Conformité légale' },
+    { id: 'e-sk-kn5', source: 'skill-traduction-recherche-reco', target: 'know-normes-ergonomie-iso', type: 'requires_knowledge', strength: 0.92, label: 'Cadre ISO' },
 
     // Recherches Universitaires -> Compétences
     { id: 'e-r1', source: 'res-projet-m2-preference', target: 'skill-cognition-spatiale', type: 'acquired_in', strength: 0.95, label: 'Attention spatio-temporelle' },

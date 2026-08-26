@@ -1,5 +1,5 @@
 import React from 'react';
-import { AnyCognitiveNode, GraphEdge, SkillNode, ExperienceNode, TaskNode, CapacityNode, HorizonJobNode } from '../types';
+import { AnyCognitiveNode, GraphEdge, SkillNode, ExperienceNode, TaskNode, CapacityNode, HorizonJobNode, KnowledgeNode } from '../types';
 import { calculateSkillVitality, getVitalityStatus } from '../utils/decay';
 import { getNodeVisualDescriptor } from '../utils/nodeVisualDescriptor';
 import { getEpistemicLevel, EPISTEMIC_SCALE } from '../utils/epistemics';
@@ -443,6 +443,30 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
                   {sub}
                 </span>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Specific Details for Knowledge Node */}
+        {node.category === 'knowledge' && (
+          <div className="space-y-4">
+            <div className="p-4 bg-sky-50/80 border border-sky-200 rounded-2xl space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase text-sky-800 flex items-center gap-1.5">
+                  📚 Corpus Fondamental & Cadre Réglementaire
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 bg-sky-100 text-sky-700 rounded-lg">
+                  Acquis en {(node as KnowledgeNode).acquiredYear}
+                </span>
+              </div>
+              <p className="text-xs text-sky-950">
+                <strong>Domaine / Spécialité :</strong> {(node as KnowledgeNode).domain}
+              </p>
+              <div className="flex items-center gap-2 pt-1">
+                <span className="text-[11px] text-sky-800 bg-white/90 px-2.5 py-1 rounded-xl border border-sky-200 font-semibold flex items-center gap-1.5 shadow-2xs">
+                  🛡️ Taux d'érosion temporelle : <strong>{(node as KnowledgeNode).decayRate === 'lent' ? 'Lent (Très stable / Connaissance pérenne)' : (node as KnowledgeNode).decayRate}</strong>
+                </span>
+              </div>
             </div>
           </div>
         )}

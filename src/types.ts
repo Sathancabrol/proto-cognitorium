@@ -129,11 +129,16 @@ export interface HorizonJobNode extends BaseNode {
   romeCode?: string; // e.g. 'F1208', 'K2102', 'M1508'
   romeTitle?: string;
   matchScore: number; // 0 - 100%
+  matchingSkillIds?: string[];
+  salaryRange?: string;
+  growthRate?: string;
+  requiredSkills?: string[];
+  criticalGaps?: string[];
+  trainingPathways?: any[];
   compatibilityLevel?: 'Élevée' | 'Très Élevée' | 'Très forte' | 'Forte' | 'Modérée' | 'En développement' | 'À explorer';
   isDirectlyExercised?: boolean;
   rationale: string;
   matchingSkills: string[];
-  matchingSkillIds?: string[];
   missingSkills: {
     name: string;
     importance: 'critique' | 'recommandée' | 'bonus';
@@ -148,6 +153,29 @@ export interface HorizonJobNode extends BaseNode {
     evidenceConvergence?: string[];
     missingVerifications?: string[];
   };
+}
+
+export type AssessmentKind =
+  | 'diplome'
+  | 'certification'
+  | 'verification'
+  | 'evaluation'
+  | 'test_psy'
+  | 'physio'
+  | 'bci';
+
+export interface ProfileAssessment {
+  id: string;
+  kind: AssessmentKind;
+  title: string;
+  issuer: string;
+  year: number | string;
+  summary: string;
+  status?: VerificationStatus;
+  relatedNodeIds?: string[];
+  documentLabel?: string;
+  clinical?: boolean;
+  tags?: string[];
 }
 
 export type AnyCognitiveNode = 
@@ -200,29 +228,6 @@ export interface MatchMetiersProfile {
   recommendedRomeCodes: { code: string; title: string; matchScore: number; description: string }[];
 }
 
-export type AssessmentKind =
-  | 'diplome'
-  | 'certification'
-  | 'verification'
-  | 'evaluation'
-  | 'test_psy'
-  | 'physio'
-  | 'bci';
-
-export interface ProfileAssessment {
-  id: string;
-  kind: AssessmentKind;
-  title: string;
-  issuer: string;
-  year: number | string;
-  summary: string;
-  status?: VerificationStatus;
-  relatedNodeIds?: string[];
-  documentLabel?: string;
-  clinical?: boolean;
-  tags?: string[];
-}
-
 export type UserJourneyType = 'student' | 'professional' | 'transition';
 
 export interface CognitiveProfile {
@@ -268,9 +273,7 @@ export type AppActiveTab =
   | 'evaluations'; // Mes évaluations — preuves, diplômes, mesures
 
 // ============================================================================
-// STRUCTURE DU PRODUIT : MON COGNITORIUM est organisé en 5 sections orientées
-// parcours. Les vues (Graphe, Arbre, Tableau, Temps) sont des MODES de
-// représentation à l'intérieur des sections, pas des destinations expertes.
+// STRUCTURE DU PRODUIT : MON COGNITORIUM en 6 sections orientées parcours
 // ============================================================================
 export type CognitoriumSection = 'profil' | 'experiences' | 'competences' | 'possibilites' | 'evolution' | 'savoirs';
 
@@ -283,7 +286,7 @@ export const SECTION_LABELS: Record<CognitoriumSection, string> = {
   savoirs: 'Savoirs'
 };
 
-/** Section principale de chaque vue (une vue appartient à une seule section). */
+/** Section principale de chaque vue */
 export const SECTION_OF_TAB: Record<AppActiveTab, CognitoriumSection> = {
   dashboard: 'profil',
   signature: 'profil',
@@ -302,7 +305,7 @@ export const SECTION_OF_TAB: Record<AppActiveTab, CognitoriumSection> = {
   evaluations: 'savoirs'
 };
 
-/** Vues par défaut de chaque section. */
+/** Vues par défaut de chaque section */
 export const SECTION_DEFAULT_TAB: Record<CognitoriumSection, AppActiveTab> = {
   profil: 'dashboard',
   experiences: 'tree',

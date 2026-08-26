@@ -2,43 +2,67 @@ import React from 'react';
 import { 
   Sparkles, 
   Compass, 
+  Clock, 
+  Brain, 
+  Network, 
   RotateCcw, 
+  LayoutDashboard, 
+  ListTree, 
+  Table2, 
   AlertCircle, 
   User, 
-  Briefcase, 
-  Award, 
+  FlaskConical,
+  FolderKanban,
+  Wrench,
   TrendingUp,
   BookOpen
 } from 'lucide-react';
-import { AppActiveTab, ComplexityMode, CognitiveProfile, CognitoriumSection, SECTION_OF_TAB, SECTION_LABELS, SECTION_DEFAULT_TAB } from '../types';
+import { 
+  AppActiveTab, 
+  ComplexityMode, 
+  CognitiveProfile,
+  CognitoriumSection,
+  SECTION_LABELS,
+  SECTION_OF_TAB,
+  SECTION_DEFAULT_TAB 
+} from '../types';
 import { PROFILES_PRESETS } from '../data/initialData';
+import { MotionCreateButton } from './MotionCreateButton';
+import { QuickCreateType } from './QuickAddNodeModal';
 
-// ============================================================================
-// MON COGNITORIUM — 5 sections orientées parcours, les vues sont des modes
-// ============================================================================
-const SECTION_META: { id: CognitoriumSection; icon: React.ReactNode; color: string }[] = [
+interface SectionMeta {
+  id: CognitoriumSection;
+  icon: React.ReactNode;
+  color: string;
+}
+
+const SECTION_META: SectionMeta[] = [
   { id: 'profil', icon: <User className="w-3.5 h-3.5" />, color: 'blue' },
-  { id: 'experiences', icon: <Briefcase className="w-3.5 h-3.5" />, color: 'emerald' },
-  { id: 'competences', icon: <Award className="w-3.5 h-3.5" />, color: 'cyan' },
+  { id: 'experiences', icon: <FolderKanban className="w-3.5 h-3.5" />, color: 'emerald' },
+  { id: 'competences', icon: <Wrench className="w-3.5 h-3.5" />, color: 'cyan' },
   { id: 'possibilites', icon: <Compass className="w-3.5 h-3.5" />, color: 'orange' },
   { id: 'evolution', icon: <TrendingUp className="w-3.5 h-3.5" />, color: 'indigo' },
   { id: 'savoirs', icon: <BookOpen className="w-3.5 h-3.5" />, color: 'violet' }
 ];
 
-const SECTION_VIEWS: Record<CognitoriumSection, { tab: AppActiveTab; label: string; testId: string }[]> = {
+interface ViewOption {
+  tab: AppActiveTab;
+  label: string;
+  testId: string;
+}
+
+const SECTION_VIEWS: Record<CognitoriumSection, ViewOption[]> = {
   profil: [
-    { tab: 'dashboard', label: 'Mon Cognitorium', testId: 'tab-btn-dashboard' },
-    { tab: 'signature', label: 'Passeport', testId: 'tab-btn-signature' }
+    { tab: 'dashboard', label: 'Synthèse', testId: 'tab-btn-dashboard' },
+    { tab: 'signature', label: 'Passeport cognitif', testId: 'tab-btn-signature' }
   ],
   experiences: [
-    { tab: 'tree', label: 'Arbre & Tâches', testId: 'tab-btn-tree' },
-    { tab: 'network', label: 'Graphe Réseau', testId: 'tab-btn-network' },
-    { tab: 'temporal', label: 'Graphe Temporel', testId: 'tab-btn-temporal' }
+    { tab: 'tree', label: 'Arbre hiérarchique', testId: 'tab-btn-tree' },
+    { tab: 'network', label: 'Graphe réseau', testId: 'tab-btn-network' },
+    { tab: 'temporal', label: 'Graphe temporel', testId: 'tab-btn-temporal' }
   ],
   competences: [
-    { tab: 'table', label: 'Tableau', testId: 'tab-btn-table' },
-    { tab: 'network', label: 'Graphe', testId: 'tab-btn-network-competences' },
-    { tab: 'tree', label: 'Arbre', testId: 'tab-btn-tree-competences' }
+    { tab: 'table', label: 'Matrice de maîtrise', testId: 'tab-btn-table' }
   ],
   possibilites: [
     { tab: 'horizons', label: 'Horizons ROME', testId: 'tab-btn-horizons' },
@@ -92,6 +116,7 @@ interface HeaderProps {
   currentProfile: CognitiveProfile;
   onSelectProfile: (profile: CognitiveProfile) => void;
   onOpenDistiller: () => void;
+  onOpenQuickAdd?: (type: QuickCreateType) => void;
   onOpenOnboarding: () => void;
   onOpenValidationCenter: () => void;
   pendingValidationCount: number;
@@ -107,6 +132,7 @@ export const Header: React.FC<HeaderProps> = ({
   currentProfile,
   onSelectProfile,
   onOpenDistiller,
+  onOpenQuickAdd,
   onOpenOnboarding,
   onOpenValidationCenter,
   pendingValidationCount,
@@ -178,7 +204,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Center: Sections Navigation (MON COGNITORIUM en 5 sections) */}
+        {/* Center: Sections Navigation (MON COGNITORIUM en 6 sections) */}
         <div className="flex flex-col items-center gap-1.5 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/60 overflow-x-auto max-w-full">
           <nav className="flex items-center gap-0.5">
             {SECTION_META.map((s) => {
@@ -199,7 +225,7 @@ export const Header: React.FC<HeaderProps> = ({
           </nav>
 
           {/* Modes de représentation de la section active */}
-          {SECTION_VIEWS[SECTION_OF_TAB[activeTab]].length > 1 && (
+          {SECTION_VIEWS[SECTION_OF_TAB[activeTab]]?.length > 1 && (
             <nav className="flex items-center gap-0.5">
               {SECTION_VIEWS[SECTION_OF_TAB[activeTab]].map((v) => (
                 <button
@@ -228,14 +254,22 @@ export const Header: React.FC<HeaderProps> = ({
             <RotateCcw className="w-4 h-4" />
           </button>
 
-          <button
-            id="btn-open-distiller-header"
-            onClick={onOpenDistiller}
-            className="flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm shadow-blue-500/20 transition-all active:scale-95"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>+ Ajouter un vécu</span>
-          </button>
+          {onOpenQuickAdd ? (
+            <MotionCreateButton
+              onOpenQuickAdd={onOpenQuickAdd}
+              onOpenDistiller={onOpenDistiller}
+              buttonLabel="Créer / Ajouter"
+            />
+          ) : (
+            <button
+              id="btn-open-distiller-header"
+              onClick={onOpenDistiller}
+              className="flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm shadow-blue-500/20 transition-all active:scale-95"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>+ Ajouter un vécu</span>
+            </button>
+          )}
         </div>
       </div>
     </header>

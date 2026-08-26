@@ -13,7 +13,7 @@ import {
   ShieldCheck,
   FileCheck
 } from 'lucide-react';
-import { CognitiveProfile, AnyCognitiveNode, SkillNode, CapacityNode, HorizonJobNode, VerificationStatus } from '../types';
+import { CognitiveProfile, AnyCognitiveNode, SkillNode, CapacityNode, HorizonJobNode, KnowledgeNode, VerificationStatus } from '../types';
 import { calculateSkillVitality } from '../utils/decay';
 
 interface TableViewProps {
@@ -50,6 +50,7 @@ export const TableView: React.FC<TableViewProps> = ({
     // Category filter
     if (selectedCategory !== 'all') {
       if (selectedCategory === 'skills' && !node.category.startsWith('skill_')) return false;
+      if (selectedCategory === 'knowledge' && node.category !== 'knowledge') return false;
       if (selectedCategory === 'capacity' && node.category !== 'capacity_cognitive') return false;
       if (selectedCategory === 'horizon' && node.category !== 'horizon_job') return false;
       if (selectedCategory === 'experience' && !['experience', 'formation', 'research_project'].includes(node.category)) return false;
@@ -105,6 +106,7 @@ export const TableView: React.FC<TableViewProps> = ({
           >
             <option value="all">Toutes les catégories</option>
             <option value="skills">Compétences</option>
+            <option value="knowledge">📚 Savoirs Théoriques & Normes</option>
             <option value="capacity">Cognition</option>
             <option value="horizon">Horizons ROME</option>
             <option value="experience">Expériences & Formations</option>
@@ -150,12 +152,14 @@ export const TableView: React.FC<TableViewProps> = ({
               ) : (
                 filteredNodes.map((node) => {
                   const isSkill = node.category.startsWith('skill_');
+                  const isKnowledge = node.category === 'knowledge';
                   const isCapacity = node.category === 'capacity_cognitive';
                   const isHorizon = node.category === 'horizon_job';
                   const isTask = node.category === 'task';
                   const isExp = node.category === 'experience' || node.category === 'formation' || node.category === 'research_project';
 
                   const skillNode = isSkill ? (node as SkillNode) : null;
+                  const knowledgeNode = isKnowledge ? (node as KnowledgeNode) : null;
                   const horizonNode = isHorizon ? (node as HorizonJobNode) : null;
 
                   const vitality = skillNode
@@ -188,8 +192,11 @@ export const TableView: React.FC<TableViewProps> = ({
 
                       {/* Category */}
                       <td className="py-3.5 px-4">
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase bg-slate-100 text-slate-700">
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${
+                          isKnowledge ? 'bg-sky-100 text-sky-800' : 'bg-slate-100 text-slate-700'
+                        }`}>
                           {isSkill && 'Compétence'}
+                          {isKnowledge && '📚 Savoir Théorique'}
                           {isCapacity && 'Capacité Méta'}
                           {isHorizon && 'Horizon ROME'}
                           {node.category === 'experience' && 'Expérience'}
@@ -214,6 +221,15 @@ export const TableView: React.FC<TableViewProps> = ({
                                 }`}
                                 style={{ width: `${vitality}%` }}
                               />
+                            </div>
+                          </div>
+                        )}
+
+                        {isKnowledge && (
+                          <div className="text-[11px] font-semibold text-sky-800 space-y-0.5">
+                            <div>{knowledgeNode?.domain || 'Corpus Fondamental'}</div>
+                            <div className="text-[10px] text-slate-500 font-normal">
+                              Érosion : {knowledgeNode?.decayRate === 'lent' ? '🛡️ Très stable (Lent)' : knowledgeNode?.decayRate || 'Lent'} · Acquis en {knowledgeNode?.acquiredYear || '—'}
                             </div>
                           </div>
                         )}

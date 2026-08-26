@@ -13,9 +13,10 @@ import {
   Brain, 
   Compass,
   ArrowRight,
-  Filter
+  Filter,
+  BookOpen
 } from 'lucide-react';
-import { CognitiveProfile, AnyCognitiveNode, ExperienceNode, TaskNode, SkillNode, CapacityNode, HorizonJobNode } from '../types';
+import { CognitiveProfile, AnyCognitiveNode, ExperienceNode, TaskNode, SkillNode, CapacityNode, HorizonJobNode, KnowledgeNode } from '../types';
 import { getNodeVisualDescriptor } from '../utils/nodeVisualDescriptor';
 
 interface TreeViewProps {
@@ -48,6 +49,7 @@ export const TreeView: React.FC<TreeViewProps> = ({
 
   const allTasks = profile.nodes.filter((n) => n.category === 'task') as TaskNode[];
   const allSkills = profile.nodes.filter((n) => n.category.startsWith('skill_')) as SkillNode[];
+  const allKnowledge = profile.nodes.filter((n) => n.category === 'knowledge') as KnowledgeNode[];
   const allCapacities = profile.nodes.filter((n) => n.category === 'capacity_cognitive') as CapacityNode[];
   const allHorizons = profile.nodes.filter((n) => n.category === 'horizon_job') as HorizonJobNode[];
 
@@ -67,6 +69,22 @@ export const TreeView: React.FC<TreeViewProps> = ({
       )
       .map((e) => e.target);
     return allSkills.filter((skill) => skillIds.includes(skill.id));
+  };
+
+  // Helper to find connected knowledge for an experience or formation
+  const getKnowledgeForExperience = (expId: string) => {
+    const knowIds = profile.edges
+      .filter((e) => (e.source === expId || e.target === expId) && (e.type === 'acquired_in' || e.type === 'requires_knowledge'))
+      .map((e) => (e.source === expId ? e.target : e.source));
+    return allKnowledge.filter((k) => knowIds.includes(k.id));
+  };
+
+  // Helper to find required knowledge for a skill
+  const getKnowledgeForSkill = (skillId: string) => {
+    const knowIds = profile.edges
+      .filter((e) => (e.source === skillId || e.target === skillId) && e.type === 'requires_knowledge')
+      .map((e) => (e.source === skillId ? e.target : e.source));
+    return allKnowledge.filter((k) => knowIds.includes(k.id));
   };
 
   // Helper to find connected capacities for a skill
@@ -229,6 +247,32 @@ export const TreeView: React.FC<TreeViewProps> = ({
                     </div>
                   </div>
 
+                  {/* Connected Knowledges for Experience/Formation */}
+                  {(() => {
+                    const expKnowledges = getKnowledgeForExperience(exp.id);
+                    if (expKnowledges.length === 0) return null;
+                    return (
+                      <div className="space-y-2 p-3 bg-sky-50/50 border border-sky-100 rounded-2xl">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-sky-700 flex items-center gap-1.5">
+                          <BookOpen className="w-3.5 h-3.5" /> Corpus Théorique & Normes Rattachées ({expKnowledges.length})
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {expKnowledges.map((kn) => (
+                            <button
+                              key={kn.id}
+                              onClick={() => onSelectNode(kn)}
+                              className="px-2.5 py-1 bg-white hover:bg-sky-50 text-sky-900 border border-sky-200 rounded-xl text-xs font-semibold shadow-2xs transition-colors flex items-center gap-1.5"
+                            >
+                              <span>📚</span>
+                              <span>{kn.name}</span>
+                              <span className="text-[10px] text-sky-600 font-normal">({kn.domain})</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   {/* LEVEL 3: COMPÉTENCES DÉCOMPOSÉES */}
                   <div className="space-y-3 pt-2 border-t border-slate-100">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
@@ -238,6 +282,7 @@ export const TreeView: React.FC<TreeViewProps> = ({
                     <div className="space-y-4">
                       {skills.map((skill) => {
                         const capacities = getCapacitiesForSkill(skill.id);
+                        const requiredKnowledges = getKnowledgeForSkill(skill.id);
                         const skillDesc = getNodeVisualDescriptor(skill, simulationYear);
 
                         return (
@@ -289,6 +334,24 @@ export const TreeView: React.FC<TreeViewProps> = ({
                                   >
                                     {sub}
                                   </span>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Underlying Theoretical Knowledges */}
+                            {requiredKnowledges.length > 0 && (
+                              <div className="pt-2 border-t border-slate-200/60 flex flex-wrap items-center gap-1.5">
+                                <span className="text-[10px] font-bold uppercase text-sky-700 flex items-center gap-1 mr-1">
+                                  <BookOpen className="w-3 h-3" /> Savoirs théoriques :
+                                </span>
+                                {requiredKnowledges.map((kn) => (
+                                  <button
+                                    key={kn.id}
+                                    onClick={() => onSelectNode(kn)}
+                                    className="px-2 py-0.5 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 rounded-md text-[11px] font-medium transition-colors flex items-center gap-1"
+                                  >
+                                    <span>📚</span> {kn.name}
+                                  </button>
                                 ))}
                               </div>
                             )}

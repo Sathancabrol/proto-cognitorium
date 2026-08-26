@@ -345,7 +345,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
             ) : (
               <p className="text-[11px] leading-relaxed text-indigo-100">
-                ✅ Aucun écart critique détecté sur tes compétences prioritaires. Vérifie la vitalité de tes compétences ou explore de nouveaux métiers dans « Mes possibilités ».
+                ✅ Aucun écart critique détecté sur vos horizons prioritaires. Vérifiez la vitalité de vos compétences ou explorez de nouveaux métiers dans « Mes possibilités ».
               </p>
             )}
           </div>
@@ -576,6 +576,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
+          {/* Card 5b: Atlas & Savoirs */}
           <div
             id="entry-card-atlas"
             onClick={() => onNavigateTab('atlas')}
@@ -598,7 +599,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
-          {/* Card 6: Diagnostic & Passeport */}
+          {/* Card 5c: Coffre de Preuves / Évaluations */}
           <div
             id="entry-card-evaluations"
             onClick={() => onNavigateTab('evaluations')}
@@ -621,6 +622,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
+          {/* Card 6: Diagnostic & Passeport */}
           <div
             id="entry-card-signature"
             onClick={() => onNavigateTab('signature')}

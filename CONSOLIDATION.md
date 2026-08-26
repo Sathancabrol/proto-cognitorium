@@ -103,7 +103,7 @@ Le scénario complet est désormais jouable : **Onboarding → Ajouter un vécu/
 2. **Matching approximatif** : la couverture d'une fiche est calculée sur les compétences de l'arborescence simplifiée (max 40 par fiche) — les scores sont des **indices de proximité**, jamais des garanties. L'UI le dit explicitement.
 3. **Le questionnaire des 10 biais** (formulations exactes dans `raw/02_cognitorium_parametrage.json`) n'est toujours pas intégré à l'app web : c'est le prochain candidat d'implémentation.
 4. **Persistance** : le profil reste en `localStorage` ; le schéma SQL (`raw/01_cognitorium_schema_ddl.sql`) n'est toujours pas branché — un serveur de persistance SQLite est la suite naturelle (la table `rome_import`/`rome_fiche` est prête pour versionner le référentiel).
-5. **`raw/identifiants_cognitorium…json`** (secrets en clair, présent sur `01a034f2`) : **non repris** lors de la réintégration de `raw/` ; ignoré via `.gitignore` (`raw/identifiants_cognitorium*.json`).
+5. **`raw/identifiants_cognitorium…json`** contient des secrets en clair : à déplacer hors du dépôt (le `.gitignore` ne couvre que `.env*`).
 
 ---
 

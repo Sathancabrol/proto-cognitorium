@@ -7,6 +7,7 @@ import {
   ExperienceNode, 
   CapacityNode, 
   HorizonJobNode, 
+  KnowledgeNode,
   GraphEdge 
 } from '../types';
 import confetti from 'canvas-confetti';
@@ -16,6 +17,7 @@ export type QuickCreateType =
   | 'skill_tech' 
   | 'skill_soft' 
   | 'formation' 
+  | 'knowledge'
   | 'capacity' 
   | 'horizon';
 
@@ -71,6 +73,15 @@ const TYPE_CONFIGS: Record<QuickCreateType, {
     category: 'formation',
     description: 'Diplôme d\'État, titre RNCP, certification d\'éditeur, bootcamp.',
     placeholder: 'ex: Master Informatique & IA, Certif AWS Solutions Arch...'
+  },
+  knowledge: {
+    label: 'Savoir Théorique & Norme',
+    badge: 'Corpus & Notions Fondamentales',
+    icon: BookOpen,
+    color: 'from-sky-600 to-blue-700',
+    category: 'knowledge',
+    description: 'Notion théorique, modèle scientifique, réglementation légale, norme NF / ISO ou corpus académique.',
+    placeholder: 'ex: Codex des 188 Biais Cognitifs, Norme NF P98-332, Analyse de Variance (ANOVA)...'
   },
   capacity: {
     label: 'Capacité Cognitive',
@@ -189,6 +200,39 @@ export const QuickAddNodeModal: React.FC<QuickAddNodeModalProps> = ({
         ]
       };
       newNode = expNode;
+    } else if (selectedType === 'knowledge') {
+      const knowledgeNode: KnowledgeNode = {
+        id: newId,
+        name: name.trim(),
+        category: 'knowledge',
+        domain: institution.trim() || 'Sciences Cognitives & Normes',
+        acquiredYear: startYear,
+        decayRate: 'lent',
+        description: description.trim() || undefined,
+        verificationStatus: 'verified',
+        confidenceScore: 100,
+        evidence: [
+          {
+            id: `ev-${Date.now()}`,
+            source: 'declaration',
+            label: 'Ajout manuel utilisateur',
+            confidenceScore: 100,
+            date: today
+          }
+        ]
+      };
+      newNode = knowledgeNode;
+
+      if (parentExperienceId) {
+        newEdges.push({
+          id: `edge-${parentExperienceId}-${newId}`,
+          source: parentExperienceId,
+          target: newId,
+          type: 'acquired_in',
+          strength: 0.9,
+          label: 'Acquis dans'
+        });
+      }
     } else if (selectedType === 'capacity') {
       const capNode: CapacityNode = {
         id: newId,
@@ -220,13 +264,18 @@ export const QuickAddNodeModal: React.FC<QuickAddNodeModalProps> = ({
         romeCode: romeCode.trim() || 'M1805',
         domain: 'Numérique & Stratégie',
         matchScore: 80,
-        rationale: description.trim() || 'Horizon ajouté manuellement.',
+        salaryRange: '45k€ - 75k€',
+        growthRate: '+14% d\'ici 2030',
+        requiredSkills: [],
+        criticalGaps: [],
+        description: description.trim() || undefined,
+        trainingPathways: [],
+        verificationStatus: 'verified',
+        confidenceScore: 100,
+        rationale: 'Créé manuellement dans Cognitorium',
         matchingSkills: [],
         missingSkills: [],
-        unlockedOpportunities: [],
-        description: description.trim() || undefined,
-        verificationStatus: 'verified',
-        confidenceScore: 100
+        unlockedOpportunities: []
       };
       newNode = horizonNode;
     }
@@ -353,6 +402,22 @@ export const QuickAddNodeModal: React.FC<QuickAddNodeModalProps> = ({
             </div>
           )}
 
+          {/* Domain for Knowledge Node */}
+          {selectedType === 'knowledge' && (
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                Domaine Scientifique / Cadre Normatif
+              </label>
+              <input
+                type="text"
+                value={institution}
+                onChange={(e) => setInstitution(e.target.value)}
+                placeholder="ex: Sciences Cognitives, Normes VRD, Psychophysique, Droit RGPD..."
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-slate-900 font-medium text-sm transition-all"
+              />
+            </div>
+          )}
+
           {/* ROME Code for Horizon Job */}
           {selectedType === 'horizon' && (
             <div>
@@ -369,21 +434,21 @@ export const QuickAddNodeModal: React.FC<QuickAddNodeModalProps> = ({
             </div>
           )}
 
-          {/* Connect to Parent Experience (for Skills) */}
-          {(selectedType === 'skill_tech' || selectedType === 'skill_soft') && experiences.length > 0 && (
+          {/* Connect to Parent Experience (for Skills & Knowledge) */}
+          {(selectedType === 'skill_tech' || selectedType === 'skill_soft' || selectedType === 'knowledge') && experiences.length > 0 && (
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                Rattacher à une Expérience / Formation d'Origine
+                Rattacher à une Expérience / Formation / Recherche d'Origine
               </label>
               <select
                 value={parentExperienceId}
                 onChange={(e) => setParentExperienceId(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-slate-900 font-medium text-sm transition-all"
               >
-                <option value="">-- Aucun rattachement direct (Compétence Autonome) --</option>
+                <option value="">-- Aucun rattachement direct (Autonome) --</option>
                 {experiences.map((exp) => (
                   <option key={exp.id} value={exp.id}>
-                    {exp.name} ({exp.category === 'formation' ? 'Formation' : 'Expérience'})
+                    {exp.name} ({exp.category === 'formation' ? 'Formation' : exp.category === 'research_project' ? 'Recherche' : 'Expérience'})
                   </option>
                 ))}
               </select>
