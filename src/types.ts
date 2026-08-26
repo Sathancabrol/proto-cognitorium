@@ -16,7 +16,7 @@ export type InferenceType = 'explicite' | 'inference_forte' | 'inference_a_valid
 
 export interface EvidenceItem {
   id: string;
-  source: 'cv' | 'declaration' | 'project' | 'diploma' | 'exp' | 'attest' | 'ai_inference' | 'peer_review' | 'validation_humaine';
+  source: 'cv' | 'declaration' | 'project' | 'diploma' | 'ai_inference' | 'peer_review' | 'validation_humaine' | 'exp' | 'attest';
   label: string;
   detail?: string;
   confidenceScore: number; // 0 - 100
@@ -128,12 +128,11 @@ export interface HorizonJobNode extends BaseNode {
   domain: string;
   romeCode?: string; // e.g. 'F1208', 'K2102', 'M1508'
   romeTitle?: string;
-  matchScore: number; // 0 - 100% (indice de proximité — toujours accompagné de son explication)
-  compatibilityLevel?: 'Élevée' | 'Très Élevée' | 'Modérée' | 'En développement' | 'Très forte' | 'Forte' | 'À explorer';
+  matchScore: number; // 0 - 100%
+  compatibilityLevel?: 'Élevée' | 'Très Élevée' | 'Très forte' | 'Forte' | 'Modérée' | 'En développement' | 'À explorer';
   isDirectlyExercised?: boolean;
   rationale: string;
   matchingSkills: string[];
-  /** IDs des compétences du profil qui ouvrent ce métier (relations précises, pas "tout → tout"). */
   matchingSkillIds?: string[];
   missingSkills: {
     name: string;
@@ -315,3 +314,28 @@ export const SECTION_DEFAULT_TAB: Record<CognitoriumSection, AppActiveTab> = {
 
 export type ComplexityMode = 'essential' | 'expert';
 
+// Cartographie & Signalétique Cartes de Jeux Vidéo (Benchmark RPG)
+export type GameCartographyMode = 'hybrid' | 'minimalist' | 'maximalist';
+export type RpgStampType = 'flag' | 'star' | 'lightning' | 'target' | 'shield' | 'question';
+
+export interface NodeStamp {
+  nodeId: string;
+  stampType: RpgStampType;
+  label?: string;
+  timestamp?: number;
+}
+
+export type QuestType = 'main' | 'secondary';
+export type QuestPriority = 'critical' | 'high' | 'medium' | 'low';
+
+export interface QuestItem {
+  id: string;
+  nodeId: string;
+  title: string;
+  type: QuestType; // Quête Principale ou Quête Secondaire
+  priority: QuestPriority; // Priorité (Critique, Haute, Moyenne, Basse)
+  completed: boolean; // Validée / Acquise ou En cours
+  category: NodeCategory;
+  loreDescription?: string;
+  xpReward?: number;
+}
