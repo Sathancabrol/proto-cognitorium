@@ -219,13 +219,12 @@ export const QuickAddNodeModal: React.FC<QuickAddNodeModalProps> = ({
         category: 'horizon_job',
         romeCode: romeCode.trim() || 'M1805',
         domain: 'Numérique & Stratégie',
-        matchingScore: 80,
-        salaryRange: '45k€ - 75k€',
-        growthRate: '+14% d\'ici 2030',
-        requiredSkills: [],
-        criticalGaps: [],
+        matchScore: 80,
+        rationale: description.trim() || 'Horizon ajouté manuellement.',
+        matchingSkills: [],
+        missingSkills: [],
+        unlockedOpportunities: [],
         description: description.trim() || undefined,
-        trainingPathways: [],
         verificationStatus: 'verified',
         confidenceScore: 100
       };
