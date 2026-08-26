@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COGNITORIUM — Prototype</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root{
+  /* ===== Tokens repris de COGNITORIUM_Specification_v1.md ===== */
+  --bg:#050508;            /* Void */
+  --bg-elev:#0A0A12;       /* Neural Dark */
+  --bg-panel:#1A1A2E;      /* Synapse */
+  --text-1:#E8E8F0;        /* White Matter */
+  --text-2:#8A8AA8;        /* Cortex */
+  --text-3:#4A4A6A;        /* Glial */
+  --accent:#00E5CC;        /* Plasticity */
+  --accent-dim:rgba(0,229,204,.42);
+  --accent-faint:rgba(0,229,204,.13);
+  --transfer:#9B59B6;      /* Transfer — pont parcours ↔ cognition */
+  --transfer-dim:rgba(155,89,182,.4);
+  --border:rgba(45,45,68,.7);      /* Axon */
+  --border-strong:rgba(74,74,106,.9);
+  --danger:#FF3366;        /* Inhibition */
+  --font-display:'Inter',sans-serif;
+  --font-body:'Inter',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--text-1);font-family:var(--font-body);overflow:hidden;}
+button{font-family:inherit;color:inherit;background:none;border:none;cursor:pointer;}
+::selection{background:var(--accent-dim);color:#00110D;}
+
+/* ---------- layout shell ---------- */
+#app{position:relative;width:100vw;height:100vh;}
+
+header{
+  position:absolute;top:0;left:0;right:0;height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 22px;z-index:20;
+  background:linear-gradient(to bottom, rgba(10,13,18,.92), rgba(10,13,18,0));
+  pointer-events:none;
+}
+header *{pointer-events:auto;}
+.wordmark{font-family:var(--font-display);font-weight:600;font-size:15px;letter-spacing:.14em;color:var(--text-1);}
+.wordmark span{color:var(--accent);}
+.breadcrumb{font-family:var(--font-mono);font-size:11px;color:var(--text-2);letter-spacing:.02em;display:flex;gap:6px;align-items:center;}
+.breadcrumb b{color:var(--text-1);font-weight:500;}
+
+.legend{
+  position:absolute;top:64px;right:22px;z-index:15;
+  background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;
+  padding:12px 14px;font-size:11px;color:var(--text-2);
+  display:flex;flex-direction:column;gap:7px;
+  font-family:var(--font-mono);
+  min-width:190px;
+}
+.legend .row{display:flex;align-items:center;gap:8px;}
+.legend .swatch{width:11px;height:11px;border-radius:50%;flex-shrink:0;}
+.sw-etabli{background:var(--accent);}
+.sw-modele{background:none;border:1.5px dashed var(--accent-dim);}
+.sw-specule{background:none;border:1.5px dotted var(--text-3);}
+.legend .title{color:var(--text-1);font-family:var(--font-body);font-size:10px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px;}
+
+/* ---------- view rail ---------- */
+.view-rail{
+  position:absolute;bottom:22px;left:22px;z-index:20;
+  display:flex;gap:2px;background:var(--bg-panel);border:1px solid var(--border);
+  border-radius:9px;padding:3px;
+}
+.view-rail button{
+  padding:8px 16px;font-size:12px;font-family:var(--font-body);font-weight:500;
+  color:var(--text-2);border-radius:6px;transition:background .15s,color .15s;
+  letter-spacing:.01em;
+}
+.view-rail button.active{background:var(--accent-faint);color:var(--accent);}
+.view-rail button:hover:not(.active){color:var(--text-1);}
+.view-rail button:focus-visible{outline:1.5px solid var(--accent);outline-offset:2px;}
+
+.a11y-toggle{
+  position:absolute;bottom:22px;right:22px;z-index:20;
+  background:var(--bg-panel);border:1px solid var(--border);border-radius:9px;
+  padding:8px 14px;font-size:11px;color:var(--text-2);font-family:var(--font-mono);
+}
+.a11y-toggle:hover{color:var(--text-1);border-color:var(--border-strong);}
+.a11y-toggle:focus-visible{outline:1.5px solid var(--accent);outline-offset:2px;}
+
+/* ---------- graph ---------- */
+#graph-view{position:absolute;inset:0;}
+svg#graph{width:100%;height:100%;cursor:grab;}
+svg#graph:active{cursor:grabbing;}
+.network-halo{fill:var(--accent-faint);opacity:.55;}
+.network-label{font-family:var(--font-mono);font-size:10px;fill:var(--text-3);letter-spacing:.08em;text-transform:uppercase;pointer-events:none;}
+
+.edge{fill:none;stroke:var(--accent);}
+.edge.etabli{stroke-opacity:.55;}
+.edge.modele{stroke-opacity:.28;stroke-dasharray:4 3;}
+.edge.speculatif{stroke-opacity:.14;stroke-dasharray:1 3;}
+.edge.pont{stroke:var(--transfer);stroke-opacity:.5;stroke-dasharray:2 4;}
+.edge.pont.hors-focus{stroke-opacity:.08;}
+
+.node.level-parcours rect.core{fill:var(--bg-panel);stroke:var(--text-2);stroke-width:1.2;transition:stroke .25s,fill .25s;}
+.node.level-parcours.selected rect.core{stroke:var(--transfer);stroke-width:1.8;}
+.node.level-parcours text{font-size:10.5px;fill:var(--text-1);font-weight:500;}
+.parcours-zone-label{font-family:var(--font-mono);font-size:10px;fill:var(--text-3);letter-spacing:.1em;text-transform:uppercase;}
+
+.node circle.core{transition:r .5s cubic-bezier(.2,.8,.2,1), fill-opacity .5s;}
+.node.etabli circle.core{fill:var(--accent);}
+.node.modele circle.core{fill:var(--accent);fill-opacity:.35;stroke:var(--accent-dim);stroke-width:1.4;stroke-dasharray:3 2;}
+.node.speculatif circle.core{fill:transparent;stroke:var(--text-3);stroke-width:1.2;stroke-dasharray:1 3;}
+.node.selected circle.core{stroke:var(--text-1);stroke-width:1.5;}
+.node text{font-family:var(--font-body);font-weight:500;fill:var(--text-1);pointer-events:none;text-anchor:middle;}
+.node.level-network text, .node.level-domain text{font-size:11px;}
+.node.level-subdomain text, .node.level-capacity text{font-size:9.5px;fill:var(--text-2);}
+.node.level-micro text{font-size:8.5px;fill:var(--text-3);}
+.node{cursor:pointer;}
+.node:focus-visible circle.core{outline:none;stroke:var(--accent);stroke-width:2px;}
+.node .pulse{fill:none;stroke:var(--accent);stroke-width:1;opacity:0;}
+body.motion-ok .node.trained .pulse{animation:pulse 2.2s ease-out infinite;}
+
+@keyframes pulse{
+  0%{r:var(--r0);opacity:.5;}
+  100%{r:calc(var(--r0) + 16px);opacity:0;}
+}
+
+/* ---------- node detail panel ---------- */
+#panel{
+  position:absolute;top:0;right:0;bottom:0;width:380px;
+  background:var(--bg-panel);border-left:1px solid var(--border);
+  transform:translateX(100%);transition:transform .32s cubic-bezier(.2,.8,.2,1);
+  z-index:30;display:flex;flex-direction:column;
+}
+#panel.open{transform:translateX(0);}
+.panel-head{padding:64px 22px 16px;border-bottom:1px solid var(--border);}
+.panel-eyebrow{font-family:var(--font-mono);font-size:10px;color:var(--text-2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;}
+.panel-title{font-family:var(--font-display);font-size:20px;font-weight:600;line-height:1.25;margin-bottom:10px;}
+.status-badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:10.5px;padding:4px 9px;border-radius:20px;border:1px solid var(--border-strong);color:var(--text-2);}
+.status-badge .dot{width:7px;height:7px;border-radius:50%;}
+.close-btn{position:absolute;top:20px;right:18px;width:30px;height:30px;border-radius:6px;color:var(--text-2);font-size:18px;}
+.close-btn:hover{background:var(--border);color:var(--text-1);}
+
+.tabs{display:flex;border-bottom:1px solid var(--border);padding:0 22px;}
+.tabs button{padding:12px 0;margin-right:20px;font-size:11.5px;color:var(--text-2);border-bottom:2px solid transparent;font-weight:500;}
+.tabs button.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-body{flex:1;overflow-y:auto;padding:20px 22px 30px;}
+.tab-body::-webkit-scrollbar{width:6px;}
+.tab-body::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px;}
+
+.desc{font-size:13px;line-height:1.65;color:var(--text-2);margin-bottom:18px;}
+.section-label{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--text-3);margin:20px 0 10px;}
+.conn-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px;}
+.conn-row .w{font-family:var(--font-mono);font-size:11px;color:var(--text-2);}
+.protocol-card{border:1px solid var(--border);border-radius:8px;padding:13px 14px;margin-bottom:10px;}
+.protocol-card h4{margin:0 0 4px;font-size:12.5px;font-weight:600;}
+.protocol-card p{margin:0 0 10px;font-size:11.5px;color:var(--text-2);line-height:1.5;}
+.btn-primary{background:var(--accent);color:#00110D;padding:8px 14px;border-radius:6px;font-size:11.5px;font-weight:600;}
+.btn-primary:hover{background:#5CF0DA;}
+.btn-primary:focus-visible{outline:2px solid var(--text-1);outline-offset:2px;}
+
+.chart-wrap{margin-top:4px;}
+.chart-wrap svg{width:100%;height:150px;overflow:visible;}
+.empty-note{font-size:12px;color:var(--text-3);font-style:italic;padding:20px 0;}
+
+.app-item{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border);font-size:12.5px;color:var(--text-2);}
+.app-item .tag{font-family:var(--font-mono);font-size:9.5px;color:var(--accent);border:1px solid var(--accent-dim);padding:2px 7px;border-radius:20px;flex-shrink:0;margin-top:1px;}
+
+.meta-slider-group{margin-bottom:22px;}
+.meta-slider-group label{display:flex;justify-content:space-between;font-size:11.5px;color:var(--text-2);margin-bottom:6px;}
+.meta-slider-group input[type=range]{width:100%;accent-color:var(--accent);}
+.meta-gap{font-family:var(--font-mono);font-size:11px;color:var(--text-2);margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:8px;}
+
+/* ---------- session view ---------- */
+#session-view{
+  position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
+  background:var(--bg);
+}
+#session-view.active{display:flex;}
+.session-frame{width:min(92vw,520px);text-align:center;}
+.session-eyebrow{font-family:var(--font-mono);font-size:10.5px;color:var(--text-2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;}
+.session-title{font-family:var(--font-display);font-size:22px;font-weight:600;margin-bottom:6px;}
+.session-sub{font-size:12.5px;color:var(--text-2);margin-bottom:34px;line-height:1.6;}
+.nback-grid{display:grid;grid-template-columns:repeat(3,72px);grid-template-rows:repeat(3,72px);gap:8px;margin:0 auto 30px;justify-content:center;}
+.nback-cell{width:72px;height:72px;border-radius:10px;background:var(--bg-elev);border:1px solid var(--border);transition:background .12s, border-color .12s;}
+.nback-cell.lit{background:var(--accent-faint);border-color:var(--accent);}
+.session-hud{display:flex;justify-content:center;gap:26px;margin-bottom:22px;font-family:var(--font-mono);font-size:11px;color:var(--text-2);}
+.session-hud b{color:var(--text-1);font-weight:500;}
+.session-controls{display:flex;gap:12px;justify-content:center;}
+.btn-secondary{border:1px solid var(--border-strong);padding:10px 22px;border-radius:7px;font-size:13px;color:var(--text-1);}
+.btn-secondary:hover{border-color:var(--accent-dim);}
+.btn-secondary:focus-visible, .btn-primary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+.key-hint{font-family:var(--font-mono);font-size:10.5px;color:var(--text-3);margin-top:16px;}
+
+.summary-row{display:flex;justify-content:space-between;font-size:12.5px;color:var(--text-2);padding:9px 0;border-bottom:1px solid var(--border);}
+.summary-row b{color:var(--text-1);font-family:var(--font-mono);font-weight:500;}
+
+/* ---------- accessible list fallback ---------- */
+#a11y-list{
+  position:absolute;inset:0;background:var(--bg);overflow-y:auto;padding:80px 40px 60px;display:none;
+}
+#a11y-list.active{display:block;}
+#a11y-list h2{font-family:var(--font-display);font-size:18px;margin-bottom:4px;}
+#a11y-list p.hint{color:var(--text-2);font-size:12.5px;margin-bottom:24px;}
+#a11y-list ul{list-style:none;padding-left:18px;margin:0;}
+#a11y-list > ul{padding-left:0;}
+#a11y-list li{margin-bottom:6px;}
+#a11y-list button{display:block;width:100%;text-align:left;padding:8px 10px;border-radius:6px;font-size:13px;border:1px solid transparent;}
+#a11y-list button:hover, #a11y-list button:focus-visible{background:var(--bg-panel);border-color:var(--border-strong);outline:none;}
+#a11y-list .lvl-tag{font-family:var(--font-mono);font-size:9.5px;color:var(--text-3);margin-right:8px;}
+
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+
+@media (max-width:720px){
+  #panel{width:100%;}
+  .legend{display:none;}
+}
+</style>
+</head>
+<body class="motion-ok">
+<div id="app">
+
+  <header>
+    <div class="wordmark">COGNITO<span>RIUM</span></div>
+    <div class="breadcrumb" id="breadcrumb"><b>Réseau global</b></div>
+  </header>
+
+  <div class="legend" aria-hidden="true">
+    <div class="title">Statut épistémique</div>
+    <div class="row"><span class="swatch sw-etabli"></span> Établi</div>
+    <div class="row"><span class="swatch sw-modele"></span> Modèle</div>
+    <div class="row"><span class="swatch sw-specule"></span> Spéculatif</div>
+    <div class="title" style="margin-top:4px;">Couches</div>
+    <div class="row"><span class="swatch" style="border-radius:3px;background:var(--text-2);"></span> Parcours (expériences)</div>
+    <div class="row"><span class="swatch" style="background:var(--accent);"></span> Cognition (capacités)</div>
+    <div class="row"><span class="swatch" style="border-radius:0;width:14px;height:2px;background:var(--transfer);"></span> Pont mobilisé</div>
+  </div>
+
+  <div id="graph-view">
+    <svg id="graph" role="img" aria-hidden="true"></svg>
+  </div>
+
+  <div id="session-view" aria-live="polite"></div>
+
+  <div id="a11y-list" aria-label="Représentation textuelle du réseau cognitif"></div>
+
+  <div id="panel" aria-hidden="true">
+    <button class="close-btn" id="panel-close" aria-label="Fermer le détail">✕</button>
+    <div class="panel-head">
+      <div class="panel-eyebrow" id="panel-eyebrow">—</div>
+      <div class="panel-title" id="panel-title">—</div>
+      <span class="status-badge" id="panel-status"><span class="dot"></span><span id="panel-status-text">—</span></span>
+    </div>
+    <div class="tabs">
+      <button data-tab="apercu" class="active">Aperçu</button>
+      <button data-tab="trajectoire">Trajectoire</button>
+      <button data-tab="application">Application réelle</button>
+      <button data-tab="metacognition">Écart métacognitif</button>
+    </div>
+    <div class="tab-body" id="tab-body"></div>
+  </div>
+
+  <div class="view-rail" role="tablist" aria-label="Vues principales">
+    <button data-view="network" class="active" role="tab" aria-selected="true">Réseau</button>
+    <button data-view="session" role="tab" aria-selected="false">Session</button>
+  </div>
+
+  <button class="a11y-toggle" id="a11y-toggle" aria-pressed="false">Vue liste accessible</button>
+
+</div>
+
+<script>
+/* =========================================================================
+   COGNITORIUM — prototype interactif
+   Toutes les données ci-dessous sont des données de démonstration
+   représentatives, pas un catalogue scientifique validé.
+   ========================================================================= */
+
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+if(reducedMotion) document.body.classList.remove('motion-ok');
+
+/* ---------------------- DONNÉES DE DÉMONSTRATION ---------------------- */
+
+const NETWORKS = [
+  {id:'ecn', name:'Contrôle exécutif', angle:0},
+  {id:'dmn', name:'Réseau par défaut', angle:51},
+  {id:'sal', name:'Saillance', angle:103},
+  {id:'dan', name:'Attention dorsale', angle:154},
+  {id:'van', name:'Attention ventrale', angle:206},
+  {id:'mem', name:'Réseaux mnésiques', angle:257},
+  {id:'lang', name:'Langage & cognition sociale', angle:309},
+];
+
+const DOMAINS = [
+  {id:'memoire', name:'Mémoire', net:'mem', status:'etabli',
+   desc:"Ensemble des processus d'encodage, de stockage et de récupération de l'information. Regroupe plusieurs systèmes fonctionnellement distincts (travail, procédurale, autobiographique)."},
+  {id:'attention', name:'Attention', net:'dan', status:'etabli',
+   desc:"Sélection et allocation des ressources de traitement. S'appuie sur des réseaux dorsal (orientation volontaire) et ventral (réorientation par saillance)."},
+  {id:'raisonnement', name:'Raisonnement', net:'ecn', status:'etabli',
+   desc:"Manipulation d'informations abstraites pour inférer, déduire ou résoudre un problème structuré."},
+  {id:'langage', name:'Langage', net:'lang', status:'etabli',
+   desc:"Compréhension et production du langage, de la reconnaissance phonologique à l'intégration sémantique en contexte."},
+  {id:'creativite', name:'Créativité', net:'dmn', status:'modele',
+   desc:"Génération d'idées ou de solutions nouvelles et adaptées ; les corrélats fonctionnels précis restent débattus dans la littérature."},
+  {id:'cognition_sociale', name:'Cognition sociale', net:'lang', status:'etabli',
+   desc:"Traitement des états mentaux d'autrui (théorie de l'esprit), des émotions et des signaux sociaux."},
+  {id:'fonctions_executives', name:'Fonctions exécutives', net:'ecn', status:'etabli',
+   desc:"Ensemble de processus de contrôle de haut niveau : inhibition, flexibilité, mise à jour (Miyake & Friedman)."},
+  {id:'perception', name:'Perception', net:'van', status:'etabli',
+   desc:"Construction active d'une représentation du monde à partir des signaux sensoriels."},
+  {id:'apprentissage', name:'Apprentissage', net:'mem', status:'etabli',
+   desc:"Acquisition durable de connaissances ou de compétences par l'expérience et la pratique répétée."},
+  {id:'metacognition', name:'Métacognition', net:'ecn', status:'modele',
+   desc:"Connaissance et régulation de ses propres processus cognitifs ; la mesure fine de l'exactitude métacognitive reste un champ actif de recherche."},
+];
+
+const DOMAIN_EDGES = [
+  ['memoire','fonctions_executives',.82,'etabli'],
+  ['attention','fonctions_executives',.77,'etabli'],
+  ['langage','fonctions_executives',.55,'modele'],
+  ['raisonnement','fonctions_executives',.71,'etabli'],
+  ['memoire','apprentissage',.85,'etabli'],
+  ['attention','perception',.66,'etabli'],
+  ['creativite','cognition_sociale',.38,'speculatif'],
+  ['metacognition','apprentissage',.6,'modele'],
+  ['cognition_sociale','langage',.73,'etabli'],
+  ['perception','memoire',.48,'modele'],
+  ['raisonnement','langage',.5,'modele'],
+  ['metacognition','memoire',.44,'speculatif'],
+];
+
+/* ---- Couche PARCOURS (modèle Cognitarium : jumeau cognitif de parcours humain) ----
+   Chaque expérience du parcours d'un individu (formation, poste, projet) est
+   représentée comme un nœud distinct, relié par des arêtes-pont aux domaines
+   cognitifs qu'elle mobilise. Persona de démonstration générique. */
+const PARCOURS = [
+  {id:'exp_licence', name:'Licence Informatique', type:'Formation', period:'2018–2021',
+   desc:"Formation académique généraliste en informatique : algorithmique, structures de données, bases de données."},
+  {id:'exp_devjob', name:'Développeur full-stack', type:'Expérience professionnelle', period:'2021–2024',
+   desc:"Conception et maintenance d'applications web en contexte de production, avec gestion de plusieurs flux de travail simultanés."},
+  {id:'exp_lead', name:'Lead technique (équipe de 4)', type:'Expérience professionnelle', period:'2023–2024',
+   desc:"Coordination d'une petite équipe, arbitrages techniques, communication avec des parties prenantes non techniques."},
+  {id:'exp_piano', name:'Pratique du piano (autodidacte)', type:'Apprentissage informel', period:'2015–présent',
+   desc:"Pratique régulière et progressive d'un instrument, hors cadre scolaire."},
+  {id:'exp_projet', name:'Projet personnel — application mobile', type:'Projet', period:'2022–2023',
+   desc:"Conception et développement en autonomie d'une application mobile de bout en bout, hors contexte professionnel."},
+];
+
+const BRIDGE_EDGES = [
+  // [expérience, domaine cognitif mobilisé, force, statut]
+  ['exp_licence','raisonnement',.75,'etabli'],
+  ['exp_licence','memoire',.55,'modele'],
+  ['exp_devjob','fonctions_executives',.8,'etabli'],
+  ['exp_devjob','memoire',.6,'modele'],
+  ['exp_lead','cognition_sociale',.72,'etabli'],
+  ['exp_lead','fonctions_executives',.5,'modele'],
+  ['exp_piano','memoire',.68,'etabli'],
+  ['exp_piano','attention',.45,'modele'],
+  ['exp_projet','creativite',.6,'modele'],
+  ['exp_projet','fonctions_executives',.58,'modele'],
+];
+
+// arborescence détaillée pour deux domaines, pour démontrer la profondeur du zoom sémantique
+const SUBDOMAINS = {
+  memoire: [
+    {id:'sd_encodage', name:'Encodage', status:'etabli'},
+    {id:'sd_consolidation', name:'Consolidation', status:'etabli'},
+    {id:'sd_recuperation', name:'Récupération', status:'etabli'},
+    {id:'sd_mdt', name:'Mémoire de travail', status:'etabli'},
+    {id:'sd_procedurale', name:'Mémoire procédurale', status:'etabli'},
+    {id:'sd_prospective', name:'Mémoire prospective', status:'modele'},
+    {id:'sd_autobio', name:'Mémoire autobiographique', status:'modele'},
+  ],
+  fonctions_executives: [
+    {id:'sd_inhibition', name:'Inhibition', status:'etabli'},
+    {id:'sd_flexibilite', name:'Flexibilité cognitive', status:'etabli'},
+    {id:'sd_maj', name:'Mise à jour', status:'etabli'},
+    {id:'sd_planification', name:'Planification', status:'modele'},
+    {id:'sd_controle_att', name:'Contrôle attentionnel', status:'etabli'},
+    {id:'sd_conflit', name:'Résolution de conflit', status:'modele'},
+  ],
+};
+
+const CAPACITIES = {
+  sd_mdt: [
+    {id:'cap_maintien', name:'Maintien actif', status:'etabli'},
+    {id:'cap_manipulation', name:'Manipulation mentale sous charge', status:'etabli'},
+    {id:'cap_interference', name:"Résistance à l'interférence", status:'etabli', trainable:true},
+    {id:'cap_maj_temps_reel', name:'Mise à jour en temps réel', status:'modele'},
+  ],
+};
+
+const MICRO = {
+  cap_interference: [
+    {id:'micro_stroop', name:'Tâche de Stroop', status:'etabli'},
+    {id:'micro_nback', name:'N-back avec leurres', status:'etabli', trainable:true, protocol:'nback'},
+    {id:'micro_doubletache', name:'Stabilité en double tâche', status:'modele'},
+  ],
+};
+
+const REAL_APPLICATIONS = {
+  cap_interference: [
+    {tag:'Code', text:"Garder plusieurs variables d'état en tête sans se laisser distraire par du code non pertinent affiché à l'écran."},
+    {tag:'Conduite', text:"Filtrer les stimuli visuels non pertinents (panneaux publicitaires) pour rester concentré sur la route."},
+    {tag:'Réunion', text:"Suivre un fil de discussion principal malgré des apartés ou notifications simultanées."},
+  ],
+  memoire: [
+    {tag:'Étude', text:"Retenir des concepts sur la durée grâce à la répétition espacée plutôt qu'au bachotage."},
+    {tag:'Musique', text:"Rappeler une séquence de doigtés apprise, au-delà de la simple lecture de partition."},
+  ],
+};
+
+/* état de mesure (maturité 0–1) et historique de session, en mémoire uniquement */
+const measurementState = {}; // id -> {maturity, history:[{t,val}]}
+function ensureState(id, base=0.35){
+  if(!measurementState[id]) measurementState[id] = {maturity: base, history:[{t:0, val: base}]};
+  return measurementState[id];
+}
+NETWORKS.forEach(n=>ensureState(n.id, 1));
+DOMAINS.forEach(d=>ensureState(d.id, 0.55 + Math.random()*0.25));
+Object.values(SUBDOMAINS).flat().forEach(s=>ensureState(s.id, 0.4 + Math.random()*0.2));
+Object.values(CAPACITIES).flat().forEach(c=>ensureState(c.id, 0.3 + Math.random()*0.15));
+Object.values(MICRO).flat().forEach(m=>ensureState(m.id, 0.18));
+PARCOURS.forEach(p=>ensureState(p.id, 0.5 + Math.random()*0.3));
+
+/* ---------------------- CONSTRUCTION DU GRAPHE ---------------------- */
+
+const svg = d3.select('#graph');
+const container = svg.append('g').attr('id','zoom-container');
+const haloLayer = container.append('g').attr('class','halo-layer');
+const edgeLayer = container.append('g').attr('class','edge-layer');
+const nodeLayer = container.append('g').attr('class','node-layer');
+
+let W = window.innerWidth, H = window.innerHeight;
+function resize(){
+  W = window.innerWidth; H = window.innerHeight;
+  svg.attr('viewBox', [0,0,W,H]);
+}
+resize();
+window.addEventListener('resize', resize);
+
+svg.call(d3.zoom().scaleExtent([0.4,3]).on('zoom', ev=>{
+  container.attr('transform', ev.transform);
+}));
+
+const R = Math.min(W,H)*0.34;
+NETWORKS.forEach(n=>{
+  const rad = n.angle*Math.PI/180;
+  n.cx = W/2 + Math.cos(rad)*R;
+  n.cy = H/2 + Math.sin(rad)*R;
+});
+
+let expanded = new Set();       // domain/subdomain/capacity ids currently expanded
+let nodes = [];
+let links = [];
+let selectedId = null;
+
+function buildGraphData(){
+  nodes = []; links = [];
+
+  const parcoursX = W*0.16;
+  PARCOURS.forEach((p,i)=>{
+    const y = H*0.28 + i*(H*0.44/(PARCOURS.length-1));
+    nodes.push({id:p.id, level:'parcours', name:p.name, status:'etabli', desc:p.desc, ptype:p.type, period:p.period,
+      x:parcoursX+(Math.random()-.5)*10, y:y, anchorX:parcoursX, anchorY:y});
+  });
+
+  DOMAINS.forEach(d=>{
+    const net = NETWORKS.find(n=>n.id===d.net);
+    nodes.push({id:d.id, level:'domain', name:d.name, status:d.status, desc:d.desc, x: net.cx+(Math.random()-.5)*40, y: net.cy+(Math.random()-.5)*40, anchorX:net.cx, anchorY:net.cy});
+  });
+  DOMAIN_EDGES.forEach(([a,b,w,s])=>links.push({source:a,target:b,weight:w,status:s,kind:'domain'}));
+  BRIDGE_EDGES.forEach(([a,b,w,s])=>links.push({source:a,target:b,weight:w,status:s,kind:'pont'}));
+
+  if(expanded.has('memoire')){
+    SUBDOMAINS.memoire.forEach(s=>{
+      const parent = nodes.find(n=>n.id==='memoire');
+      nodes.push({id:s.id, level:'subdomain', name:s.name, status:s.status, parent:'memoire', x:parent.x+(Math.random()-.5)*60, y:parent.y+(Math.random()-.5)*60});
+      links.push({source:'memoire', target:s.id, weight:.9, status:'etabli', kind:'tree'});
+    });
+  }
+  if(expanded.has('fonctions_executives')){
+    SUBDOMAINS.fonctions_executives.forEach(s=>{
+      const parent = nodes.find(n=>n.id==='fonctions_executives');
+      nodes.push({id:s.id, level:'subdomain', name:s.name, status:s.status, parent:'fonctions_executives', x:parent.x+(Math.random()-.5)*60, y:parent.y+(Math.random()-.5)*60});
+      links.push({source:'fonctions_executives', target:s.id, weight:.9, status:'etabli', kind:'tree'});
+    });
+  }
+  if(expanded.has('sd_mdt')){
+    CAPACITIES.sd_mdt.forEach(c=>{
+      const parent = nodes.find(n=>n.id==='sd_mdt');
+      nodes.push({id:c.id, level:'capacity', name:c.name, status:c.status, parent:'sd_mdt', trainable:c.trainable, x:(parent?.x||W/2)+(Math.random()-.5)*50, y:(parent?.y||H/2)+(Math.random()-.5)*50});
+      links.push({source:'sd_mdt', target:c.id, weight:.9, status:'etabli', kind:'tree'});
+    });
+  }
+  if(expanded.has('cap_interference')){
+    MICRO.cap_interference.forEach(m=>{
+      const parent = nodes.find(n=>n.id==='cap_interference');
+      nodes.push({id:m.id, level:'micro', name:m.name, status:m.status, parent:'cap_interference', trainable:m.trainable, protocol:m.protocol, x:(parent?.x||W/2)+(Math.random()-.5)*40, y:(parent?.y||H/2)+(Math.random()-.5)*40});
+      links.push({source:'cap_interference', target:m.id, weight:.9, status:'etabli', kind:'tree'});
+    });
+  }
+}
+
+const radiusByLevel = {parcours:30, domain:22, subdomain:14, capacity:10, micro:7};
+
+function radiusFor(n){
+  const base = radiusByLevel[n.level] || 10;
+  const mat = ensureState(n.id).maturity;
+  return base * (0.55 + mat*0.65);
+}
+
+let sim;
+function renderGraph(){
+  buildGraphData();
+
+  haloLayer.selectAll('*').remove();
+  haloLayer.selectAll('circle.network-halo')
+    .data(NETWORKS).join('circle')
+    .attr('class','network-halo')
+    .attr('cx',d=>d.cx).attr('cy',d=>d.cy).attr('r', 92);
+  haloLayer.selectAll('text.network-label')
+    .data(NETWORKS).join('text')
+    .attr('class','network-label')
+    .attr('x',d=>d.cx).attr('y',d=>d.cy-100)
+    .text(d=>d.name);
+
+  sim = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(links).id(d=>d.id).distance(l=> l.kind==='tree'? 55 : 130).strength(l=>l.kind==='tree'?0.7:0.15))
+    .force('charge', d3.forceManyBody().strength(-180))
+    .force('collide', d3.forceCollide().radius(d=>radiusFor(d)+18))
+    .force('anchor', alpha=>{
+      nodes.forEach(n=>{
+        if(n.anchorX!=null){
+          n.vx += (n.anchorX-n.x)*0.008*alpha;
+          n.vy += (n.anchorY-n.y)*0.008*alpha;
+        }
+      });
+    })
+    .alpha(1).alphaDecay(reducedMotion?0.2:0.045);
+
+  const edgeSel = edgeLayer.selectAll('path.edge').data(links, d=>d.source.id+'-'+d.target.id+(d.source.id||''));
+  edgeSel.exit().remove();
+  const edgeEnter = edgeSel.enter().append('path').attr('class', d=> d.kind==='pont' ? 'edge pont' : 'edge '+d.status);
+  const edgeMerge = edgeEnter.merge(edgeSel)
+    .attr('class', d=> d.kind==='pont' ? 'edge pont' : 'edge '+d.status)
+    .attr('stroke-width', d=> d.kind==='tree' ? 1 : Math.max(0.6, d.weight*2.4));
+
+  const nodeSel = nodeLayer.selectAll('g.node').data(nodes, d=>d.id);
+  nodeSel.exit().remove();
+  const nodeEnter = nodeSel.enter().append('g')
+    .attr('class', d=>`node level-${d.level} ${d.status}`)
+    .attr('tabindex',0)
+    .attr('role','button')
+    .attr('aria-label', d=>d.name)
+    .on('click', (ev,d)=>onNodeActivate(d))
+    .on('keydown', (ev,d)=>{ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); onNodeActivate(d);} })
+    .call(d3.drag().on('start',dragstart).on('drag',dragged).on('end',dragend));
+
+  nodeEnter.filter(d=>d.level!=='parcours').append('circle').attr('class','pulse').attr('r', d=>radiusFor(d));
+  nodeEnter.filter(d=>d.level!=='parcours').append('circle').attr('class','core').attr('r', d=>radiusFor(d));
+  nodeEnter.filter(d=>d.level==='parcours').append('rect').attr('class','core')
+    .attr('x',-58).attr('y',-16).attr('width',116).attr('height',32).attr('rx',7);
+  nodeEnter.append('text').attr('dy', d=> d.level==='parcours' ? 4 : radiusFor(d)+13).text(d=>d.name);
+
+  const nodeMerge = nodeEnter.merge(nodeSel)
+    .attr('class', d=>`node level-${d.level} ${d.status}${d.id===selectedId?' selected':''}${trainedNodes.has(d.id)?' trained':''}`);
+  nodeMerge.select('circle.core').attr('r', d=>radiusFor(d));
+  nodeMerge.select('circle.pulse').attr('r', d=>radiusFor(d)).style('--r0', d=>radiusFor(d)+'px');
+
+  sim.on('tick', ()=>{
+    edgeMerge.attr('d', d=> `M${d.source.x},${d.source.y} L${d.target.x},${d.target.y}`);
+    nodeMerge.attr('transform', d=>`translate(${d.x},${d.y})`);
+  });
+
+  function dragstart(ev,d){ if(!ev.active) sim.alphaTarget(0.2).restart(); d.fx=d.x; d.fy=d.y; }
+  function dragged(ev,d){ d.fx=ev.x; d.fy=ev.y; }
+  function dragend(ev,d){ if(!ev.active) sim.alphaTarget(0); d.fx=null; d.fy=null; }
+
+  renderA11yList();
+}
+
+const EXPANDABLE = new Set(['memoire','fonctions_executives','sd_mdt','cap_interference']);
+const trainedNodes = new Set();
+
+function onNodeActivate(d){
+  if(EXPANDABLE.has(d.id) && !expanded.has(d.id)){
+    expanded.add(d.id);
+    renderGraph();
+  }
+  selectNode(d.id);
+}
+
+/* ---------------------- PANNEAU DE NŒUD ---------------------- */
+
+const DESCRIPTIONS = {}; // fallback lookups
+DOMAINS.forEach(d=>DESCRIPTIONS[d.id]=d.desc);
+PARCOURS.forEach(p=>DESCRIPTIONS[p.id]=p.desc);
+
+const STATUS_LABEL = {etabli:'Établi', modele:'Modèle', speculatif:'Spéculatif'};
+
+function findNode(id){ return nodes.find(n=>n.id===id) || DOMAINS.find(d=>d.id===id) || PARCOURS.find(p=>p.id===id); }
+
+function selectNode(id){
+  selectedId = id;
+  nodeLayer.selectAll('g.node').classed('selected', d=>d.id===id);
+  const n = findNode(id);
+  if(!n) return;
+  document.getElementById('breadcrumb').innerHTML = `Réseau global <span style="color:var(--text-3)">/</span> <b>${n.name}</b>`;
+  document.getElementById('panel').classList.add('open');
+  document.getElementById('panel').setAttribute('aria-hidden','false');
+  document.getElementById('panel-eyebrow').textContent = levelLabel(n.level);
+  document.getElementById('panel-title').textContent = n.name;
+  const dot = document.querySelector('#panel-status .dot');
+  dot.style.background = n.status==='etabli' ? 'var(--accent)' : 'transparent';
+  dot.style.border = n.status==='etabli' ? 'none' : `1.5px ${n.status==='modele'?'dashed':'dotted'} var(--text-2)`;
+  document.getElementById('panel-status-text').textContent = STATUS_LABEL[n.status] || '—';
+  activateTab('apercu');
+}
+
+function levelLabel(l){
+  return {parcours:'Parcours — expérience', domain:'Domaine cognitif', subdomain:'Sous-domaine', capacity:'Capacité', micro:'Micro-compétence', network:'Réseau à large échelle'}[l] || l;
+}
+
+function activateTab(tab){
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  const body = document.getElementById('tab-body');
+  const n = findNode(selectedId);
+  if(!n){ body.innerHTML=''; return; }
+
+  if(tab==='apercu') body.innerHTML = renderApercu(n);
+  if(tab==='trajectoire') body.innerHTML = renderTrajectoire(n);
+  if(tab==='application') body.innerHTML = renderApplication(n);
+  if(tab==='metacognition') body.innerHTML = renderMetacognition(n);
+
+  if(tab==='trajectoire') drawTrajectoryChart(n.id);
+}
+
+function renderApercu(n){
+  const desc = DESCRIPTIONS[n.id] || "Nœud du réseau cognitif. Description détaillée disponible dans le catalogue scientifique complet (hors du périmètre de ce prototype).";
+  const conns = links.filter(l=> (l.source.id||l.source)===n.id || (l.target.id||l.target)===n.id );
+  let connHtml = conns.map(l=>{
+    const otherId = (l.source.id||l.source)===n.id ? (l.target.id||l.target) : (l.source.id||l.source);
+    const other = findNode(otherId);
+    return `<div class="conn-row"><span>${other?other.name:otherId}</span><span class="w">${(l.weight*100|0)}%</span></div>`;
+  }).join('') || '<p class="empty-note">Pas de connexion affichée à ce niveau de zoom.</p>';
+
+  let metaHtml = '';
+  if(n.level==='parcours'){
+    metaHtml = `<div class="section-label">Métadonnées</div>
+      <div class="conn-row"><span>Type</span><span class="w">${n.ptype}</span></div>
+      <div class="conn-row"><span>Période</span><span class="w">${n.period}</span></div>`;
+  }
+
+  let expandHint = '';
+  if(EXPANDABLE.has(n.id) && !expanded.has(n.id)){
+    expandHint = `<p class="desc" style="margin-top:14px;">Ce nœud contient des sous-niveaux non encore explorés. Cliquez à nouveau sur le nœud dans le graphe pour révéler le niveau suivant.</p>`;
+  }
+
+  let protocolHtml = '';
+  if(n.protocol==='nback'){
+    protocolHtml = `<div class="section-label">Protocole d'entraînement</div>
+      <div class="protocol-card">
+        <h4>N-back visuel avec leurres</h4>
+        <p>Tâche adaptative de reconnaissance de position en séquence. Objectif mesurable : précision de détection sous charge d'interférence.</p>
+        <button class="btn-primary" onclick="startSession('${n.id}')">Lancer la session</button>
+      </div>`;
+  }
+
+  return `
+    <p class="desc">${desc}</p>
+    ${metaHtml}
+    ${expandHint}
+    <div class="section-label">${n.level==='parcours' ? 'Compétences cognitives mobilisées (pont)' : 'Connexions mesurées'}</div>
+    ${connHtml}
+    ${protocolHtml}
+  `;
+}
+
+function renderTrajectoire(n){
+  const st = ensureState(n.id);
+  if(st.history.length<2){
+    return `<p class="empty-note">Mesure encore limitée sur ce nœud — pas assez de sessions pour tracer une trajectoire fiable.</p>
+    <div class="chart-wrap"><svg id="traj-svg"></svg></div>`;
+  }
+  return `<p class="desc">Évolution de la maturité de mesure de ce nœud au fil des sessions. La bande représente l'incertitude estimée, plus large lorsque les données sont rares.</p>
+  <div class="chart-wrap"><svg id="traj-svg"></svg></div>`;
+}
+
+function drawTrajectoryChart(id){
+  const svgEl = document.getElementById('traj-svg');
+  if(!svgEl) return;
+  const st = ensureState(id);
+  const w = svgEl.clientWidth || 320, h = 150, pad = 20;
+  const s = d3.select(svgEl).attr('viewBox',[0,0,w,h]);
+  s.selectAll('*').remove();
+  const data = st.history;
+  const x = d3.scaleLinear().domain([0, Math.max(1,data.length-1)]).range([pad, w-pad]);
+  const y = d3.scaleLinear().domain([0,1]).range([h-pad, pad]);
+  const uncertainty = data.map((d,i)=> Math.max(0.03, 0.22 - i*0.03));
+  const area = d3.area().x((d,i)=>x(i)).y0((d,i)=>y(Math.max(0,d.val-uncertainty[i]))).y1((d,i)=>y(Math.min(1,d.val+uncertainty[i]))).curve(d3.curveMonotoneX);
+  const line = d3.line().x((d,i)=>x(i)).y(d=>y(d.val)).curve(d3.curveMonotoneX);
+  s.append('path').attr('d', area(data)).attr('fill','var(--accent-faint)');
+  s.append('path').attr('d', line(data)).attr('fill','none').attr('stroke','var(--accent)').attr('stroke-width',1.6);
+  s.selectAll('circle').data(data).join('circle').attr('cx',(d,i)=>x(i)).attr('cy',d=>y(d.val)).attr('r',2.6).attr('fill','var(--accent)');
+  s.append('line').attr('x1',pad).attr('x2',w-pad).attr('y1',y(0)).attr('y2',y(0)).attr('stroke','var(--border)');
+}
+
+function renderApplication(n){
+  const apps = REAL_APPLICATIONS[n.id];
+  if(!apps) return `<p class="empty-note">Aucune application réelle documentée pour ce nœud dans ce prototype.</p>`;
+  return apps.map(a=>`<div class="app-item"><span class="tag">${a.tag}</span><span>${a.text}</span></div>`).join('');
+}
+
+function renderMetacognition(n){
+  return `
+    <p class="desc">Comparez votre perception de votre propre performance à la mesure réelle enregistrée pour ce nœud. L'écart entre les deux est un indicateur, pas un jugement.</p>
+    <div class="meta-slider-group">
+      <label>Perception subjective <span id="meta-perc-val">50%</span></label>
+      <input type="range" min="0" max="100" value="50" id="meta-perc">
+    </div>
+    <div class="meta-slider-group">
+      <label>Mesure enregistrée <span id="meta-real-val">${Math.round(ensureState(n.id).maturity*100)}%</span></label>
+      <input type="range" min="0" max="100" value="${Math.round(ensureState(n.id).maturity*100)}" id="meta-real" disabled style="opacity:.55">
+    </div>
+    <div class="meta-gap" id="meta-gap">Écart : calcul en cours…</div>
+  `;
+}
+
+document.getElementById('tab-body').addEventListener('input', e=>{
+  if(e.target.id==='meta-perc'){
+    document.getElementById('meta-perc-val').textContent = e.target.value+'%';
+    updateMetaGap();
+  }
+});
+function updateMetaGap(){
+  const perc = document.getElementById('meta-perc');
+  const real = document.getElementById('meta-real');
+  if(!perc||!real) return;
+  const gap = parseInt(perc.value) - parseInt(real.value);
+  const el = document.getElementById('meta-gap');
+  if(Math.abs(gap)<8) el.textContent = `Écart : ${gap>0?'+':''}${gap} pts — perception globalement alignée avec la mesure.`;
+  else el.textContent = `Écart : ${gap>0?'+':''}${gap} pts — ${gap>0?'surestimation':'sous-estimation'} par rapport à la mesure enregistrée.`;
+}
+
+document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click', ()=>activateTab(b.dataset.tab)));
+document.getElementById('panel-close').addEventListener('click', ()=>{
+  document.getElementById('panel').classList.remove('open');
+  document.getElementById('panel').setAttribute('aria-hidden','true');
+  selectedId=null;
+  nodeLayer.selectAll('g.node').classed('selected', false);
+  document.getElementById('breadcrumb').innerHTML = '<b>Réseau global</b>';
+});
+
+/* ---------------------- VUES (rail) ---------------------- */
+
+document.querySelectorAll('.view-rail button').forEach(b=>{
+  b.addEventListener('click', ()=>setView(b.dataset.view));
+});
+function setView(view){
+  document.querySelectorAll('.view-rail button').forEach(b=>{
+    const active = b.dataset.view===view;
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-selected', active);
+  });
+  document.getElementById('graph-view').style.display = view==='network' ? 'block' : 'none';
+  document.getElementById('session-view').classList.toggle('active', view==='session');
+  if(view==='session' && !sessionActive) renderSessionIntro();
+}
+
+/* ---------------------- SESSION : N-BACK VISUEL ---------------------- */
+
+let sessionActive = false;
+let sessionState = null;
+
+function renderSessionIntro(){
+  document.getElementById('session-view').innerHTML = `
+    <div class="session-frame">
+      <div class="session-eyebrow">Protocole d'entraînement</div>
+      <div class="session-title">N-back visuel avec leurres</div>
+      <div class="session-sub">Une case s'allume à chaque essai. Indiquez si la position actuelle correspond à celle affichée il y a N essais. La difficulté s'ajuste selon votre performance.</div>
+      <button class="btn-primary" style="padding:11px 26px;font-size:13px;" onclick="startSession('micro_nback')">Commencer (20 essais)</button>
+    </div>`;
+}
+
+function startSession(nodeId){
+  setView('session');
+  sessionActive = true;
+  sessionState = {
+    nodeId, n: 2, trial: 0, totalTrials: 20,
+    sequence: [], hits:0, misses:0, falseAlarms:0, correctRej:0,
+    waitingResponse:false, timer:null,
+  };
+  runTrial();
+}
+
+function runTrial(){
+  const s = sessionState;
+  if(s.trial >= s.totalTrials){ return endSession(); }
+  const pos = Math.floor(Math.random()*9);
+  // force a controlled proportion of matches (~30%) once enough history exists
+  let actualPos = pos;
+  if(s.sequence.length >= s.n && Math.random() < 0.32){
+    actualPos = s.sequence[s.sequence.length - s.n];
+  }
+  s.sequence.push(actualPos);
+  s.trial++;
+  s.isMatch = s.sequence.length > s.n && s.sequence[s.sequence.length-1-s.n] === actualPos;
+  s.responded = false;
+
+  document.getElementById('session-view').innerHTML = `
+    <div class="session-frame">
+      <div class="session-eyebrow">Essai ${s.trial} / ${s.totalTrials} — N = ${s.n}</div>
+      <div class="session-title">Correspond-il à la position N-back ?</div>
+      <div class="session-hud">
+        <span>Précision : <b id="hud-acc">${sessionAccuracy(s)}%</b></span>
+        <span>Niveau N : <b>${s.n}</b></span>
+      </div>
+      <div class="nback-grid" id="nback-grid"></div>
+      <div class="session-controls">
+        <button class="btn-secondary" onclick="respond(false)">Non (N)</button>
+        <button class="btn-primary" onclick="respond(true)">Correspondance (Espace)</button>
+      </div>
+      <div class="key-hint">Espace = correspondance · N = pas de correspondance</div>
+    </div>`;
+  const grid = document.getElementById('nback-grid');
+  for(let i=0;i<9;i++){
+    const cell = document.createElement('div');
+    cell.className = 'nback-cell' + (i===actualPos ? ' lit':'');
+    grid.appendChild(cell);
+  }
+  clearTimeout(s.timer);
+  s.timer = setTimeout(()=>{ if(!s.responded) respond(null); }, 2200);
+}
+
+function sessionAccuracy(s){
+  const total = s.hits+s.misses+s.falseAlarms+s.correctRej;
+  if(total===0) return 0;
+  return Math.round(((s.hits+s.correctRej)/total)*100);
+}
+
+window.respond = function(said){
+  const s = sessionState;
+  if(!s || s.responded) return;
+  s.responded = true;
+  clearTimeout(s.timer);
+  if(s.isMatch && said===true) s.hits++;
+  else if(s.isMatch && said!==true) s.misses++;
+  else if(!s.isMatch && said===true) s.falseAlarms++;
+  else s.correctRej++;
+
+  // adaptation simple : après 4 essais, ajuste N selon précision récente
+  if(s.trial % 6 === 0){
+    const acc = sessionAccuracy(s);
+    if(acc>85 && s.n<4) s.n++;
+    else if(acc<55 && s.n>1) s.n--;
+  }
+  setTimeout(runTrial, 260);
+}
+document.addEventListener('keydown', e=>{
+  if(!sessionActive || !sessionState || sessionState.responded) return;
+  if(e.code==='Space'){ e.preventDefault(); respond(true); }
+  if(e.key==='n' || e.key==='N') respond(false);
+});
+
+function endSession(){
+  sessionActive = false;
+  const s = sessionState;
+  const acc = sessionAccuracy(s);
+  document.getElementById('session-view').innerHTML = `
+    <div class="session-frame">
+      <div class="session-eyebrow">Session terminée</div>
+      <div class="session-title">Résumé de performance</div>
+      <div style="max-width:320px;margin:0 auto 24px;">
+        <div class="summary-row"><span>Précision de détection</span><b>${acc}%</b></div>
+        <div class="summary-row"><span>Détections correctes</span><b>${s.hits}</b></div>
+        <div class="summary-row"><span>Omissions</span><b>${s.misses}</b></div>
+        <div class="summary-row"><span>Fausses alarmes</span><b>${s.falseAlarms}</b></div>
+        <div class="summary-row"><span>Niveau N atteint</span><b>${s.n}</b></div>
+      </div>
+      <button class="btn-primary" style="padding:11px 26px;font-size:13px;" onclick="applySessionResult('${s.nodeId}', ${acc})">Voir l'impact sur le réseau</button>
+    </div>`;
+}
+
+window.applySessionResult = function(nodeId, acc){
+  const st = ensureState(nodeId);
+  const target = Math.min(1, Math.max(0, acc/100));
+  st.maturity = st.maturity*0.6 + target*0.4;
+  st.history.push({t: st.history.length, val: st.maturity});
+  trainedNodes.add(nodeId);
+  // renforcement modéré du parent direct uniquement (pas de transfert supposé aux voisins)
+  const parentLink = links.find(l=> (l.target.id||l.target)===nodeId);
+  if(parentLink){
+    const parentId = parentLink.source.id||parentLink.source;
+    const pst = ensureState(parentId);
+    pst.maturity = Math.min(1, pst.maturity + 0.03);
+  }
+  setView('network');
+  renderGraph();
+  selectNode(nodeId);
+  activateTab('trajectoire');
+}
+
+/* ---------------------- LISTE ACCESSIBLE (fallback) ---------------------- */
+
+const a11yBtn = document.getElementById('a11y-toggle');
+a11yBtn.addEventListener('click', ()=>{
+  const list = document.getElementById('a11y-list');
+  const active = !list.classList.contains('active');
+  list.classList.toggle('active', active);
+  a11yBtn.setAttribute('aria-pressed', active);
+  a11yBtn.textContent = active ? 'Fermer la vue liste' : 'Vue liste accessible';
+  document.getElementById('graph-view').setAttribute('aria-hidden', active ? 'true':'false');
+});
+
+function renderA11yList(){
+  const root = document.getElementById('a11y-list');
+  let html = `<h2>Réseau cognitif — représentation textuelle</h2>
+  <p class="hint">Alternative accessible au graphe visuel. Naviguez au clavier ; activez un élément pour voir son détail dans le panneau latéral.</p>
+  <ul><li><span class="lvl-tag">Couche</span>Parcours (expériences)<ul>`;
+  PARCOURS.forEach(p=>{
+    html += `<li><button data-id="${p.id}"><span class="lvl-tag">${p.type}</span>${p.name} — ${p.period}</button></li>`;
+  });
+  html += `</ul></li><li><span class="lvl-tag">Couche</span>Cognition (connectome)<ul>`;
+  DOMAINS.forEach(d=>{
+    html += `<li><button data-id="${d.id}"><span class="lvl-tag">Domaine</span>${d.name} — ${STATUS_LABEL[d.status]}</button>`;
+    if(expanded.has(d.id) && SUBDOMAINS[d.id]){
+      html += '<ul>';
+      SUBDOMAINS[d.id].forEach(s=>{
+        html += `<li><button data-id="${s.id}"><span class="lvl-tag">Sous-domaine</span>${s.name} — ${STATUS_LABEL[s.status]}</button>`;
+        if(expanded.has(s.id) && CAPACITIES[s.id]){
+          html += '<ul>';
+          CAPACITIES[s.id].forEach(c=>{
+            html += `<li><button data-id="${c.id}"><span class="lvl-tag">Capacité</span>${c.name} — ${STATUS_LABEL[c.status]}</button>`;
+            if(expanded.has(c.id) && MICRO[c.id]){
+              html += '<ul>';
+              MICRO[c.id].forEach(m=>{
+                html += `<li><button data-id="${m.id}"><span class="lvl-tag">Micro-compétence</span>${m.name} — ${STATUS_LABEL[m.status]}</button></li>`;
+              });
+              html += '</ul>';
+            }
+            html += '</li>';
+          });
+          html += '</ul>';
+        }
+        html += '</li>';
+      });
+      html += '</ul>';
+    }
+    html += '</li>';
+  });
+  html += '</ul></li></ul>';
+  root.innerHTML = html;
+  root.querySelectorAll('button[data-id]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const id = b.dataset.id;
+      if(EXPANDABLE.has(id) && !expanded.has(id)){ expanded.add(id); renderGraph(); }
+      selectNode(id);
+    });
+  });
+}
+
+/* ---------------------- INIT ---------------------- */
+renderGraph();
+</script>
+</body>
+</html>
