@@ -1,0 +1,17 @@
+{
+  "name": "cognitorium-audit-probes",
+  "private": true,
+  "description": "Dépendances des sondes d'audit (tools/audit/*.mjs). Installées à part pour ne pas alourdir les dépendances de l'application.",
+  "type": "module",
+  "scripts": {
+    "runtime": "node tools/audit/runtime-probe.mjs",
+    "interaction": "node tools/audit/interaction-probe.mjs",
+    "data": "node tools/audit/data-audit.mjs",
+    "rome": "node tools/audit/rome-diagnostic.mjs",
+    "content": "node tools/audit/content-audit.mjs",
+    "fixsim": "node tools/audit/fix-simulation.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.0"
+  }
+}
