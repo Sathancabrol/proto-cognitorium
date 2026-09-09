@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ExternalLink, FlaskConical } from 'lucide-react';
+import { AlertTriangle, ExternalLink, FlaskConical, Sparkles } from 'lucide-react';
 import { LAB_DOMAINS, LAB_EXPERIMENTS, LabExperiment, doiUrl } from '../data/experimentCatalog';
 import { LAB_DEMOS } from './lab/LabDemos';
 import { CoverFlowCarousel, CarouselItem } from './ui/CoverFlowCarousel';
@@ -8,6 +8,7 @@ import { DisciplineGraph } from './atlas/DisciplineGraph';
 import { PsyBranch } from '../data/psychologyAtlas';
 import { NodeRelated } from './savoirs/NodeRelated';
 import { relatedForPoster } from '../data/savoirsLinks';
+import { CognitiveProfile } from '../types';
 import posterStroop from '../assets/images/poster-stroop.jpg';
 import posterGorilla from '../assets/images/poster-gorilla.jpg';
 import posterChange from '../assets/images/poster-change.jpg';
@@ -283,7 +284,9 @@ const PosterTitles: React.FC<{ selectedId: string; onPick: (id: string) => void 
 export const ExperimentStudio: React.FC<{
   focusId?: string | null;
   onOpenRef?: (id: string) => void;
-}> = ({ focusId, onOpenRef }) => {
+  profile?: CognitiveProfile;
+  onSelectNode?: (nodeId: string) => void;
+}> = ({ focusId, onOpenRef, profile, onSelectNode }) => {
   const [mode, setMode] = useState<SavoirsViewMode>('coverflow');
   const [domain, setDomain] = useState<string>('tous');
   const [id, setId] = useState(LAB_EXPERIMENTS[0].id);
@@ -296,6 +299,26 @@ export const ExperimentStudio: React.FC<{
   );
   const exp = LAB_EXPERIMENTS.find((e) => e.id === id) ?? LAB_EXPERIMENTS[0];
   const Demo = LAB_DEMOS[exp.id];
+
+  const userMatches = useMemo(() => {
+    if (!profile) return [];
+    const keywords = [
+      ...exp.concepts.map((c) => c.toLowerCase()),
+      ...exp.transfert.map((t) => t.toLowerCase()),
+      exp.domaine.toLowerCase(),
+      exp.paradigme.toLowerCase()
+    ];
+
+    return profile.nodes.filter((node) => {
+      const nodeName = node.name.toLowerCase();
+      const nodeDesc = (node.description || '').toLowerCase();
+      return keywords.some((kw) => {
+        if (nodeName.includes(kw)) return true;
+        const words = kw.split(/[\s,–—/-]+/).filter((w) => w.length >= 4);
+        return words.some((w) => nodeName.includes(w) || nodeDesc.includes(w));
+      });
+    });
+  }, [profile, exp]);
 
   const openFiche = (expId: string) => {
     setId(expId);
@@ -445,6 +468,35 @@ export const ExperimentStudio: React.FC<{
           <div className="mt-3">
             <NodeRelated related={relatedForPoster(exp)} onOpenRef={onOpenRef} tone="dark" />
           </div>
+
+          {/* Résonance avec le vécu et les compétences réelles */}
+          {userMatches.length > 0 && (
+            <div className="mt-4 p-3 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+                <span className="text-xs font-bold text-emerald-300">
+                  Mobilisé dans votre vécu :
+                </span>
+                <span className="text-xs text-emerald-200/90">
+                  {userMatches.length} {userMatches.length > 1 ? 'éléments identifiés' : 'élément identifié'}
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {userMatches.slice(0, 3).map((match) => (
+                  <button
+                    key={match.id}
+                    type="button"
+                    onClick={() => onSelectNode?.(match.id)}
+                    className="px-2.5 py-1 rounded-xl bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-500/40 text-[11px] font-semibold transition-all flex items-center gap-1.5 shadow-xs"
+                    title={`Examiner ${match.name} dans votre réseau cognitif`}
+                  >
+                    <span>{match.name}</span>
+                    <span className="text-[10px] text-emerald-400">↗</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </header>
 
         <div className="px-5 sm:px-8 py-3 border-b border-white/10 flex gap-1">

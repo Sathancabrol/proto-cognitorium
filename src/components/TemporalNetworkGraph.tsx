@@ -114,6 +114,18 @@ export const TemporalNetworkGraph: React.FC<TemporalNetworkGraphProps> = ({
     return deg;
   }, [nodes, edges]);
 
+  const milestones = useMemo(() => {
+    return nodes
+      .filter((n) => n.category === 'experience' || n.category === 'formation')
+      .map((n) => ({
+        id: n.id,
+        year: Math.round(appearYears.get(n.id) ?? 2020),
+        label: n.name,
+        category: n.category
+      }))
+      .sort((a, b) => a.year - b.year);
+  }, [nodes, appearYears]);
+
   const settleLayout = useCallback(() => {
     const spatial = spatialRef.current;
     const byId = new Map(spatial.map((n) => [n.id, n]));
@@ -368,6 +380,26 @@ export const TemporalNetworkGraph: React.FC<TemporalNetworkGraphProps> = ({
           ctx.fill();
         }
 
+        // Onde / Sillage de propagation lors de l'émergence du nœud
+        if (p.activation > 0 && p.activation < 1) {
+          const waveRadius = r + (1 - p.activation) * 44;
+          const waveAlpha = Math.max(0, (1 - p.activation) * 0.7);
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(p.sx, p.sy, waveRadius, 0, Math.PI * 2);
+          ctx.strokeStyle = palette.glow.replace('0.55', `${waveAlpha}`);
+          ctx.lineWidth = 2.2;
+          ctx.stroke();
+
+          const waveRadius2 = r + (1 - p.activation) * 22;
+          ctx.beginPath();
+          ctx.arc(p.sx, p.sy, waveRadius2, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(255, 255, 255, ${waveAlpha * 0.5})`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          ctx.restore();
+        }
+
         ctx.beginPath();
         ctx.arc(p.sx, p.sy, r, 0, Math.PI * 2);
         const body = ctx.createRadialGradient(p.sx, p.sy, 0, p.sx, p.sy, r);
@@ -618,6 +650,39 @@ export const TemporalNetworkGraph: React.FC<TemporalNetworkGraphProps> = ({
           />
           <span className="text-[11px] font-mono text-zinc-400">{yearBounds.max}</span>
         </div>
+
+        {milestones.length > 0 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto pt-1.5 border-t border-zinc-800/80">
+            <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider flex-shrink-0">
+              Jalons clés :
+            </span>
+            <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 custom-scrollbar">
+              {milestones.map((m) => {
+                const isPast = playhead >= m.year;
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => {
+                      playheadRef.current = m.year;
+                      setPlayhead(m.year);
+                      setIsPlaying(false);
+                      onSelectNode(nodes.find((n) => n.id === m.id) || null);
+                    }}
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold whitespace-nowrap transition-all flex items-center gap-1 ${
+                      isPast
+                        ? 'bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 shadow-xs'
+                        : 'bg-zinc-800/80 text-zinc-400 hover:text-zinc-200 border border-transparent'
+                    }`}
+                    title={`Sauter à l'année ${m.year} (${m.label})`}
+                  >
+                    <span className="text-cyan-400 font-mono">{m.year}</span>
+                    <span className="truncate max-w-[130px]">{m.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="absolute bottom-4 right-4 z-20 flex flex-col items-center gap-1 bg-[#1e1f24]/90 backdrop-blur-md p-1 rounded-xl shadow-lg border border-zinc-700/80">

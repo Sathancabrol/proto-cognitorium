@@ -54,7 +54,8 @@ interface ViewOption {
 const SECTION_VIEWS: Record<CognitoriumSection, ViewOption[]> = {
   profil: [
     { tab: 'dashboard', label: 'Synthèse', testId: 'tab-btn-dashboard' },
-    { tab: 'signature', label: 'Passeport cognitif', testId: 'tab-btn-signature' }
+    { tab: 'signature', label: 'Passeport cognitif', testId: 'tab-btn-signature' },
+    { tab: 'cv', label: 'CV Ciblé & ATS', testId: 'tab-btn-cv' }
   ],
   experiences: [
     { tab: 'tree', label: 'Arbre hiérarchique', testId: 'tab-btn-tree' },
@@ -66,10 +67,12 @@ const SECTION_VIEWS: Record<CognitoriumSection, ViewOption[]> = {
   ],
   possibilites: [
     { tab: 'horizons', label: 'Horizons ROME', testId: 'tab-btn-horizons' },
-    { tab: 'metiers', label: 'Graphe métiers', testId: 'tab-btn-metiers-graph' }
+    { tab: 'metiers', label: 'Graphe métiers', testId: 'tab-btn-metiers-graph' },
+    { tab: 'projets', label: 'Multi-Projets', testId: 'tab-btn-projets' }
   ],
   evolution: [
     { tab: 'decay', label: 'Vitalité & Temps', testId: 'tab-btn-decay' },
+    { tab: 'biais', label: '10 Biais Cognitifs', testId: 'tab-btn-biais' },
     { tab: 'temporal', label: 'Graphe Temporel', testId: 'tab-btn-temporal-evolution' }
   ],
   savoirs: [
@@ -106,7 +109,10 @@ const VIEW_ACTIVE_COLORS: Record<AppActiveTab, string> = {
   metacog: 'bg-violet-700 text-white',
   psyref: 'bg-slate-900 text-amber-200',
   ressources: 'bg-teal-700 text-white',
-  evaluations: 'bg-teal-800 text-white'
+  evaluations: 'bg-teal-800 text-white',
+  cv: 'bg-blue-700 text-white',
+  projets: 'bg-orange-700 text-white',
+  biais: 'bg-indigo-700 text-white'
 };
 
 interface HeaderProps {

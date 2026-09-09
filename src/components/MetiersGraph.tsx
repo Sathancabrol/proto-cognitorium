@@ -3,6 +3,7 @@ import {
   Clock,
   Lock,
   Network,
+  Orbit,
   Plus,
   RotateCcw,
   Search,
@@ -22,7 +23,7 @@ import {
   buildMetiersGraph
 } from '../utils/metiersGraphData';
 
-type DimensionMode = '2d' | 'proximity';
+type DimensionMode = '2d' | 'proximity' | 'radar';
 type SourceKey = 'exercised' | 'equivalent' | 'voisin' | 'horizon' | 'suggestion';
 
 interface SpatialNode {
@@ -33,6 +34,8 @@ interface SpatialNode {
   vy: number;
   xProx: number;
   yProx: number;
+  xRadar: number;
+  yRadar: number;
   radius: number;
 }
 
@@ -186,6 +189,34 @@ export const MetiersGraph: React.FC<MetiersGraphProps> = ({
       const proxX = node.kind === 'domain' ? -520 : (node.matchScore / 100 - 0.5) * 1100;
       const proxY = (li - (presentLetters.length - 1) / 2) * 92 + (node.kind === 'domain' ? 0 : ((node.id.length % 5) - 2) * 14);
 
+      // Radar coordinates
+      let xRadar = 0;
+      let yRadar = 0;
+      if (node.kind === 'domain') {
+        const domainR = 430;
+        xRadar = Math.cos(angle - Math.PI / 2) * domainR;
+        yRadar = Math.sin(angle - Math.PI / 2) * domainR;
+      } else if (node.kind === 'exercised') {
+        xRadar = 0;
+        yRadar = 0;
+      } else {
+        // Orbit radius based on match score
+        let orbitR = 340;
+        if (node.matchScore >= 80) {
+          orbitR = 145 + ((node.id.length * 5) % 25);
+        } else if (node.matchScore >= 65) {
+          orbitR = 245 + ((node.id.length * 7) % 35);
+        } else {
+          orbitR = 345 + ((node.id.length * 9) % 35);
+        }
+        const siblings = jobsByLetter.get(node.domainLetter) || [];
+        const si = Math.max(0, siblings.findIndex((s) => s.id === node.id));
+        const spread = 0.32;
+        const jobAngle = (angle - Math.PI / 2) + (si - (siblings.length - 1) / 2) * spread;
+        xRadar = Math.cos(jobAngle) * orbitR;
+        yRadar = Math.sin(jobAngle) * orbitR;
+      }
+
       return {
         id: node.id,
         x2d: prev?.x2d ?? x,
@@ -194,6 +225,8 @@ export const MetiersGraph: React.FC<MetiersGraphProps> = ({
         vy: prev?.vy ?? 0,
         xProx: proxX,
         yProx: proxY,
+        xRadar,
+        yRadar,
         radius
       };
     });
@@ -294,6 +327,86 @@ export const MetiersGraph: React.FC<MetiersGraphProps> = ({
         ctx.fillText('Proximité métier (moteur ROME)', width / 2, lineY + 40);
       }
 
+      if (dimensionMode === 'radar') {
+        const now = performance.now();
+        const cx = width / 2;
+        const cy = height / 2;
+
+        // Dynamic radar sweep gradient
+        const sweepAngle = (now * 0.00065) % (Math.PI * 2);
+        const sweep = ctx.createConicGradient(sweepAngle, cx, cy);
+        sweep.addColorStop(0, 'rgba(56, 189, 248, 0.12)');
+        sweep.addColorStop(0.06, 'rgba(56, 189, 248, 0.03)');
+        sweep.addColorStop(0.12, 'rgba(0, 0, 0, 0)');
+        sweep.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = sweep;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 380, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Crosshair axes
+        ctx.save();
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.12)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(cx - 420, cy);
+        ctx.lineTo(cx + 420, cy);
+        ctx.moveTo(cx, cy - 420);
+        ctx.lineTo(cx, cy + 420);
+        ctx.stroke();
+        ctx.restore();
+
+        // Concentric orbits
+        const orbits = [
+          { r: 145, color: 'rgba(16, 185, 129, 0.45)', textCol: '#10b981', label: 'Orbite 1 : Passerelles directes (>80% affinité)' },
+          { r: 245, color: 'rgba(245, 158, 11, 0.4)', textCol: '#f59e0b', label: 'Orbite 2 : Transitions modérées (65–80%)' },
+          { r: 345, color: 'rgba(99, 102, 241, 0.35)', textCol: '#818cf8', label: 'Orbite 3 : Horizons & Ruptures (<65%)' }
+        ];
+
+        orbits.forEach((orb) => {
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(cx, cy, orb.r, 0, Math.PI * 2);
+          ctx.strokeStyle = orb.color;
+          ctx.lineWidth = 1.3;
+          ctx.setLineDash([5, 5]);
+          ctx.stroke();
+          ctx.restore();
+
+          // Orbit label
+          ctx.font = '600 10px Inter, system-ui, sans-serif';
+          ctx.fillStyle = orb.textCol;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(orb.label, cx, cy - orb.r - 4);
+        });
+
+        // Center Profile Core Node (User)
+        const pulse = 1 + Math.sin(now * 0.005) * 0.12;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 32 * pulse, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(59, 130, 246, 0.15)';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, 20, 0, Math.PI * 2);
+        const centerGrad = ctx.createRadialGradient(cx, cy, 2, cx, cy, 20);
+        centerGrad.addColorStop(0, '#60a5fa');
+        centerGrad.addColorStop(1, '#1d4ed8');
+        ctx.fillStyle = centerGrad;
+        ctx.fill();
+        ctx.strokeStyle = '#93c5fd';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.font = 'bold 9px Inter, system-ui, sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('VOUS', cx, cy);
+      }
+
       const pNodes = spatialRef.current;
       const pMap = new Map(pNodes.map((n) => [n.id, n]));
 
@@ -370,12 +483,27 @@ export const MetiersGraph: React.FC<MetiersGraphProps> = ({
 
       const projected = pNodes.map((n) => {
         const raw = nodeMap.get(n.id);
-        const x = width / 2 + (dimensionMode === '2d' ? n.x2d : n.xProx);
-        const y = height / 2 + (dimensionMode === '2d' ? n.y2d : n.yProx);
+        const x = width / 2 + (dimensionMode === '2d' ? n.x2d : dimensionMode === 'radar' ? n.xRadar : n.xProx);
+        const y = height / 2 + (dimensionMode === '2d' ? n.y2d : dimensionMode === 'radar' ? n.yRadar : n.yProx);
         return { node: n, raw, x, y };
       });
       const projectedMap = new Map(projected.map((p) => [p.node.id, p]));
       const hoverOrFocus = hoveredNodeId || focusId;
+
+      if (dimensionMode === 'radar' && hoverOrFocus) {
+        const targetProj = projectedMap.get(hoverOrFocus);
+        if (targetProj?.raw && targetProj.raw.kind !== 'domain' && targetProj.raw.kind !== 'exercised') {
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(width / 2, height / 2);
+          ctx.lineTo(targetProj.x, targetProj.y);
+          ctx.strokeStyle = 'rgba(56, 189, 248, 0.75)';
+          ctx.lineWidth = 1.8;
+          ctx.setLineDash([4, 4]);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
 
       edges.forEach((edge) => {
         const src = projectedMap.get(edge.source);
@@ -690,6 +818,19 @@ export const MetiersGraph: React.FC<MetiersGraphProps> = ({
             >
               <Clock className="w-3.5 h-3.5" />
               <span>Par proximité</span>
+            </button>
+            <button
+              id="metiers-dimension-radar"
+              onClick={() => setDimensionMode('radar')}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                dimensionMode === 'radar'
+                  ? 'bg-blue-600/90 text-white shadow-md font-semibold ring-1 ring-blue-400/50'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+              }`}
+              title="Radar Orbitaire : Vous au centre, métiers en orbites d'affinité"
+            >
+              <Orbit className="w-3.5 h-3.5" />
+              <span>Radar Orbitaire</span>
             </button>
           </div>
 

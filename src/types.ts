@@ -253,18 +253,89 @@ export interface CognitiveProfile {
   nodes: AnyCognitiveNode[];
   edges: GraphEdge[];
   evaluations?: ProfileAssessment[];
+  projects?: ProfessionalProject[];
+  biasAssessment?: CognitiveBiasAssessment;
+  biasAssessmentHistory?: CognitiveBiasAssessment[];
+  cvConfig?: CvOptions;
+}
+
+// ============================================================================
+// MODULE ÉVALUATION DES 10 BIAIS COGNITIFS (Likert 1-7 & Lucidité)
+// ============================================================================
+export interface CognitiveBiasQuestion {
+  id: string;
+  name: string;
+  shortCode: string;
+  question: string;
+  definition: string;
+  remediationAdvice: string;
+  score: number; // 1 to 7
+}
+
+export interface CognitiveBiasAssessment {
+  completedAt: string;
+  lucidityIndex: number; // 0 à 100
+  averageScore: number; // 1.0 à 7.0
+  scores: Record<string, number>; // id -> score
+  highBiases: string[]; // liste des biais à score > 5
+}
+
+// ============================================================================
+// MODULE GESTIONNAIRE MULTI-PROJETS & ROADMAPS
+// ============================================================================
+export type ProjectStatus = 'reflexion' | 'en_cours' | 'valide' | 'en_pause';
+
+export interface ProjectMilestone {
+  id: string;
+  title: string;
+  targetDate?: string;
+  completed: boolean;
+  notes?: string;
+  associatedSkillIds?: string[];
+}
+
+export interface ProfessionalProject {
+  id: string;
+  title: string;
+  status: ProjectStatus;
+  targetRomeCode?: string;
+  targetHorizonTitle?: string;
+  timeHorizon?: string; // Ex: "Court terme (6 mois)", "Moyen terme (1-2 ans)"
+  description?: string;
+  targetSkillIds: string[];
+  milestones: ProjectMilestone[];
+  createdAt: string;
+  updatedAt: string;
+  archived?: boolean;
+}
+
+// ============================================================================
+// MODULE CV CIBLÉ (ATS, Moderne, Classique & Matching ROME)
+// ============================================================================
+export type CvTemplateType = 'ats' | 'moderne' | 'classique';
+
+export interface CvOptions {
+  template: CvTemplateType;
+  targetRomeCode?: string;
+  targetJobTitle?: string;
+  includeSummary: boolean;
+  includeCognitiveCapacities: boolean;
+  customHeadline?: string;
 }
 
 export type AppActiveTab = 
   | 'dashboard'   // Mon Cognitorium (Accueil & Synthèse)
+  | 'signature'   // Signature Cognitive & Passeport
+  | 'cv'          // Générateur & Exportateur de CV ciblés ROME
+  | 'tree'        // Vue Arbre & Décomposition Hiérarchique
   | 'network'     // Graphe Réseau Dynamique (Canvas interactif)
   | 'temporal'    // Graphe réseau animé dans le temps
-  | 'tree'        // Vue Arbre & Décomposition Hiérarchique
   | 'table'       // Vue Tableau & Matrice de Maîtrise
   | 'horizons'    // Passerelles ROME & Horizons Métiers
   | 'metiers'     // Graphe métiers (données & filtres ROME)
+  | 'projets'     // Gestionnaire Multi-Projets & Feuilles de Route
   | 'decay'       // Vitalité & Temporalité (Decay Engine)
-  | 'signature'   // Signature Cognitive & Passeport
+  | 'biais'       // Évaluation des 10 Biais Cognitifs
   | 'atlas'       // Arborescence des savoirs psychologiques
   | 'posters'     // Atlas expérimental (posters / infographies)
   | 'metacog'     // Boucle métacognitive & SRL
@@ -290,13 +361,16 @@ export const SECTION_LABELS: Record<CognitoriumSection, string> = {
 export const SECTION_OF_TAB: Record<AppActiveTab, CognitoriumSection> = {
   dashboard: 'profil',
   signature: 'profil',
+  cv: 'profil',
   tree: 'experiences',
   network: 'experiences',
   temporal: 'experiences',
   table: 'competences',
   horizons: 'possibilites',
   metiers: 'possibilites',
+  projets: 'possibilites',
   decay: 'evolution',
+  biais: 'evolution',
   atlas: 'savoirs',
   posters: 'savoirs',
   metacog: 'savoirs',

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Sparkles, Loader2, CheckCircle2, BookOpen, Layers, ArrowRight, ShieldCheck, AlertCircle, Check } from 'lucide-react';
+import { X, Sparkles, Loader2, CheckCircle2, BookOpen, Layers, ArrowRight, ShieldCheck, AlertCircle, Check, Zap, Compass } from 'lucide-react';
 import { AnyCognitiveNode, GraphEdge, SkillNode, CapacityNode, HorizonJobNode, ExperienceNode, TaskNode } from '../types';
 import confetti from 'canvas-confetti';
 
@@ -22,6 +22,14 @@ function normalizeName(s: string): string {
 
 const SAMPLE_NARRATIVES = [
   {
+    title: '👔 Métier Cadre & Direction d\'Équipe',
+    text: "Cadre responsable d'équipe opérationnelle. Définition des objectifs stratégiques, gestion d'un budget annuel de 450 000 €, encadrement direct de 12 collaborateurs, conduite des entretiens annuels, arbitrage des priorités et reporting auprès du comité de direction."
+  },
+  {
+    title: '⚡ Bac STI2D SIN (Systèmes Numériques & Réseaux)',
+    text: "Bachelier STI2D spécialité Systèmes d'Information et Numérique (SIN) à Sète. Réalisation d'un projet tuteuré d'automatisme et réseau : programmation de microcontrôleurs Arduino/ESP32, configuration de trames réseau IP, câblage de capteurs de mesure et soutenance orale de projet."
+  },
+  {
     title: '🏗️ Chantier & Gros Œuvre',
     text: "Conducteur de travaux sur un chantier de réhabilitation lourde en centre-ville pendant 2 ans. Coordination quotidienne de 15 artisans et sous-traitants, négociation des devis fournisseurs avec marges serrées, résolution d'imprévus de structure en direct avec les architectes et tenue d'un planning sous pénalités de retard."
   },
@@ -39,12 +47,22 @@ const SAMPLE_NARRATIVES = [
   }
 ];
 
+const SUGGESTED_OBJECTIVES = [
+  'Métier cadre / Management d\'équipe',
+  'Bac STI2D SIN à Sète / Étudiant',
+  'Chef de projet informatique',
+  'Technicien Systèmes & Réseaux',
+  'Conducteur de travaux',
+  'Reconversion numérique'
+];
+
 export const ExperienceDistillerModal: React.FC<ExperienceDistillerModalProps> = ({
   isOpen,
   onClose,
   onDistillComplete
 }) => {
   const [narrativeText, setNarrativeText] = useState('');
+  const [targetObjective, setTargetObjective] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,7 +87,7 @@ export const ExperienceDistillerModal: React.FC<ExperienceDistillerModalProps> =
     setError(null);
   };
 
-  const handleDistill = async (textToUse?: string) => {
+  const handleDistill = async (textToUse?: string, forceLocal: boolean = false) => {
     const text = textToUse || narrativeText;
     if (!text.trim()) {
       setError("Veuillez saisir ou sélectionner un récit d'expérience.");
@@ -83,7 +101,11 @@ export const ExperienceDistillerModal: React.FC<ExperienceDistillerModalProps> =
       const response = await fetch('/api/distill-experience', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ experienceText: text })
+        body: JSON.stringify({
+          experienceText: text,
+          targetObjective: targetObjective.trim() || undefined,
+          forceLocal
+        })
       });
 
       const data = await response.json();
@@ -350,7 +372,7 @@ export const ExperienceDistillerModal: React.FC<ExperienceDistillerModalProps> =
                   <span className="text-[11px] font-normal text-slate-400">Langage naturel libre</span>
                 </label>
                 <textarea
-                  rows={5}
+                  rows={4}
                   value={narrativeText}
                   onChange={(e) => setNarrativeText(e.target.value)}
                   placeholder="Décrivez une expérience, un projet ou collez des sections de votre CV avec vos propres mots (missions, outils, imprévus surmontés, résultats)..."
@@ -358,9 +380,65 @@ export const ExperienceDistillerModal: React.FC<ExperienceDistillerModalProps> =
                 />
               </div>
 
+              {/* Target Objective / Headline (Optional) with Interactive Chips */}
+              <div className="space-y-2 bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/80">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                    <Compass className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Intitulé visé ou Objectif cible (Optionnel)</span>
+                  </label>
+                  <span className="text-[11px] text-blue-600 font-medium">Suggestions guidées ↓</span>
+                </div>
+                <input
+                  type="text"
+                  list="distiller-objectives-list"
+                  value={targetObjective}
+                  onChange={(e) => setTargetObjective(e.target.value)}
+                  placeholder="ex: Métier cadre, Bac STI2D SIN à Sète, Chef de projet..."
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-slate-400"
+                />
+                <datalist id="distiller-objectives-list">
+                  {SUGGESTED_OBJECTIVES.map((obj) => (
+                    <option key={obj} value={obj} />
+                  ))}
+                </datalist>
+                <div className="flex flex-wrap gap-1.5 pt-1 items-center">
+                  <span className="text-[10px] text-slate-400 font-semibold">Exemples :</span>
+                  {SUGGESTED_OBJECTIVES.map((obj) => {
+                    const isSelected = targetObjective.toLowerCase() === obj.toLowerCase();
+                    return (
+                      <button
+                        key={obj}
+                        type="button"
+                        onClick={() => setTargetObjective(obj)}
+                        className={`px-2 py-0.5 rounded-lg text-[11px] font-medium transition-all flex items-center gap-1 ${
+                          isSelected
+                            ? 'bg-blue-600 text-white shadow-xs'
+                            : 'bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200'
+                        }`}
+                      >
+                        {isSelected && <Check className="w-2.5 h-2.5" />}
+                        <span>{obj}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {error && (
-                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl">
-                  {error}
+                <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl space-y-2">
+                  <div className="text-rose-700 text-xs font-semibold flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleDistill(undefined, true)}
+                    className="w-full py-2 px-3 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+                  >
+                    <Zap className="w-3.5 h-3.5" />
+                    <span>⚡ Basculer sur l'extraction locale heuristique (Instantanée & Garantie)</span>
+                  </button>
                 </div>
               )}
 

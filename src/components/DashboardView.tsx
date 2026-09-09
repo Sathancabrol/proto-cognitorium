@@ -34,6 +34,7 @@ interface DashboardViewProps {
   onOpenValidationCenter: () => void;
   onOpenDistiller: () => void;
   onReactivateSkill: (skillId: string) => void;
+  onOpenOnboarding?: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -45,19 +46,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onSelectNode,
   onOpenValidationCenter,
   onOpenDistiller,
-  onReactivateSkill
+  onReactivateSkill,
+  onOpenOnboarding
 }) => {
-  // Extract key skills
-  const allSkills = profile.nodes.filter((n) => n.category.startsWith('skill_')) as SkillNode[];
-  const allCapacities = profile.nodes.filter((n) => n.category === 'capacity_cognitive');
-  const allHorizons = profile.nodes.filter((n) => n.category === 'horizon_job') as HorizonJobNode[];
-  const allExperiences = profile.nodes.filter((n) => n.category === 'experience' || n.category === 'formation');
+  // Extract key skills safely
+  const allSkills = (profile.nodes || []).filter((n) => n?.category?.startsWith('skill_')) as SkillNode[];
+  const allCapacities = (profile.nodes || []).filter((n) => n?.category === 'capacity_cognitive');
+  const allHorizons = (profile.nodes || []).filter((n) => n?.category === 'horizon_job') as HorizonJobNode[];
+  const allExperiences = (profile.nodes || []).filter((n) => n?.category === 'experience' || n?.category === 'formation');
 
   // Top 3 strongest skills
-  const topSkills = [...allSkills].sort((a, b) => b.baseMastery - a.baseMastery).slice(0, 3);
+  const topSkills = [...allSkills].sort((a, b) => (b?.baseMastery || 0) - (a?.baseMastery || 0)).slice(0, 3);
 
   // 2 Top matching horizons
-  const topHorizons = [...allHorizons].sort((a, b) => b.matchScore - a.matchScore).slice(0, 2);
+  const topHorizons = [...allHorizons].sort((a, b) => (b?.matchScore || 0) - (a?.matchScore || 0)).slice(0, 2);
 
   // Prochaine action : calculée depuis le premier horizon (jamais de chiffre magique codé en dur)
   const nextActionHorizon = topHorizons[0];
@@ -67,17 +69,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   // 1 Skill in decay / needing reactivation
   const skillToReactivate = allSkills.find((s) => {
-    const vit = calculateSkillVitality(s, simulationYear, s.isReactivated);
+    const vit = calculateSkillVitality(s, simulationYear, s?.isReactivated);
     return vit < 75;
-  }) || allSkills[allSkills.length - 1];
+  }) || (allSkills.length > 0 ? allSkills[allSkills.length - 1] : undefined);
 
   const skillToReactivateVitality = skillToReactivate
     ? calculateSkillVitality(skillToReactivate, simulationYear, skillToReactivate.isReactivated)
     : 100;
 
   // Pending validation items count
-  const pendingNodes = profile.nodes.filter(
-    (n) => n.verificationStatus === 'pending' || n.verificationStatus === 'inferred'
+  const pendingNodes = (profile.nodes || []).filter(
+    (n) => n?.verificationStatus === 'pending' || n?.verificationStatus === 'inferred'
   );
 
   return (
@@ -100,6 +102,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </span>
               )}
               <span className="text-xs text-slate-400">• Simulation : {simulationYear}</span>
+              {onOpenOnboarding && (
+                <button
+                  id="dashboard-open-onboarding-btn"
+                  onClick={onOpenOnboarding}
+                  className="px-3 py-1 bg-white hover:bg-slate-50 text-blue-600 border border-blue-200 text-xs font-bold rounded-full transition-colors flex items-center gap-1 shadow-xs"
+                >
+                  <Sparkles className="w-3 h-3 text-blue-500" />
+                  <span>Mon Compte & Changer de profil</span>
+                </button>
+              )}
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">

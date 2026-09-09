@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Header } from './components/Header';
+import { VolantSidebar } from './components/VolantSidebar';
+import { TopHeaderBar } from './components/TopHeaderBar';
 import { DashboardView } from './components/DashboardView';
 import { NetworkGraph } from './components/NetworkGraph';
 import { TemporalNetworkGraph } from './components/TemporalNetworkGraph';
@@ -20,6 +22,10 @@ import { MetacogLoopView } from './components/MetacogLoopView';
 import { PsyRefView } from './components/PsyRefView';
 import { ResourcesView } from './components/ResourcesView';
 import { MesEvaluationsView } from './components/MesEvaluationsView';
+import { CognitiveBiasesView } from './components/CognitiveBiasesView';
+import { MultiProjectsView } from './components/MultiProjectsView';
+import { TargetedCvView } from './components/TargetedCvView';
+import { ProfileManagementModal } from './components/ProfileManagementModal';
 import { INITIAL_COGNITORIUM_PROFILE, PROFILES_PRESETS } from './data/initialData';
 import { 
   CognitiveProfile, 
@@ -60,6 +66,8 @@ export default function App() {
   const [quickAddType, setQuickAddType] = useState<QuickCreateType>('experience');
   const [posterFocus, setPosterFocus] = useState<string | null>(null);
   const [refFocus, setRefFocus] = useState<string | null>(null);
+  const [isSidebarPinned, setIsSidebarPinned] = useState<boolean>(false);
+  const [isProfileManagementOpen, setIsProfileManagementOpen] = useState<boolean>(false);
 
   // Persist profile changes to localStorage
   useEffect(() => {
@@ -234,16 +242,14 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-blue-500 selection:text-white">
-      {/* Top Main Navigation Header */}
-      <Header
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex font-sans selection:bg-blue-500 selection:text-white">
+      {/* Volant Déroulant Gauche avec animation fluide */}
+      <VolantSidebar
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        simulationYear={simulationYear}
         currentProfile={profile}
         onSelectProfile={handleSelectProfile}
         onOpenDistiller={() => setIsDistillerOpen(true)}
-        onOpenQuickAdd={handleOpenQuickAdd}
         onOpenOnboarding={() => setIsOnboardingOpen(true)}
         onOpenValidationCenter={() => setIsValidationCenterOpen(true)}
         pendingValidationCount={pendingNodes.length}
@@ -252,10 +258,37 @@ export default function App() {
           setComplexityMode((m) => (m === 'essential' ? 'expert' : 'essential'))
         }
         onResetToDemo={handleResetToDemo}
+        isPinned={isSidebarPinned}
+        onTogglePin={() => setIsSidebarPinned((p) => !p)}
       />
 
-      {/* Main App Content Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+      {/* Main Content Column with dynamic padding based on sidebar state */}
+      <div
+        className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
+          isSidebarPinned ? 'pl-72' : 'pl-[68px]'
+        }`}
+      >
+        {/* Sleek Minimalist Top Header Bar with breadcrumb and fast section sub-modes */}
+        <TopHeaderBar
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          currentProfile={profile}
+          onOpenDistiller={() => setIsDistillerOpen(true)}
+          onOpenQuickAdd={handleOpenQuickAdd}
+          onOpenValidationCenter={() => setIsValidationCenterOpen(true)}
+          onOpenOnboarding={() => setIsOnboardingOpen(true)}
+          onOpenProfileManagement={() => setIsProfileManagementOpen(true)}
+          pendingValidationCount={pendingNodes.length}
+          complexityMode={complexityMode}
+          onToggleComplexity={() =>
+            setComplexityMode((m) => (m === 'essential' ? 'expert' : 'essential'))
+          }
+          isSidebarPinned={isSidebarPinned}
+          onToggleSidebarPin={() => setIsSidebarPinned((p) => !p)}
+        />
+
+        {/* Main App Content Body */}
+        <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
         {/* VIEW 0: DASHBOARD OVERVIEW */}
         {activeTab === 'dashboard' && (
           <DashboardView
@@ -266,6 +299,7 @@ export default function App() {
             onOpenDistiller={() => setIsDistillerOpen(true)}
             onOpenValidationCenter={() => setIsValidationCenterOpen(true)}
             onReactivateSkill={handleReactivateSkill}
+            onOpenOnboarding={() => setIsOnboardingOpen(true)}
             complexityMode={complexityMode}
             onToggleComplexity={() =>
               setComplexityMode((m) => (m === 'essential' ? 'expert' : 'essential'))
@@ -426,6 +460,14 @@ export default function App() {
         {activeTab === 'posters' && (
           <ExperimentStudio
             focusId={posterFocus}
+            profile={profile}
+            onSelectNode={(nodeId) => {
+              const target = profile.nodes.find((n) => n.id === nodeId);
+              if (target) {
+                setSelectedNode(target);
+                setActiveTab('network');
+              }
+            }}
             onOpenRef={(id) => {
               setRefFocus(id);
               setActiveTab('psyref');
@@ -459,7 +501,55 @@ export default function App() {
             }}
           />
         )}
+
+        {/* NOUVEAUX MODULES CDC / RECOMMANDATIONS */}
+        {/* VUE CV CIBLÉ & ATS */}
+        {activeTab === 'cv' && (
+          <TargetedCvView profile={profile} />
+        )}
+
+        {/* VUE MULTI-PROJETS & ROADMAPS PROFESSIONNELLES */}
+        {activeTab === 'projets' && (
+          <MultiProjectsView
+            profile={profile}
+            onUpdateProjects={(projects) => {
+              setProfile((prev) => ({
+                ...prev,
+                projects
+              }));
+            }}
+            onNavigateTab={setActiveTab}
+          />
+        )}
+
+        {/* VUE ÉVALUATION DES 10 BIAIS COGNITIFS */}
+        {activeTab === 'biais' && (
+          <CognitiveBiasesView
+            profile={profile}
+            onSaveAssessment={(assessment) => {
+              setProfile((prev) => ({
+                ...prev,
+                biasAssessment: assessment,
+                biasAssessmentHistory: [
+                  ...(prev.biasAssessmentHistory || []),
+                  assessment
+                ]
+              }));
+            }}
+          />
+        )}
       </main>
+      </div>
+
+      {/* Profile Management Modal (Export .cognitorium, Import, Scoring Explainability) */}
+      <ProfileManagementModal
+        isOpen={isProfileManagementOpen}
+        onClose={() => setIsProfileManagementOpen(false)}
+        profile={profile}
+        onImportProfile={(imported) => {
+          setProfile(imported);
+        }}
+      />
 
       {/* Slide-out Node Inspector Drawer */}
       <NodeInspectorModal

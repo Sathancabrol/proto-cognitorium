@@ -103,6 +103,108 @@ const TYPE_CONFIGS: Record<QuickCreateType, {
   }
 };
 
+const SUGGESTIONS_BY_TYPE: Record<QuickCreateType, {
+  nameSuggestions: string[];
+  descSuggestions?: string[];
+  institutionSuggestions?: string[];
+}> = {
+  experience: {
+    nameSuggestions: [
+      'Métier cadre / Management d\'équipe',
+      'Chef de projet technique',
+      'Technicien Systèmes & Réseaux',
+      'Conducteur de travaux & Chantier',
+      'Développeur Full-Stack',
+      'Responsable d\'exploitation'
+    ],
+    descSuggestions: [
+      'Pilotage des objectifs, coordination opérationnelle et gestion d\'équipe.',
+      'Gestion de projets transversaux et suivi des indicateurs clés (KPI).'
+    ],
+    institutionSuggestions: ['Entreprise Privée', 'Direction PME / ETI', 'Groupe Industriel', 'Collectivité Territoriale', 'Startup Numérique']
+  },
+  formation: {
+    nameSuggestions: [
+      'Bac STI2D SIN (Numérique & Systèmes)',
+      'Bachelier STI2D ITEC',
+      'BTS / BUT Informatique & Réseaux',
+      'Titre Professionnel RNCP Cadre',
+      'Master Ingénierie & Management',
+      'Licence Professionnelle'
+    ],
+    descSuggestions: [
+      'Projets de conception, travaux dirigés et soutenance devant jury professionnel.',
+      'Formation appliquée avec manipulation de bancs d\'essais et outils numériques.'
+    ],
+    institutionSuggestions: ['Lycée Technique (Sète)', 'Université / IUT', 'École d\'Ingénieurs', 'Centre de Formation Professionnelle']
+  },
+  skill_tech: {
+    nameSuggestions: [
+      'Gestion budgétaire & Pilotage financier',
+      'Supervision réseau local (IP, Switch, Wi-Fi)',
+      'Développement TypeScript & React',
+      'Programmation Python & Algorithmes',
+      'Modélisation de bases de données (SQL)',
+      'Analyse et cartographie des processus'
+    ],
+    descSuggestions: [
+      'Maîtrise opérationnelle mise en pratique lors de missions professionnelles.',
+      'Diagnostic approfondi, paramétrage et résolution d\'incidents.'
+    ]
+  },
+  skill_soft: {
+    nameSuggestions: [
+      'Management d\'équipe & Leadership',
+      'Négociation partenariats & fournisseurs',
+      'Résolution d\'imprévus complexes',
+      'Communication assertive & reporting',
+      'Prise de décision sous contraintes',
+      'Pédagogie & transmission de savoir'
+    ],
+    descSuggestions: [
+      'Aisance relationnelle éprouvée en situation de forte exigence.',
+      'Animation de réunions et coordination d\'acteurs pluridisciplinaires.'
+    ]
+  },
+  capacity: {
+    nameSuggestions: [
+      'Coordination systémique d\'opérations',
+      'Résolution de problèmes complexes',
+      'Pensée critique & Arbitrage',
+      'Veille & assimilation technologique rapide',
+      'Vision stratégique globale'
+    ],
+    descSuggestions: [
+      'Capacité cognitive transversale d\'ordre supérieur unissant plusieurs compétences.'
+    ]
+  },
+  horizon: {
+    nameSuggestions: [
+      'Métier Cadre Dirigeant (M1402)',
+      'Chef de projet informatique (M1805)',
+      'Ingénieur Systèmes & Réseaux (M1810)',
+      'Responsable d\'exploitation (M1401)',
+      'Consultant en Organisation & SI'
+    ],
+    descSuggestions: [
+      'Horizon professionnel ciblé avec passerelle d\'apprentissage continue.'
+    ]
+  },
+  knowledge: {
+    nameSuggestions: [
+      'Principes de management et droit du travail',
+      'Architecture des réseaux IP & Modèle OSI',
+      'Méthodes Agiles (Scrum, Kanban)',
+      'Norme ISO 9001 / Management de la Qualité',
+      'Codex des 188 Biais Cognitifs'
+    ],
+    descSuggestions: [
+      'Corpus théorique structuré avec références et méthodologies éprouvées.'
+    ],
+    institutionSuggestions: ['Sciences Informatiques', 'Management & Stratégie', 'Normes & Réglementations', 'Sciences Cognitives']
+  }
+};
+
 export const QuickAddNodeModal: React.FC<QuickAddNodeModalProps> = ({
   isOpen,
   onClose,
@@ -372,18 +474,50 @@ export const QuickAddNodeModal: React.FC<QuickAddNodeModalProps> = ({
         <form onSubmit={handleSubmit} className="p-5 sm:p-6 overflow-y-auto space-y-4 flex-1">
           {/* Label / Name */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-              Intitulé / Nom du Nœud <span className="text-red-500">*</span>
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
+                Intitulé / Nom du Nœud <span className="text-red-500">*</span>
+              </label>
+              <span className="text-[10px] text-blue-600 font-medium">Suggestions disponibles ↓</span>
+            </div>
             <input
               type="text"
               required
+              list="quick-add-name-list"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={currentConfig.placeholder}
               className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-slate-900 font-medium text-sm transition-all"
               autoFocus
             />
+            <datalist id="quick-add-name-list">
+              {SUGGESTIONS_BY_TYPE[selectedType]?.nameSuggestions.map((sug) => (
+                <option key={sug} value={sug} />
+              ))}
+            </datalist>
+
+            {/* Interactive Suggestion Chips */}
+            <div className="mt-2 flex flex-wrap gap-1.5 items-center">
+              <span className="text-[10px] font-bold text-slate-400">Exemples rapides :</span>
+              {SUGGESTIONS_BY_TYPE[selectedType]?.nameSuggestions.map((sug) => {
+                const isSelected = name.trim().toLowerCase() === sug.toLowerCase();
+                return (
+                  <button
+                    key={sug}
+                    type="button"
+                    onClick={() => setName(sug)}
+                    className={`px-2 py-0.5 rounded-lg text-[11px] font-medium transition-all flex items-center gap-1 ${
+                      isSelected
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200/80 hover:border-blue-300'
+                    }`}
+                  >
+                    {isSelected && <Check className="w-2.5 h-2.5" />}
+                    <span>{sug}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Context / Institution for Experiences & Formations */}
@@ -394,11 +528,32 @@ export const QuickAddNodeModal: React.FC<QuickAddNodeModalProps> = ({
               </label>
               <input
                 type="text"
+                list="quick-add-inst-list"
                 value={institution}
                 onChange={(e) => setInstitution(e.target.value)}
                 placeholder="ex: Université Paris-Saclay, Startup Tech..."
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-slate-900 font-medium text-sm transition-all"
               />
+              <datalist id="quick-add-inst-list">
+                {SUGGESTIONS_BY_TYPE[selectedType]?.institutionSuggestions?.map((inst) => (
+                  <option key={inst} value={inst} />
+                ))}
+              </datalist>
+              {SUGGESTIONS_BY_TYPE[selectedType]?.institutionSuggestions && (
+                <div className="mt-1.5 flex flex-wrap gap-1 items-center">
+                  <span className="text-[10px] text-slate-400">Suggestions :</span>
+                  {SUGGESTIONS_BY_TYPE[selectedType]?.institutionSuggestions?.map((inst) => (
+                    <button
+                      key={inst}
+                      type="button"
+                      onClick={() => setInstitution(inst)}
+                      className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
+                    >
+                      {inst}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -510,6 +665,22 @@ export const QuickAddNodeModal: React.FC<QuickAddNodeModalProps> = ({
               placeholder="Détails du contexte, réalisations clés, livrables ou certification associée..."
               className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-slate-900 font-medium text-sm transition-all resize-none"
             />
+            {SUGGESTIONS_BY_TYPE[selectedType]?.descSuggestions && (
+              <div className="mt-1.5 flex flex-wrap gap-1 items-center">
+                <span className="text-[10px] text-slate-400">Exemples descriptifs :</span>
+                {SUGGESTIONS_BY_TYPE[selectedType]?.descSuggestions?.map((desc, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setDescription(desc)}
+                    className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors line-clamp-1 max-w-[280px] text-left"
+                    title={desc}
+                  >
+                    {desc}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Footer Actions */}
