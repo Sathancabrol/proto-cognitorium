@@ -26,6 +26,12 @@ import { CognitiveBiasesView } from './components/CognitiveBiasesView';
 import { MultiProjectsView } from './components/MultiProjectsView';
 import { TargetedCvView } from './components/TargetedCvView';
 import { ProfileManagementModal } from './components/ProfileManagementModal';
+import { CognitoriumBrandSplash } from './components/auth/CognitoriumBrandSplash';
+import { CognitoriumAuthPortal } from './components/auth/CognitoriumAuthPortal';
+import { CognitoriumSignUpFlow } from './components/auth/CognitoriumSignUpFlow';
+import { CognitoriumTutorialOnboarding } from './components/auth/CognitoriumTutorialOnboarding';
+import { CognitoriumOrganicStudio } from './components/auth/CognitoriumOrganicStudio';
+import { AuthFlowStep, UserAccount } from './types/authTypes';
 import { INITIAL_COGNITORIUM_PROFILE, PROFILES_PRESETS } from './data/initialData';
 import { 
   CognitiveProfile, 
@@ -39,8 +45,80 @@ import {
 } from './types';
 
 const STORAGE_KEY = 'cognitorium_active_profile_v10_full_fusion';
+const ACCOUNTS_STORAGE_KEY = 'cognitorium_auth_accounts_v2';
+const CUSTOM_PROFILES_STORAGE_KEY = 'cognitorium_custom_profiles_v2';
+const ACTIVE_USER_STORAGE_KEY = 'cognitorium_active_user_v2';
+const SESSION_ACTIVE_KEY = 'cognitorium_session_active_v2';
+
+const DEFAULT_ACCOUNTS: UserAccount[] = [
+  {
+    id: 'usr_nathan_cabrol',
+    email: 'nathan.cabrol@cognitorium.fr',
+    personName: 'Näthan Cabrol',
+    headline: 'Conducteur de travaux BTP & VRD • Ergonome • Ingénierie Pédagogique',
+    targetTitle: 'Conducteur de travaux BTP & VRD',
+    targetRomeCode: 'F1201',
+    journeyType: 'professional',
+    createdAt: '2024-01-15T08:00:00.000Z',
+    lastLoginAt: new Date().toISOString(),
+    hasCompletedOnboarding: true,
+    profileId: INITIAL_COGNITORIUM_PROFILE.id
+  }
+];
 
 export default function App() {
+  // Machine à états d'authentification et parcours utilisateur
+  const [authStep, setAuthStep] = useState<AuthFlowStep>(() => {
+    try {
+      const isSessionActive = sessionStorage.getItem(SESSION_ACTIVE_KEY);
+      if (isSessionActive === 'true') {
+        return 'APP';
+      }
+    } catch (e) {
+      console.warn("Session check failed:", e);
+    }
+    return 'SPLASH';
+  });
+
+  // Comptes utilisateurs enregistrés
+  const [savedAccounts, setSavedAccounts] = useState<UserAccount[]>(() => {
+    try {
+      const raw = localStorage.getItem(ACCOUNTS_STORAGE_KEY);
+      if (raw) {
+        return JSON.parse(raw);
+      }
+    } catch (e) {
+      console.warn("Erreur chargement comptes:", e);
+    }
+    return DEFAULT_ACCOUNTS;
+  });
+
+  // Profils personnalisés créés par les utilisateurs
+  const [savedCustomProfiles, setSavedCustomProfiles] = useState<CognitiveProfile[]>(() => {
+    try {
+      const raw = localStorage.getItem(CUSTOM_PROFILES_STORAGE_KEY);
+      if (raw) {
+        return JSON.parse(raw);
+      }
+    } catch (e) {
+      console.warn("Erreur chargement profils personnalisés:", e);
+    }
+    return [];
+  });
+
+  // Utilisateur actuellement authentifié
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => {
+    try {
+      const raw = localStorage.getItem(ACTIVE_USER_STORAGE_KEY);
+      if (raw) {
+        return JSON.parse(raw);
+      }
+    } catch (e) {
+      console.warn("Erreur chargement utilisateur actif:", e);
+    }
+    return DEFAULT_ACCOUNTS[0];
+  });
+
   const [profile, setProfile] = useState<CognitiveProfile>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -77,6 +155,37 @@ export default function App() {
       console.warn("Impossible de persister le profil:", e);
     }
   }, [profile]);
+
+  // Persist accounts
+  useEffect(() => {
+    try {
+      localStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(savedAccounts));
+    } catch (e) {
+      console.warn("Impossible de persister les comptes:", e);
+    }
+  }, [savedAccounts]);
+
+  // Persist custom profiles
+  useEffect(() => {
+    try {
+      localStorage.setItem(CUSTOM_PROFILES_STORAGE_KEY, JSON.stringify(savedCustomProfiles));
+    } catch (e) {
+      console.warn("Impossible de persister les profils personnalisés:", e);
+    }
+  }, [savedCustomProfiles]);
+
+  // Persist active user
+  useEffect(() => {
+    try {
+      if (currentUser) {
+        localStorage.setItem(ACTIVE_USER_STORAGE_KEY, JSON.stringify(currentUser));
+      } else {
+        localStorage.removeItem(ACTIVE_USER_STORAGE_KEY);
+      }
+    } catch (e) {
+      console.warn("Impossible de persister l'utilisateur actif:", e);
+    }
+  }, [currentUser]);
 
   // Compute pending validation count
   const pendingNodes = useMemo(() => {
@@ -241,6 +350,136 @@ export default function App() {
     }
   };
 
+  // Gestion des transitions du parcours utilisateur
+  const handleSplashComplete = () => {
+    setAuthStep('PORTAL');
+  };
+
+  const handleSelectAccount = (account: UserAccount | null, selectedProfile: CognitiveProfile) => {
+    setProfile(selectedProfile);
+    setCurrentUser(account);
+    setSelectedNode(null);
+    setSimulationYear(2026);
+    try {
+      sessionStorage.setItem(SESSION_ACTIVE_KEY, 'true');
+    } catch (e) {}
+
+    // Si le compte existe et n'a pas encore validé l'onboarding -> tutoriel
+    if (account && !account.hasCompletedOnboarding) {
+      setAuthStep('ONBOARDING_TUTORIAL');
+    } else {
+      setAuthStep('APP');
+    }
+  };
+
+  const handleStartSignUp = () => {
+    setAuthStep('SIGNUP');
+  };
+
+  const handleOrganicStudioSuccess = (
+    newAccount: UserAccount,
+    newProfile: CognitiveProfile,
+    targetTab: AppActiveTab
+  ) => {
+    setSavedAccounts((prev) => [newAccount, ...prev.filter((a) => a.id !== newAccount.id)]);
+    setSavedCustomProfiles((prev) => [newProfile, ...prev.filter((p) => p.id !== newProfile.id)]);
+    setCurrentUser(newAccount);
+    setProfile(newProfile);
+    setSelectedNode(null);
+    setSimulationYear(2026);
+    setActiveTab(targetTab || 'dashboard');
+    try {
+      sessionStorage.setItem(SESSION_ACTIVE_KEY, 'true');
+    } catch (e) {}
+    setAuthStep('APP');
+  };
+
+  const handleFinishTutorial = () => {
+    if (currentUser) {
+      const updatedUser: UserAccount = {
+        ...currentUser,
+        hasCompletedOnboarding: true,
+        lastLoginAt: new Date().toISOString()
+      };
+      setCurrentUser(updatedUser);
+      setSavedAccounts((prev) =>
+        prev.map((a) => (a.id === updatedUser.id ? updatedUser : a))
+      );
+    }
+    try {
+      sessionStorage.setItem(SESSION_ACTIVE_KEY, 'true');
+    } catch (e) {}
+    setAuthStep('APP');
+  };
+
+  const handleSkipTutorial = () => {
+    if (currentUser) {
+      const updatedUser: UserAccount = {
+        ...currentUser,
+        hasCompletedOnboarding: true,
+        lastLoginAt: new Date().toISOString()
+      };
+      setCurrentUser(updatedUser);
+      setSavedAccounts((prev) =>
+        prev.map((a) => (a.id === updatedUser.id ? updatedUser : a))
+      );
+    }
+    try {
+      sessionStorage.setItem(SESSION_ACTIVE_KEY, 'true');
+    } catch (e) {}
+    setAuthStep('APP');
+  };
+
+  const handleContinueAsGuest = () => {
+    setCurrentUser(null);
+    try {
+      sessionStorage.setItem(SESSION_ACTIVE_KEY, 'true');
+    } catch (e) {}
+    setAuthStep('APP');
+  };
+
+  const handleLogout = () => {
+    try {
+      sessionStorage.removeItem(SESSION_ACTIVE_KEY);
+    } catch (e) {}
+    setAuthStep('PORTAL');
+  };
+
+  const handleReplaySplash = () => {
+    setAuthStep('SPLASH');
+  };
+
+  // 1. Écran d'accueil de marque & animation du logo
+  if (authStep === 'SPLASH') {
+    return <CognitoriumBrandSplash onComplete={handleSplashComplete} />;
+  }
+
+  // 2. Écran d'accueil & Choix de compte (Authentification / Inscription / Invité)
+  if (authStep === 'PORTAL') {
+    return (
+      <CognitoriumAuthPortal
+        savedAccounts={savedAccounts}
+        savedCustomProfiles={savedCustomProfiles}
+        currentActiveProfile={profile}
+        onSelectAccount={handleSelectAccount}
+        onStartSignUp={handleStartSignUp}
+        onContinueAsGuest={handleContinueAsGuest}
+        onReplaySplash={handleReplaySplash}
+      />
+    );
+  }
+
+  // 3. Studio Organique : Saisie vivante, Tissage du Connectome en temps réel, Test CV & ROME Matcher, et Volant
+  if (authStep === 'SIGNUP' || authStep === 'ONBOARDING_TUTORIAL') {
+    return (
+      <CognitoriumOrganicStudio
+        onCancel={() => setAuthStep('PORTAL')}
+        onComplete={handleOrganicStudioSuccess}
+      />
+    );
+  }
+
+  // 5. Espace principal complet de l'application
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex font-sans selection:bg-blue-500 selection:text-white">
       {/* Volant Déroulant Gauche avec animation fluide */}
@@ -260,6 +499,7 @@ export default function App() {
         onResetToDemo={handleResetToDemo}
         isPinned={isSidebarPinned}
         onTogglePin={() => setIsSidebarPinned((p) => !p)}
+        onLogout={handleLogout}
       />
 
       {/* Main Content Column with dynamic padding based on sidebar state */}
@@ -285,6 +525,8 @@ export default function App() {
           }
           isSidebarPinned={isSidebarPinned}
           onToggleSidebarPin={() => setIsSidebarPinned((p) => !p)}
+          onLogout={handleLogout}
+          onOpenTutorial={() => setAuthStep('ONBOARDING_TUTORIAL')}
         />
 
         {/* Main App Content Body */}

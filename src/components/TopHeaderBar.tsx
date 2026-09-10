@@ -15,7 +15,8 @@ import {
   TrendingUp,
   BookOpen,
   Database,
-  FileText
+  FileText,
+  HelpCircle
 } from 'lucide-react';
 import {
   AppActiveTab,
@@ -92,6 +93,7 @@ interface TopHeaderBarProps {
   isSidebarPinned: boolean;
   onToggleSidebarPin: () => void;
   onLogout?: () => void;
+  onOpenTutorial?: () => void;
 }
 
 export const TopHeaderBar: React.FC<TopHeaderBarProps> = ({
@@ -108,7 +110,8 @@ export const TopHeaderBar: React.FC<TopHeaderBarProps> = ({
   onToggleComplexity,
   isSidebarPinned,
   onToggleSidebarPin,
-  onLogout
+  onLogout,
+  onOpenTutorial
 }) => {
   const currentSection = SECTION_OF_TAB[activeTab] || 'profil';
   const availableViews = SECTION_VIEWS[currentSection] || [];
@@ -201,6 +204,19 @@ export const TopHeaderBar: React.FC<TopHeaderBarProps> = ({
             <SlidersHorizontal className="w-3 h-3 text-slate-500" />
             <span>{complexityMode === 'essential' ? 'Essentiel' : 'Expert'}</span>
           </button>
+
+          {/* Bouton Tutoriel & Onboarding */}
+          {onOpenTutorial && (
+            <button
+              id="topbar-btn-tutorial"
+              onClick={onOpenTutorial}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-cyan-50 hover:bg-cyan-100 text-cyan-800 rounded-xl text-xs font-bold border border-cyan-200 transition-colors"
+              title="Revoir le tutoriel interactif et le guide de prise en main"
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-cyan-600" />
+              <span className="hidden md:inline">Tutoriel</span>
+            </button>
+          )}
 
           {/* Profil Actif */}
           {onOpenOnboarding ? (
