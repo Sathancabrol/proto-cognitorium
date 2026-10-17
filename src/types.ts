@@ -23,6 +23,7 @@ export interface EvidenceItem {
   inferenceType?: InferenceType;
   inferenceMethod?: string;
   sourceDocument?: string;
+  sourceUrl?: string; // URL web facultative, validée avant affichage
   sourcePage?: number;
   date?: string;
   volumeMetric?: string;
