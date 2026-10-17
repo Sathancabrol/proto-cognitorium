@@ -3,6 +3,7 @@ import { AnyCognitiveNode, GraphEdge, SkillNode, ExperienceNode, TaskNode, Capac
 import { calculateSkillVitality, getVitalityStatus } from '../utils/decay';
 import { getNodeVisualDescriptor } from '../utils/nodeVisualDescriptor';
 import { getEpistemicLevel, EPISTEMIC_SCALE } from '../utils/epistemics';
+import { safeEvidenceSourceUrl } from '../utils/evidenceSourceLink';
 import { 
   X, 
   Sparkles, 
@@ -354,6 +355,17 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
                     <span className="text-[10px] text-blue-700 block">
                       🗂️ <strong>Document source :</strong> {ev.sourceDocument}{ev.sourcePage ? ` · p. ${ev.sourcePage}` : ''}
                     </span>
+                  )}
+                  {safeEvidenceSourceUrl(ev.sourceUrl ?? ev.sourceDocument) && (
+                    <a
+                      href={safeEvidenceSourceUrl(ev.sourceUrl ?? ev.sourceDocument)!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      referrerPolicy="no-referrer"
+                      className="text-[11px] font-semibold text-blue-700 underline underline-offset-2 inline-block"
+                    >
+                      Consulter la source vérifiable ↗
+                    </a>
                   )}
                   {ev.date && (
                     <span className="text-[10px] text-slate-400 block">🗓️ <strong>Contexte temporel :</strong> {ev.date}</span>
